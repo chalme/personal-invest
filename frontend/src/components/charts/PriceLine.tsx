@@ -1,4 +1,4 @@
-import ReactEChartsCore from 'echarts-for-react/lib/core';
+import { ReactEChartsCore } from './ReactEChartsCore';
 import { echarts } from './echarts';
 
 export type PriceBar = {

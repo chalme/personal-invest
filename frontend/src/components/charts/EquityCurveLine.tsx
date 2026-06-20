@@ -1,4 +1,4 @@
-import ReactEChartsCore from 'echarts-for-react/lib/core';
+import { ReactEChartsCore } from './ReactEChartsCore';
 import type { BacktestCurvePoint } from '../../api/types';
 import { echarts } from './echarts';
 
