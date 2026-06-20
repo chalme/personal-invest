@@ -37,14 +37,14 @@ export function StocksPage() {
   }, [selectedSymbol]);
 
   const selected = useMemo(() => rows.find((row) => row.symbol === selectedSymbol) ?? rows[0], [rows, selectedSymbol]);
-  const scoreRadar = selected ? {
-    趋势: numberValue(selected.trend_score),
-    基本面: numberValue(selected.fundamental_score),
-    估值: numberValue(selected.valuation_score),
-    资金: numberValue(selected.fund_flow_score),
-    行业: numberValue(selected.sector_score),
-    风险: Math.max(0, 100 - numberValue(selected.risk_score)),
-  } : {};
+  const scoreRadar: Record<string, number> = {
+    趋势: selected ? numberValue(selected.trend_score) : 0,
+    基本面: selected ? numberValue(selected.fundamental_score) : 0,
+    估值: selected ? numberValue(selected.valuation_score) : 0,
+    资金: selected ? numberValue(selected.fund_flow_score) : 0,
+    行业: selected ? numberValue(selected.sector_score) : 0,
+    风险: selected ? Math.max(0, 100 - numberValue(selected.risk_score)) : 0,
+  };
 
   return (
     <div className="page-stack">
