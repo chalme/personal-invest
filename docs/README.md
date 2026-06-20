@@ -6,6 +6,7 @@
 | `architecture.md` | 技术架构、模块边界、数据流 |
 | `business-roadmap.md` | 观察资产、个人持仓、组合复盘和分级买卖建议的业务规划 |
 | `business-information-architecture.md` | 股票、ETF、场外基金的业务与信息架构 |
+| `long-term-roadmap.md` | 当前状态、长期业务定位、模型演进和未来阶段规划 |
 | `ux.md` | 页面体验、视觉要求、交互标准 |
 | `storage.md` | SQLite / DuckDB / Parquet 存储边界 |
 | `roadmap.md` | MVP 与后续迭代计划 |

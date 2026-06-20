@@ -28,7 +28,9 @@
 
 ### 2. 访问保护
 
-目标：避免公网域名被无权限访问。
+目标：公网访问前先鉴权，避免个人投资数据、持仓、建议和复盘记录被无权限访问。
+
+当前已经通过 Cloudflare 代理域名，但 Cloudflare 普通代理 / CDN / WAF 不等同于登录鉴权。第一阶段推荐使用 Cloudflare Access 作为外层访问保护。
 
 可选方案：
 
@@ -38,6 +40,30 @@
 - API Token
 
 推荐方案：优先使用 Cloudflare Access，减少代码改动。
+
+保护范围：
+
+- 前端域名：`invest.chalme.indevs.in`
+- API 域名：`api.chalme.indevs.in`
+
+验收标准：
+
+- 未登录访问前端域名时，应进入 Cloudflare Access 登录页。
+- 未登录访问 API 域名时，应被 Cloudflare Access 拦截。
+- 已授权账号登录后，前端页面和 API 请求正常。
+- 直接访问服务器 IP 和后端端口不能绕过访问保护。
+- `/health` 只保留最小健康信息，不暴露敏感配置。
+
+后续任务：
+
+- `P0-008`：Cloudflare Access 访问保护与部署边界。
+- `P1-014`：应用内单用户登录。
+- `P1-015`：API Token，用于脚本、自动化或移动端调用。
+
+参考：
+
+- [Cloudflare Access applications](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/)
+- [Cloudflare HTTP/self-hosted applications](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/)
 
 优先级：高。
 
@@ -109,4 +135,3 @@ make prod-server
 ```text
 https://invest.chalme.indevs.in
 ```
-
