@@ -10,6 +10,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { AiAnalysisPage } from './pages/AiAnalysisPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SignalsPage } from './pages/SignalsPage';
+import { ErrorBoundary } from './components/system/ErrorBoundary';
 
 export function App() {
   const [active, setActive] = useState('dashboard');
@@ -27,6 +28,6 @@ export function App() {
       default: return <Dashboard />;
     }
   })();
-  return <AppLayout active={active} onChange={setActive}>{page}</AppLayout>;
+  return <AppLayout active={active} onChange={setActive}><ErrorBoundary>{page}</ErrorBoundary></AppLayout>;
 }
 
