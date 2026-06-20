@@ -137,3 +137,36 @@ export type StrategyConfig = {
   };
   updated_at?: string;
 };
+
+export type BacktestCurvePoint = {
+  trade_date: string;
+  equity: number;
+  benchmark_equity: number;
+  daily_return: number;
+  drawdown: number;
+};
+
+export type BacktestResult = {
+  backtest_id: string;
+  name: string;
+  status: string;
+  summary: {
+    start_date?: string;
+    end_date?: string;
+    initial_cash?: number;
+    final_equity?: number;
+    total_return?: number;
+    annualized_return?: number;
+    max_drawdown?: number;
+    win_rate?: number;
+    volatility?: number;
+    sharpe_ratio?: number | null;
+    benchmark_symbol?: string;
+    benchmark_return?: number;
+    trading_days?: number;
+    used_symbols?: string[];
+  };
+  curve: BacktestCurvePoint[];
+  holdings: Array<{ symbol: string; name?: string }>;
+  notes: string[];
+};
