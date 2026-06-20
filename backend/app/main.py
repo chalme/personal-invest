@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import dashboard, jobs, market, portfolio, stocks, watchlist
+from app.api import dashboard, jobs, market, portfolio, prices, reports, stocks, watchlist
 from app.core.config import get_settings
 
 
@@ -20,6 +20,8 @@ app.add_middleware(
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(market.router, prefix="/api")
 app.include_router(stocks.router, prefix="/api")
+app.include_router(prices.router, prefix="/api")
+app.include_router(reports.router, prefix="/api")
 app.include_router(watchlist.router, prefix="/api")
 app.include_router(portfolio.router, prefix="/api")
 app.include_router(jobs.router, prefix="/api")

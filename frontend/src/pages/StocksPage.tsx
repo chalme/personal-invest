@@ -1,30 +1,98 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiGet } from '../api/client';
-import { Badge, Card } from '../components/ui';
+import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
+import { PriceLine, type PriceBar } from '../components/charts/PriceLine';
+import { ScoreRadar } from '../components/charts/ScoreRadar';
 
 type StockAnalysis = Record<string, string | number | null>;
 
+function badgeTone(state: unknown): 'good' | 'warn' | 'bad' | 'neutral' {
+  const text = String(state ?? '');
+  if (text.includes('风险') || text.includes('暂不')) return 'bad';
+  if (text.includes('观察')) return 'good';
+  if (text.includes('持有')) return 'warn';
+  return 'neutral';
+}
+
+function numberValue(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function StocksPage() {
   const [rows, setRows] = useState<StockAnalysis[]>([]);
+  const [selectedSymbol, setSelectedSymbol] = useState('');
+  const [prices, setPrices] = useState<PriceBar[]>([]);
+
   useEffect(() => {
-    apiGet<{ data: StockAnalysis[] }>('/api/stocks/analysis').then((res) => setRows(res.data));
+    apiGet<{ data: StockAnalysis[] }>('/api/stocks/analysis').then((res) => {
+      setRows(res.data);
+      if (res.data[0]?.symbol) setSelectedSymbol(String(res.data[0].symbol));
+    });
   }, []);
+
+  useEffect(() => {
+    if (!selectedSymbol) return;
+    apiGet<{ data: PriceBar[] }>(`/api/stocks/${selectedSymbol}/prices?limit=120`).then((res) => setPrices(res.data));
+  }, [selectedSymbol]);
+
+  const selected = useMemo(() => rows.find((row) => row.symbol === selectedSymbol) ?? rows[0], [rows, selectedSymbol]);
+  const scoreRadar = selected ? {
+    趋势: numberValue(selected.trend_score),
+    基本面: numberValue(selected.fundamental_score),
+    估值: numberValue(selected.valuation_score),
+    资金: numberValue(selected.fund_flow_score),
+    行业: numberValue(selected.sector_score),
+    风险: Math.max(0, 100 - numberValue(selected.risk_score)),
+  } : {};
+
   return (
     <div className="page-stack">
       <div className="page-title-row">
         <div>
           <h2>个股公司分析</h2>
-          <p>从趋势、基本面、估值、资金、行业、风险拆分判断。</p>
+          <p>从趋势、基本面、估值、资金、行业、风险拆分判断，并联动价格趋势。</p>
         </div>
+        {selected && <Badge tone={badgeTone(selected.state)}>{selected.trade_date}</Badge>}
       </div>
-      <Card>
-        <table className="data-table">
+
+      {selected ? (
+        <>
+          <div className="metric-grid">
+            <MetricCard label="当前股票" value={String(selected.name ?? selected.symbol)} hint={String(selected.symbol)} tone="neutral" />
+            <MetricCard label="综合评分" value={numberValue(selected.total_score).toFixed(1)} hint={String(selected.state ?? '')} tone={badgeTone(selected.state)} />
+            <MetricCard label="趋势评分" value={numberValue(selected.trend_score).toFixed(1)} hint="价格动量与均线结构" tone="good" />
+            <MetricCard label="风险分" value={numberValue(selected.risk_score).toFixed(1)} hint="越高代表风险越大" tone={numberValue(selected.risk_score) > 60 ? 'bad' : 'warn'} />
+          </div>
+
+          <div className="grid-two">
+            <Card title="价格趋势" description="最近 120 条日线收盘走势。">
+              {prices.length > 0 ? <PriceLine data={prices} /> : <EmptyState title="暂无价格数据" description="执行 make daily 生成 Parquet 后会显示价格趋势。" />}
+            </Card>
+            <Card title="评分雷达" description="多维评分只用于辅助观察，不代表确定性预测。">
+              <ScoreRadar scores={scoreRadar} />
+            </Card>
+          </div>
+
+          <Card title="结构化结论" description="当前系统根据预计算快照输出。">
+            <div className="analysis-summary">
+              <div><span>结论</span><strong>{selected.conclusion}</strong></div>
+              <div><span>风险</span><strong>{selected.risk_note}</strong></div>
+            </div>
+          </Card>
+        </>
+      ) : (
+        <EmptyState title="暂无个股分析" description="执行 make daily 后会生成个股评分快照。" />
+      )}
+
+      <Card title="个股评分列表" description="点击行切换上方图表。">
+        <table className="data-table clickable-table">
           <thead><tr><th>股票</th><th>状态</th><th>总分</th><th>趋势</th><th>基本面</th><th>估值</th><th>资金</th><th>结论</th><th>风险</th></tr></thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={`${row.symbol}-${row.trade_date}`}>
+              <tr key={`${row.symbol}-${row.trade_date}`} onClick={() => setSelectedSymbol(String(row.symbol))} className={selectedSymbol === row.symbol ? 'selected-row' : ''}>
                 <td><strong>{row.name}</strong><br /><small>{row.symbol}</small></td>
-                <td><Badge tone="good">{row.state}</Badge></td>
+                <td><Badge tone={badgeTone(row.state)}>{row.state}</Badge></td>
                 <td>{row.total_score}</td><td>{row.trend_score}</td><td>{row.fundamental_score}</td><td>{row.valuation_score}</td><td>{row.fund_flow_score}</td><td>{row.conclusion}</td><td>{row.risk_note}</td>
               </tr>
             ))}
@@ -34,4 +102,3 @@ export function StocksPage() {
     </div>
   );
 }
-
