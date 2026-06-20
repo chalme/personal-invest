@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Flame, PlayCircle, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Database, Flame, PlayCircle, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
 import { apiGet, apiPost } from '../api/client';
 import type { CreateJobResponse, DashboardResponse, JobExecution, MarketTrend, RiskEvent, Signal } from '../api/types';
 import { MarketScoreLine } from '../components/charts/MarketScoreLine';
@@ -39,6 +39,20 @@ function riskTone(risk: RiskEvent) {
 function signalTone(signal: Signal) {
   if ((signal.risk_level ?? '').toLowerCase().includes('high') || signal.signal_type.includes('风险')) return 'bad' as const;
   if (signal.signal_type.includes('观察')) return 'good' as const;
+  return 'neutral' as const;
+}
+
+function dataSourceLabel(mode?: string) {
+  if (mode === 'real') return '真实数据';
+  if (mode === 'sample') return '样本数据';
+  if (mode === 'mixed') return '混合数据';
+  return '数据未知';
+}
+
+function dataSourceTone(mode?: string) {
+  if (mode === 'real') return 'good' as const;
+  if (mode === 'mixed') return 'warn' as const;
+  if (mode === 'sample') return 'bad' as const;
   return 'neutral' as const;
 }
 
@@ -121,6 +135,7 @@ export function Dashboard() {
   const pnlTone = data.summary.total_pnl >= 0 ? 'good' : 'bad';
   const currentMarketTone = marketTone(data.market?.market_score ?? 0);
   const latestJobStatus = String(data.latest_job?.status ?? '暂无任务');
+  const source = data.data_source;
 
   return (
     <div className="page-stack dashboard-page">
@@ -131,7 +146,9 @@ export function Dashboard() {
           <p>{insight.desc}</p>
           <div className="hero-meta-row">
             <Badge tone={currentMarketTone}>{data.market?.trend_state ?? '未知状态'}</Badge>
+            <Badge tone={dataSourceTone(source?.mode)}>{dataSourceLabel(source?.mode)}</Badge>
             <span>数据日期：{data.market?.trade_date ?? '暂无'}</span>
+            <span>来源日期：{source?.latest_trade_date ?? '暂无'}</span>
             <span>最近任务：{latestJobStatus}</span>
           </div>
         </div>
@@ -143,6 +160,19 @@ export function Dashboard() {
           <button className="ghost-button" onClick={load}>刷新工作台</button>
         </div>
       </section>
+
+      {source?.warning && (
+        <section className={`data-source-alert alert-${dataSourceTone(source.mode)}`}>
+          <Database size={18} />
+          <div>
+            <strong>{dataSourceLabel(source.mode)}提示</strong>
+            <p>{source.warning}</p>
+            <small>
+              数据行数 {source.rows} · 标的 {source.symbol_count} · 来源 {Object.entries(source.source_count ?? {}).map(([key, value]) => `${key}:${value}`).join(' / ') || '未知'}
+            </small>
+          </div>
+        </section>
+      )}
 
       <div className="metric-grid">
         <MetricCard label="市场评分" value={data.market?.market_score ?? '-'} hint={data.market?.trend_state ?? '暂无'} tone={currentMarketTone} />

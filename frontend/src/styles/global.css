@@ -193,3 +193,41 @@ button { font: inherit; }
   .grid-three { grid-template-columns: 1fr; }
   .portfolio-brief { grid-template-columns: 1fr; }
 }
+
+.data-source-alert {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.72);
+  color: var(--text-primary);
+}
+
+.data-source-alert p,
+.data-source-inline span {
+  margin: 4px 0;
+  color: var(--text-secondary);
+}
+
+.data-source-alert small,
+.data-source-inline small {
+  display: block;
+  color: var(--text-muted);
+}
+
+.data-source-alert.alert-bad {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(127, 29, 29, 0.2);
+}
+
+.data-source-alert.alert-warn {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(120, 53, 15, 0.18);
+}
+
+.data-source-inline {
+  display: grid;
+  gap: 8px;
+}

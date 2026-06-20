@@ -33,23 +33,29 @@
 
 ### P0-001: 修正每日任务按钮只入队不执行
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Goal: Dashboard 点击“执行今日更新”后，真正启动每日流水线，而不是只创建 `QUEUED` 任务记录。
 - Files: `backend/app/api/jobs.py`, `backend/app/services/job_service.py`, `worker/daily_job.py`, `frontend/src/pages/Dashboard.tsx`
 - Concrete Changes: 后端启动后台任务；任务状态可查询；前端轮询进度并在成功或失败后刷新状态。
 - Acceptance: 点击按钮后任务从 `RUNNING` 进入 `SUCCESS` 或 `FAILED`，失败时页面展示错误原因。
-- Detail: 暂不拆分。
+- Completed At: 2026-06-20
+- Changed Files: `backend/app/api/jobs.py`, `backend/app/services/job_service.py`, `worker/daily_job.py`, `frontend/src/pages/Dashboard.tsx`
+- Verification: Dashboard 按钮会启动后台任务，任务状态可轮询至 `SUCCESS` 或 `FAILED`。
+- Notes: 后端复用同一个 `job_execution.id` 更新任务进度。
 
 ### P0-002: 增加数据来源与样本数据提示
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Goal: 用户能清楚知道当前分析使用真实数据、样本数据，还是两者混用。
 - Files: `worker/ingest/market_data.py`, `backend/app/api/market.py` 或新增 `backend/app/api/data.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/MarketPage.tsx`
 - Concrete Changes: 暴露 `source_count`、`latest_trade_date`、`has_sample_data`；页面显示数据来源和风险提示。
 - Acceptance: 使用样本数据时，Dashboard 和市场页有明确提示，系统不会把样本数据伪装成真实数据。
-- Detail: 暂不拆分。
+- Completed At: 2026-06-20
+- Changed Files: `worker/ingest/market_data.py`, `backend/app/services/data_source_service.py`, `backend/app/api/market.py`, `backend/app/services/dashboard_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/MarketPage.tsx`
+- Verification: Dashboard 和市场页会展示真实/样本/混合数据提示；后端提供 `GET /api/market/data-source`。
+- Notes: 样本数据不会再被页面伪装成真实数据。
 
 ### P0-003: 引入资产类型字段
 

@@ -5,6 +5,11 @@ from app.services.market_service import MarketService
 router = APIRouter(prefix="/market", tags=["market"])
 
 
+@router.get("/data-source")
+def get_market_data_source() -> dict:
+    return {"data": MarketService().data_source_summary()}
+
+
 @router.get("/trend")
 def get_market_trend() -> dict:
     return {"data": MarketService().latest_market_trend()}

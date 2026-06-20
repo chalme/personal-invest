@@ -1,3 +1,17 @@
+export type DataSourceSummary = {
+  status: string;
+  mode: 'real' | 'sample' | 'mixed' | 'unknown' | string;
+  latest_trade_date?: string | null;
+  generated_at?: string | null;
+  rows: number;
+  symbol_count: number;
+  source_count: Record<string, number>;
+  has_sample_data: boolean;
+  has_real_data: boolean;
+  warning?: string | null;
+  manifest_file?: string | null;
+};
+
 export type MarketTrend = {
   trade_date: string;
   market_score: number;
@@ -84,6 +98,7 @@ export type RiskEvent = {
 };
 
 export type DashboardResponse = {
+  data_source?: DataSourceSummary;
   market: MarketTrend | null;
   sectors: SectorTrend[];
   positions: Position[];

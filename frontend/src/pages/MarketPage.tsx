@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
-import type { MarketTrend, SectorTrend } from '../api/types';
+import type { DataSourceSummary, MarketTrend, SectorTrend } from '../api/types';
 import { SectorBar } from '../components/charts/SectorBar';
 import { ScoreRadar } from '../components/charts/ScoreRadar';
 import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
@@ -8,10 +8,12 @@ import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
 export function MarketPage() {
   const [market, setMarket] = useState<MarketTrend | null>(null);
   const [sectors, setSectors] = useState<SectorTrend[]>([]);
+  const [dataSource, setDataSource] = useState<DataSourceSummary | null>(null);
 
   useEffect(() => {
     apiGet<{ data: MarketTrend | null }>('/api/market/trend').then((res) => setMarket(res.data));
     apiGet<{ data: SectorTrend[] }>('/api/market/sectors').then((res) => setSectors(res.data));
+    apiGet<{ data: DataSourceSummary }>('/api/market/data-source').then((res) => setDataSource(res.data));
   }, []);
 
   if (!market) return <EmptyState title="暂无市场数据" description="请先运行初始化脚本或每日更新任务。" />;
@@ -25,6 +27,15 @@ export function MarketPage() {
         </div>
         <Badge tone="good">{market.market_score}/100</Badge>
       </div>
+      {dataSource?.warning && (
+        <Card title="数据来源提示" description={`最新来源日期：${dataSource.latest_trade_date ?? '暂无'} · 模式：${dataSource.mode}`}>
+          <div className="data-source-inline">
+            <Badge tone={dataSource.mode === 'sample' ? 'bad' : 'warn'}>{dataSource.mode === 'sample' ? '样本数据' : '混合数据'}</Badge>
+            <span>{dataSource.warning}</span>
+            <small>来源统计：{Object.entries(dataSource.source_count ?? {}).map(([key, value]) => `${key}:${value}`).join(' / ') || '未知'}</small>
+          </div>
+        </Card>
+      )}
       <div className="metric-grid">
         <MetricCard label="指数趋势" value={market.index_trend_score ?? '-'} />
         <MetricCard label="市场宽度" value={market.breadth_score ?? '-'} />

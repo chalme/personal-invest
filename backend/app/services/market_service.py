@@ -1,4 +1,5 @@
 from app.repositories.sqlite_repo import SQLiteRepository
+from app.services.data_source_service import DataSourceService
 
 
 class MarketService:
@@ -75,4 +76,7 @@ class MarketService:
             """,
             (min_date,),
         )
+
+    def data_source_summary(self) -> dict:
+        return DataSourceService().market_source_summary()
 
