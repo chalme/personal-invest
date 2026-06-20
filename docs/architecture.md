@@ -61,17 +61,17 @@ FastAPI API Server
 
 | 模块 | 职责 |
 |---|---|
-| Dashboard | 展示市场、持仓、信号、风险总览 |
+| Dashboard | 展示市场、持仓、信号、风险总览和今日建议 |
 | Market Trend | 判断大盘趋势、市场宽度、量能、情绪 |
 | Sector Trend | 判断行业强弱、轮动、行业风险 |
 | Stock Analysis | 分析个股趋势、基本面、估值、资金、风险 |
 | Fund Analysis | 分析基金收益、回撤、波动、类型适配、风险 |
 | Watchlist | 管理股票和基金观察池、分组、备注、优先级 |
-| Portfolio | 管理持仓、成本、盈亏、仓位 |
-| Signal | 管理策略信号、观察标记、风险提示 |
+| Portfolio | 管理个人持仓、成本、盈亏、仓位、组合暴露 |
+| Signal | 管理策略信号、观察标记、风险提示、分级建议 |
 | Backtest | 验证策略历史表现 |
 | Report | 生成日报、周报、HTML/Markdown 报告 |
-| AI Assistant | 基于系统数据做解释，不做交易决策 |
+| AI Assistant | 基于系统数据解释规则生成的建议、风险和依据 |
 
 ## 每日任务流
 
@@ -103,7 +103,7 @@ FastAPI API Server
 计算基金分析
   │
   ▼
-生成策略信号
+生成策略信号 / 分级建议
   │
   ▼
 执行持仓风控
@@ -122,9 +122,10 @@ FastAPI API Server
 3. 策略信号必须记录 data_version。
 4. 报告必须记录 data_date、source、generated_at。
 5. 回测禁止未来函数。
-6. AI 只能解释数据，不能直接下单。
+6. AI 只能解释数据和规则建议，不能直接下单。
 7. 页面必须显示当前数据日期和更新时间。
 8. 股票和基金必须有明确 asset_type，基金分析不能套用股票基本面/估值口径。
+9. 分级建议必须可追溯到规则、指标、数据日期和风险说明。
 
 ## 任务文档分层
 

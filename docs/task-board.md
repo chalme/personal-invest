@@ -11,6 +11,7 @@
 1. 可用性：确保页面按钮、API、每日任务和线上访问真实可用。
 2. 数据可信度：明确真实数据、样本数据、数据日期和数据来源。
 3. 股票 + 基金双资产：股票和基金都要能进入观察、分析、持仓、信号和复盘。
+4. 个人持仓 + 分级建议：持仓要能解释组合暴露，建议要由规则生成并可追溯。
 
 ## Status
 
@@ -69,6 +70,16 @@
 - Changed Files: `backend/migrations/001_init.sql`, `scripts/init_db.py`, `backend/app/core/asset_type.py`, `backend/app/services/watchlist_service.py`, `backend/app/services/portfolio_service.py`, `worker/strategy/signal_engine.py`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/SignalsPage.tsx`
 - Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
 - Notes: 详情见 `docs/tasks/P0-003-asset-type.md`。
+
+### P0-004: 个人持仓与分级建议底座
+
+- Status: `TODO`
+- Priority: `P0`
+- Goal: 让系统支持默认个人组合，并为股票、ETF、场外基金生成可追溯的分级买卖建议。
+- Files: `backend/migrations/001_init.sql`, `scripts/init_db.py`, `backend/app/services/portfolio_service.py`, `worker/strategy/signal_engine.py`, `backend/app/services/ai_service.py`, `frontend/src/api/types.ts`
+- Concrete Changes: 明确单组合持仓口径；新增建议等级；建议结果包含触发原因、关键指标、风险说明、置信度和数据日期；AI 只解释规则生成的建议。
+- Acceptance: 持仓页能区分观察资产和真实持仓；股票、ETF、基金能展示 `继续观察`、`买入关注`、`持有`、`减仓关注`、`卖出关注` 等建议等级和依据。
+- Detail: 后续开始执行时拆到 `docs/tasks/P0-004-holdings-advice.md`。
 
 ### P1-001: 新增基金数据管线
 
@@ -135,20 +146,30 @@
 - Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
 - Notes: 详情见 `docs/tasks/P1-005-fund-portfolio.md`。
 
-### P1-006: 信号、日报、AI 同时覆盖股票和基金
+### P1-006: 信号、日报、AI 同时覆盖股票、基金和分级建议
 
 - Status: `DONE`
 - Priority: `P1`
-- Goal: 报告和 AI 不再只解释个股，基金有独立结论和风险边界。
+- Goal: 报告和 AI 不再只解释个股，基金有独立结论、风险边界和分级建议解释。
 - Files: `worker/strategy/signal_engine.py`, `worker/report/report_builder.py`, `backend/app/services/ai_service.py`, `frontend/src/pages/SignalsPage.tsx`, `frontend/src/pages/ReportsPage.tsx`, `frontend/src/pages/AiAnalysisPage.tsx`
-- Concrete Changes: 股票信号和基金信号使用不同解释模板；日报增加基金观察区；AI 支持基金解释。
-- Acceptance: 信号、日报、AI 输出能区分股票和基金。
+- Concrete Changes: 股票信号和基金信号使用不同解释模板；日报增加基金观察区和资产建议区；AI 支持解释规则生成的分级建议。
+- Acceptance: 信号、日报、AI 输出能区分股票、ETF、场外基金，并展示建议等级、依据、风险和数据日期。
 - Completed At: 2026-06-20
 - Changed Files: `worker/strategy/signal_engine.py`, `worker/report/report_builder.py`, `backend/app/services/ai_service.py`, `backend/app/api/ai.py`, `frontend/src/pages/AiAnalysisPage.tsx`
 - Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
 - Notes: 详情见 `docs/tasks/P1-006-fund-signals-reports-ai.md`。
 
 ## Completed Tasks
+
+### DOC-003: 业务规划加入个人持仓与分级买卖建议
+
+- Status: `DONE`
+- Priority: `P0`
+- Goal: 将系统业务主线明确为观察资产、个人持仓、组合复盘和分级买卖建议。
+- Completed At: 2026-06-20
+- Changed Files: `docs/business-roadmap.md`, `docs/business-information-architecture.md`, `docs/product-backlog.md`, `docs/purpose.md`, `docs/architecture.md`, `docs/ux.md`, `docs/README.md`, `docs/task-board.md`
+- Verification: 文档明确回答系统给分级买卖建议、规则生成建议、AI 解释建议、不做自动交易、观察池和持仓不同、建议必须可追溯。
+- Notes: 本任务只更新文档，不实现代码、数据库或 UI。
 
 ### DOC-002: 业务与信息架构说明
 
@@ -179,6 +200,7 @@
 复杂任务开始执行时再创建详情页。当前预留：
 
 - `docs/tasks/P0-003-asset-type.md`
+- `docs/tasks/P0-004-holdings-advice.md`
 - `docs/tasks/P1-001-fund-data-pipeline.md`
 - `docs/tasks/P1-002-fund-analysis.md`
 - `docs/tasks/P1-003-fund-page.md`

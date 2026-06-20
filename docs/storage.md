@@ -5,15 +5,16 @@
 SQLite 只保存小而重要、需要事务一致性的业务状态。
 
 ```text
-watchlist               自选股
-portfolio_position      当前持仓
+watchlist               观察池
+portfolio_position      个人持仓
 trade_record            交易记录
 strategy_config         策略配置
-strategy_signal         策略信号摘要
+strategy_signal         策略信号和分级建议摘要
 risk_event              风险事件
 market_trend_snapshot   市场趋势快照
 sector_trend_snapshot   行业趋势快照
 stock_analysis_snapshot 个股分析快照
+fund_analysis_snapshot  基金分析快照
 report_index            报告索引
 job_execution           任务执行记录
 ai_analysis             AI 分析记录
@@ -24,6 +25,7 @@ user_setting            用户配置
 
 ```text
 daily_bar               日线行情
+fund_nav                基金净值
 factor_value            因子数据
 financial_indicator     财务指标
 valuation_snapshot      估值快照
@@ -56,4 +58,3 @@ PRAGMA synchronous = NORMAL;
 PRAGMA busy_timeout = 5000;
 PRAGMA foreign_keys = ON;
 ```
-
