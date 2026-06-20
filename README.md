@@ -95,6 +95,33 @@ make check      # Python 编译检查 + 前端构建
 make clean      # 清理依赖缓存和运行文件
 ```
 
+## 数据源与每日流水线
+
+每日任务默认优先尝试 AKShare；如果当前环境未安装 AKShare、网络不可用或接口失败，会自动降级为本地样本行情，保证开发和页面演示不中断。
+
+启用真实数据源依赖：
+
+```bash
+uv sync --extra data
+```
+
+执行完整流水线：
+
+```bash
+make daily
+```
+
+输出包括：
+
+```text
+data/raw/market/*_manifest.json
+data/parquet/daily_bar/
+data/parquet/market_breadth/
+data/parquet/sector_factor/
+data/parquet/stock_factor/
+reports/daily/YYYY-MM-DD.md
+```
+
 ## 目录结构
 
 ```text

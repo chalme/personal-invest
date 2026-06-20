@@ -8,3 +8,5 @@
 | `storage.md` | SQLite / DuckDB / Parquet 存储边界 |
 | `roadmap.md` | MVP 与后续迭代计划 |
 - [开发与启动规范](development.md)
+
+- [数据流水线](data-pipeline.md)

@@ -1,13 +1,21 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date, datetime
+import sys
+from datetime import datetime
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "storage" / "invest.db"
-REPORT_DIR = ROOT / "reports" / "daily"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from worker.factor.market_trend import calculate_market_trend, calculate_sector_trend
+from worker.factor.stock_analysis import calculate_stock_analysis
+from worker.ingest.market_data import sync_market_data
+from worker.report.report_builder import build_daily_report
+from worker.risk.risk_engine import run_risk_check
+from worker.storage import DB_PATH, connect_db
+from worker.strategy.signal_engine import generate_signals
 
 
 def update_job(conn: sqlite3.Connection, job_id: int, status: str, progress: int, message: str, error: str | None = None) -> None:
@@ -35,61 +43,45 @@ def create_job(conn: sqlite3.Connection) -> int:
     return int(cursor.lastrowid)
 
 
-def generate_report(conn: sqlite3.Connection) -> Path:
-    today = date.today().isoformat()
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    report_path = REPORT_DIR / f"{today}.md"
-
-    market = conn.execute("SELECT * FROM market_trend_snapshot ORDER BY trade_date DESC LIMIT 1").fetchone()
-    risks = conn.execute("SELECT * FROM risk_event ORDER BY trade_date DESC, severity DESC LIMIT 5").fetchall()
-    signals = conn.execute("SELECT * FROM strategy_signal ORDER BY trade_date DESC, score DESC LIMIT 8").fetchall()
-
-    lines = [
-        f"# 每日投资报告 - {today}",
-        "",
-        "## 市场状态",
-        f"- 状态：{market['trend_state'] if market else '暂无'}",
-        f"- 评分：{market['market_score'] if market else '暂无'}",
-        f"- 摘要：{market['summary'] if market else '暂无'}",
-        "",
-        "## 风险事件",
-    ]
-    lines.extend([f"- {item['message']}" for item in risks] or ["- 暂无风险事件"])
-    lines.extend(["", "## 策略信号"])
-    lines.extend([f"- {item['name'] or item['symbol']}：{item['signal_type']}，{item['reason']}" for item in signals] or ["- 暂无策略信号"])
-    lines.extend(["", "## 明日关注", "- 优先处理高优先级风险。", "- 观察强势行业是否继续扩散。", "- 个股信号只作为观察，不作为自动交易指令。", ""])
-
-    report_path.write_text("\n".join(lines), encoding="utf-8")
-    now = datetime.now().isoformat(timespec="seconds")
-    conn.execute(
-        """
-        INSERT INTO report_index(report_type, report_date, title, markdown_path, summary, created_at)
-        VALUES ('daily', ?, ?, ?, ?, ?)
-        ON CONFLICT(report_type, report_date) DO UPDATE SET
-            title = excluded.title,
-            markdown_path = excluded.markdown_path,
-            summary = excluded.summary,
-            created_at = excluded.created_at
-        """,
-        (today, f"每日投资报告 - {today}", str(report_path.relative_to(ROOT)), "每日市场、风险、信号摘要", now),
-    )
-    conn.commit()
-    return report_path
-
-
 def run() -> None:
     if not DB_PATH.exists():
         raise RuntimeError("数据库不存在，请先执行 python scripts/init_db.py")
-
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.row_factory = sqlite3.Row
+    with connect_db() as conn:
         job_id = create_job(conn)
         try:
-            update_job(conn, job_id, "RUNNING", 20, "同步行情数据：当前版本使用种子数据占位")
-            update_job(conn, job_id, "RUNNING", 45, "计算市场趋势和行业强弱：当前版本读取快照")
-            update_job(conn, job_id, "RUNNING", 70, "生成策略信号和风险事件：当前版本读取快照")
-            path = generate_report(conn)
-            update_job(conn, job_id, "SUCCESS", 100, f"每日报告已生成：{path.relative_to(ROOT)}")
+            update_job(conn, job_id, "RUNNING", 10, "同步行情数据")
+            market_sync = sync_market_data()
+
+            update_job(conn, job_id, "RUNNING", 30, "计算市场趋势")
+            market = calculate_market_trend()
+
+            update_job(conn, job_id, "RUNNING", 45, "计算行业强弱")
+            sectors = calculate_sector_trend()
+
+            update_job(conn, job_id, "RUNNING", 60, "计算个股公司分析")
+            stocks = calculate_stock_analysis()
+
+            update_job(conn, job_id, "RUNNING", 75, "生成策略信号")
+            signals = generate_signals()
+
+            update_job(conn, job_id, "RUNNING", 85, "执行持仓风控")
+            risks = run_risk_check()
+
+            update_job(conn, job_id, "RUNNING", 95, "生成每日投资报告")
+            report_path = build_daily_report()
+
+            update_job(
+                conn,
+                job_id,
+                "SUCCESS",
+                100,
+                (
+                    f"完成：行情 {market_sync['rows']} 行，市场 {market['trend_state']}，"
+                    f"行业 {sectors.get('count', 0)} 个，个股 {stocks.get('count', 0)} 个，"
+                    f"信号 {signals.get('count', 0)} 条，风险 {risks.get('count', 0)} 条，"
+                    f"报告 {report_path}"
+                ),
+            )
         except Exception as exc:
             update_job(conn, job_id, "FAILED", 100, "每日更新失败", str(exc))
             raise
@@ -97,4 +89,3 @@ def run() -> None:
 
 if __name__ == "__main__":
     run()
-

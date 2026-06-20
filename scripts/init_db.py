@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 
@@ -15,7 +15,10 @@ def execute_sql_file(conn: sqlite3.Connection, path: Path) -> None:
 
 
 def seed(conn: sqlite3.Connection) -> None:
-    today = date.today().isoformat()
+    current = date.today()
+    while current.weekday() >= 5:
+        current -= timedelta(days=1)
+    today = current.isoformat()
     now = datetime.now().isoformat(timespec="seconds")
 
     conn.execute(
