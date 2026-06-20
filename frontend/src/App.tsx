@@ -7,6 +7,7 @@ import { StocksPage } from './pages/StocksPage';
 import { WatchlistPage } from './pages/WatchlistPage';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { AiAnalysisPage } from './pages/AiAnalysisPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SignalsPage } from './pages/SignalsPage';
 
@@ -21,7 +22,7 @@ export function App() {
       case 'portfolio': return <PortfolioPage />;
       case 'signals': return <SignalsPage />;
       case 'reports': return <ReportsPage />;
-      case 'ai': return <PlaceholderPage title="AI 分析" description="基于系统数据做解释，不直接给交易指令。" />;
+      case 'ai': return <AiAnalysisPage />;
       case 'settings': return <PlaceholderPage title="设置" description="数据源、主题、风控阈值和策略参数。" />;
       default: return <Dashboard />;
     }
