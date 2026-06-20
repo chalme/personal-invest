@@ -1,9 +1,11 @@
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
 import type { SectorTrend } from '../../api/types';
+import { echarts } from './echarts';
 
 export function SectorBar(props: { data: SectorTrend[] }) {
   return (
-    <ReactECharts
+    <ReactEChartsCore
+      echarts={echarts}
       style={{ height: 300 }}
       option={{
         tooltip: { trigger: 'axis' },

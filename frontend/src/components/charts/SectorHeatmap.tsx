@@ -1,5 +1,6 @@
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
 import type { SectorTrendHistory } from '../../api/types';
+import { echarts } from './echarts';
 
 export function SectorHeatmap(props: { data: SectorTrendHistory[]; height?: number }) {
   const dates = Array.from(new Set(props.data.map((item) => item.trade_date)));
@@ -11,7 +12,8 @@ export function SectorHeatmap(props: { data: SectorTrendHistory[]; height?: numb
   ]);
 
   return (
-    <ReactECharts
+    <ReactEChartsCore
+      echarts={echarts}
       style={{ height: props.height ?? 340 }}
       option={{
         tooltip: {

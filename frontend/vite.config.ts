@@ -8,6 +8,10 @@ const frontendPort = Number(process.env.FRONTEND_PORT ?? '5173');
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // ECharts is loaded as a lazy chart chunk; 700KB keeps the build signal focused on unexpected growth.
+    chunkSizeWarningLimit: 700,
+  },
   server: {
     host: frontendHost,
     port: frontendPort,

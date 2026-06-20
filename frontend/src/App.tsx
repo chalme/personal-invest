@@ -1,18 +1,20 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { AppLayout } from './components/layout/AppLayout';
-import { Dashboard } from './pages/Dashboard';
-import { MarketPage } from './pages/MarketPage';
-import { SectorsPage } from './pages/SectorsPage';
-import { StocksPage } from './pages/StocksPage';
-import { WatchlistPage } from './pages/WatchlistPage';
-import { PortfolioPage } from './pages/PortfolioPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
-import { AiAnalysisPage } from './pages/AiAnalysisPage';
-import { ReportsPage } from './pages/ReportsPage';
-import { SignalsPage } from './pages/SignalsPage';
-import { StrategiesPage } from './pages/StrategiesPage';
-import { SettingsPage } from './pages/SettingsPage';
 import { ErrorBoundary } from './components/system/ErrorBoundary';
+import { LoadingState } from './components/ui';
+
+const Dashboard = lazy(() => import('./pages/Dashboard').then((module) => ({ default: module.Dashboard })));
+const MarketPage = lazy(() => import('./pages/MarketPage').then((module) => ({ default: module.MarketPage })));
+const SectorsPage = lazy(() => import('./pages/SectorsPage').then((module) => ({ default: module.SectorsPage })));
+const StocksPage = lazy(() => import('./pages/StocksPage').then((module) => ({ default: module.StocksPage })));
+const WatchlistPage = lazy(() => import('./pages/WatchlistPage').then((module) => ({ default: module.WatchlistPage })));
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then((module) => ({ default: module.PortfolioPage })));
+const AiAnalysisPage = lazy(() => import('./pages/AiAnalysisPage').then((module) => ({ default: module.AiAnalysisPage })));
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then((module) => ({ default: module.ReportsPage })));
+const SignalsPage = lazy(() => import('./pages/SignalsPage').then((module) => ({ default: module.SignalsPage })));
+const StrategiesPage = lazy(() => import('./pages/StrategiesPage').then((module) => ({ default: module.StrategiesPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })));
 
 export function App() {
   const [active, setActive] = useState('dashboard');
@@ -31,6 +33,14 @@ export function App() {
       default: return <Dashboard />;
     }
   })();
-  return <AppLayout active={active} onChange={setActive}><ErrorBoundary>{page}</ErrorBoundary></AppLayout>;
+  return (
+    <AppLayout active={active} onChange={setActive}>
+      <ErrorBoundary>
+        <Suspense fallback={<LoadingState title="正在加载页面" description="正在加载当前功能模块。" />}>
+          {page}
+        </Suspense>
+      </ErrorBoundary>
+    </AppLayout>
+  );
 }
 

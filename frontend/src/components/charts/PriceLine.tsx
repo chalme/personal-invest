@@ -1,4 +1,5 @@
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import { echarts } from './echarts';
 
 export type PriceBar = {
   trade_date: string;
@@ -9,7 +10,8 @@ export type PriceBar = {
 
 export function PriceLine(props: { data: PriceBar[]; height?: number }) {
   return (
-    <ReactECharts
+    <ReactEChartsCore
+      echarts={echarts}
       style={{ height: props.height ?? 320 }}
       option={{
         tooltip: { trigger: 'axis' },

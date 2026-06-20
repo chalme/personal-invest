@@ -1,9 +1,11 @@
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
 import type { MarketTrend } from '../../api/types';
+import { echarts } from './echarts';
 
 export function MarketScoreLine(props: { data: MarketTrend[]; height?: number }) {
   return (
-    <ReactECharts
+    <ReactEChartsCore
+      echarts={echarts}
       style={{ height: props.height ?? 300 }}
       option={{
         tooltip: { trigger: 'axis' },

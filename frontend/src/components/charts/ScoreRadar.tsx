@@ -1,10 +1,12 @@
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import { echarts } from './echarts';
 
 export function ScoreRadar(props: { scores: Record<string, number> }) {
   const indicators = Object.keys(props.scores).map((name) => ({ name, max: 100 }));
   const values = Object.values(props.scores);
   return (
-    <ReactECharts
+    <ReactEChartsCore
+      echarts={echarts}
       style={{ height: 280 }}
       option={{
         tooltip: {},
