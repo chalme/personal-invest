@@ -52,6 +52,8 @@ def run_risk_check() -> dict[str, Any]:
         market = conn.execute("SELECT trade_date, market_score, trend_state FROM market_trend_snapshot ORDER BY trade_date DESC LIMIT 1").fetchone()
         positions = conn.execute("SELECT * FROM portfolio_position ORDER BY position_ratio DESC").fetchall()
         analyses = {row["symbol"]: row for row in conn.execute("SELECT * FROM stock_analysis_snapshot WHERE trade_date = (SELECT MAX(trade_date) FROM stock_analysis_snapshot)").fetchall()}
+        fund_analyses = {row["symbol"]: row for row in conn.execute("SELECT * FROM fund_analysis_snapshot WHERE nav_date = (SELECT MAX(nav_date) FROM fund_analysis_snapshot)").fetchall()}
+        analyses.update(fund_analyses)
     if not market:
         return {"count": 0}
     trade_date = market["trade_date"]
@@ -67,8 +69,11 @@ def run_risk_check() -> dict[str, Any]:
         if enable_stop_loss_check and pos["stop_loss_price"] and pos["current_price"] and float(pos["current_price"]) <= float(pos["stop_loss_price"]):
             values.append((trade_date, "POSITION", symbol, "STOP_LOSS_TOUCHED", 4, f"{name} 已触及止损观察价。", now))
         analysis = analyses.get(symbol)
+        asset_type = str(pos["asset_type"] or "STOCK").upper()
         if analysis and float(analysis["total_score"]) < stock_weak_score:
-            values.append((trade_date, "STOCK", symbol, "SCORE_WEAK", 2, f"{name} 综合评分低于 {stock_weak_score:g}，状态：{analysis['state']}。", now))
+            scope = "FUND" if asset_type == "FUND" else "STOCK"
+            risk_type = "FUND_SCORE_WEAK" if asset_type == "FUND" else "SCORE_WEAK"
+            values.append((trade_date, scope, symbol, risk_type, 2, f"{name} 综合评分低于 {stock_weak_score:g}，状态：{analysis['state']}。", now))
     if not values:
         values.append((trade_date, "PORTFOLIO", None, "NO_MAJOR_RISK", 1, "当前没有触发高优先级风险，继续观察数据变化。", now))
     with connect_db() as conn:

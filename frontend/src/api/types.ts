@@ -55,6 +55,7 @@ export type Position = {
   pnl_ratio?: number;
   position_ratio?: number;
   computed_position_ratio?: number;
+  price_source?: string;
   risk_count?: number;
   max_risk_severity?: number;
   analysis?: Record<string, string | number | null> | null;
@@ -73,6 +74,7 @@ export type PortfolioOverview = {
     concentration_hhi: number;
     analysis_date?: string | null;
     risk_date?: string | null;
+    fund_analysis_date?: string | null;
   };
   positions: Position[];
   portfolio_risks: RiskEvent[];

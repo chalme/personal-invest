@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import datetime
+from typing import Any
+
+import duckdb
 
 from app.core.asset_type import infer_asset_type
+from app.core.config import get_settings
 from app.repositories.sqlite_repo import SQLiteRepository
 
 
@@ -16,6 +20,29 @@ class PortfolioService:
             "SELECT * FROM portfolio_position ORDER BY position_ratio DESC, market_value DESC"
         )
 
+    def latest_fund_navs(self, symbols: list[str]) -> dict[str, float]:
+        if not symbols:
+            return {}
+        settings = get_settings()
+        base = settings.data_dir / "parquet" / "fund_nav"
+        if not base.exists() or not any(base.rglob("*.parquet")):
+            return {}
+        parquet_glob = str(base / "**" / "*.parquet")
+        placeholders = ", ".join(["?"] * len(symbols))
+        sql = f"""
+            SELECT symbol, nav
+            FROM (
+                SELECT symbol, nav, nav_date,
+                       ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY nav_date DESC) AS rn
+                FROM read_parquet(?, hive_partitioning = true)
+                WHERE symbol IN ({placeholders})
+            )
+            WHERE rn = 1
+        """
+        with duckdb.connect(database=":memory:", read_only=False) as conn:
+            rows = conn.execute(sql, [parquet_glob, *symbols]).fetchall()
+        return {str(symbol): float(nav) for symbol, nav in rows if nav is not None}
+
     def portfolio_overview(self) -> dict:
         positions = self.list_positions()
         latest_analysis_date = self.repo.fetch_one("SELECT MAX(trade_date) AS trade_date FROM stock_analysis_snapshot")
@@ -27,7 +54,16 @@ class PortfolioService:
             "SELECT * FROM stock_analysis_snapshot WHERE trade_date = ?",
             (analysis_date,),
         ) if analysis_date else []
-        analysis_by_symbol = {item["symbol"]: item for item in analyses}
+        analysis_by_symbol: dict[str, dict[str, Any]] = {item["symbol"]: item for item in analyses}
+
+        fund_analysis_date_row = self.repo.fetch_one("SELECT MAX(nav_date) AS nav_date FROM fund_analysis_snapshot")
+        fund_analysis_date = fund_analysis_date_row.get("nav_date") if fund_analysis_date_row else None
+        fund_analyses = self.repo.fetch_all(
+            "SELECT * FROM fund_analysis_snapshot WHERE nav_date = ?",
+            (fund_analysis_date,),
+        ) if fund_analysis_date else []
+        for item in fund_analyses:
+            analysis_by_symbol[item["symbol"]] = item
 
         risks = self.repo.fetch_all(
             "SELECT * FROM risk_event WHERE trade_date = ? ORDER BY severity DESC, id DESC",
@@ -41,6 +77,24 @@ class PortfolioService:
                 risks_by_symbol[symbol].append(risk)
             else:
                 portfolio_risks.append(risk)
+
+        fund_symbols = [str(item["symbol"]) for item in positions if str(item.get("asset_type") or "").upper() == "FUND"]
+        latest_fund_navs = self.latest_fund_navs(fund_symbols)
+        priced_positions: list[dict[str, Any]] = []
+        for item in positions:
+            position = dict(item)
+            asset_type = str(position.get("asset_type") or "STOCK").upper()
+            if asset_type == "FUND" and position["symbol"] in latest_fund_navs:
+                quantity = float(position.get("quantity") or 0)
+                avg_cost = float(position.get("avg_cost") or 0)
+                current_price = latest_fund_navs[position["symbol"]]
+                position["current_price"] = round(current_price, 4)
+                position["market_value"] = round(quantity * current_price, 2)
+                position["pnl"] = round(quantity * (current_price - avg_cost), 2)
+                position["pnl_ratio"] = round(((current_price / avg_cost) - 1) if avg_cost > 0 else 0, 4)
+                position["price_source"] = "fund_nav"
+            priced_positions.append(position)
+        positions = priced_positions
 
         total_market_value = sum(float(item.get("market_value") or 0) for item in positions)
         total_cost = sum(float(item.get("quantity") or 0) * float(item.get("avg_cost") or 0) for item in positions)
@@ -77,6 +131,7 @@ class PortfolioService:
                 "concentration_hhi": round(concentration, 4),
                 "analysis_date": analysis_date,
                 "risk_date": risk_date,
+                "fund_analysis_date": fund_analysis_date,
             },
             "positions": enriched_positions,
             "portfolio_risks": portfolio_risks,

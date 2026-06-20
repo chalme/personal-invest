@@ -124,13 +124,16 @@
 
 ### P1-005: 持仓页支持基金
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 股票和基金都能进入组合持仓与风险总览。
 - Files: `frontend/src/pages/PortfolioPage.tsx`, `backend/app/services/portfolio_service.py`, `worker/risk/risk_engine.py`
 - Concrete Changes: 持仓表展示资产类型；基金按份额、成本净值、当前净值计算；风险检查区分股票仓位风险和基金回撤/集中风险。
 - Acceptance: 基金持仓能正确显示市值、盈亏和风险。
-- Detail: 暂不拆分。
+- Completed At: 2026-06-20
+- Changed Files: `backend/app/services/portfolio_service.py`, `worker/risk/risk_engine.py`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/api/types.ts`
+- Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
+- Notes: 详情见 `docs/tasks/P1-005-fund-portfolio.md`。
 
 ### P1-006: 信号、日报、AI 同时覆盖股票和基金
 
