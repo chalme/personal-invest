@@ -8,11 +8,9 @@
 
 当前主线：
 
-1. 模型稳定：先补轻量迁移体系和资产主数据，避免继续把新表和字段堆进旧初始化逻辑。
-2. 规则可追溯：建议由规则生成，必须能追溯规则版本、来源快照、关键指标和变化原因。
-3. ETF 口径一致：ETF 不再复用股票基本面/估值口径，改用价格、波动、回撤、流动性和主题暴露。
-4. 行业/主题映射：市场全景不只依赖观察池分组，逐步引入资产到行业、主题、指数、地区和风格的正式映射。
-5. 组合历史复盘：持仓不只看当前表格，后续要沉淀日级组合快照，支持组合曲线、风险变化和日报复盘。
+1. 低摩擦投资工作台：把首页升级为今日概览 + 重要变化提醒，让用户一打开就知道是否需要介入。
+2. 重要事项池：把风险、建议变化、组合变化和数据异常聚合成只读事项，不把用户变成每日打卡工具。
+3. 复盘入口：把建议、组合快照和周/月总结串起来，支持自动沉淀后续表现与人工复核。
 
 ## Status
 
@@ -32,6 +30,20 @@
 5. 做完后改成 `DONE`，写入 `Completed At`、`Changed Files`、`Verification`、`Notes`。
 
 ## Current Tasks
+
+### P1-010: 低摩擦投资工作台 V1
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 将系统从多页面数据展示升级为低摩擦决策工作台，打开首页即可知道今天是否需要介入。
+- Details: `docs/tasks/P1-010-low-friction-workbench-v1.md`
+- Files: `backend/app/services/review_service.py`, `backend/app/api/review.py`, `backend/app/services/dashboard_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `docs/ux.md`, `docs/business-roadmap.md`
+- Concrete Changes: 聚合重要事项、修正 `NO_MAJOR_RISK` 语义、Dashboard 展示今日概览、复盘页展示建议变化和组合快照、文案从每日待办改为低摩擦提醒。
+- Acceptance: 用户 30 秒内能知道今天是否需要介入；没有重要变化时显示“暂无需要立即处理事项”；系统不把用户做成每日打卡工具。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 第一版只做只读聚合，不新增 `review_task` 持久化；本任务先写 TODO，不实现代码。
 
 ### P0-001: 修正每日任务按钮只入队不执行
 
@@ -314,3 +326,4 @@
 - `docs/tasks/P1-008-advice-engine-rule-trace.md`
 - `docs/tasks/P1-009-instrument-sector-map.md`
 - `docs/tasks/P2-001-portfolio-snapshot.md`
+- `docs/tasks/P1-010-low-friction-workbench-v1.md`
