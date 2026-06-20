@@ -9,7 +9,8 @@ watchlist               观察池
 portfolio_position      个人持仓
 trade_record            交易记录
 strategy_config         策略配置
-strategy_signal         策略信号和分级建议摘要
+strategy_signal         策略信号
+asset_advice_snapshot   分级建议快照
 risk_event              风险事件
 market_trend_snapshot   市场趋势快照
 sector_trend_snapshot   行业趋势快照

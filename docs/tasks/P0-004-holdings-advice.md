@@ -1,5 +1,11 @@
 # P0-004: 个人持仓与分级建议底座
 
+- Status: DONE
+- Priority: P0
+- Owner: Codex
+- Created At: 2026-06-20
+- Completed At: 2026-06-20
+
 ## Goal
 
 支持默认个人组合，并为股票、ETF、场外基金生成可追溯的分级建议。

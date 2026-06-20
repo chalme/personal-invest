@@ -1,5 +1,11 @@
 # P1-007: 市场与行业全景分析
 
+- Status: DONE
+- Priority: P1
+- Owner: Codex
+- Created At: 2026-06-20
+- Completed At: 2026-06-20
+
 ## Goal
 
 市场分析不只展示市场分数和少数强势行业，而是覆盖热门、冷门、轮动、防守、过热行业，并映射到股票、ETF、基金观察对象。

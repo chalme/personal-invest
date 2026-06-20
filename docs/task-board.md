@@ -93,7 +93,10 @@
 - Files: `worker/factor/market_trend.py`, `backend/app/services/market_service.py`, `backend/app/services/dashboard_service.py`, `frontend/src/pages/MarketPage.tsx`, `frontend/src/pages/SectorsPage.tsx`, `frontend/src/pages/Dashboard.tsx`
 - Concrete Changes: 增加行业分组、完整强弱排名、行业变化解释、行业到观察资产的映射；Dashboard 展示摘要，行业页展示完整分析。
 - Acceptance: 用户能看到市场里哪些方向热、哪些方向冷、哪些方向正在轮动，以及这些方向对应哪些股票、ETF 或基金。
-- Detail: 暂不拆分。
+- Completed At: 2026-06-20
+- Changed Files: `backend/app/services/market_service.py`, `backend/app/api/market.py`, `backend/app/services/dashboard_service.py`, `frontend/src/api/types.ts`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SectorsPage.tsx`
+- Verification: `uv run python worker/daily_job.py`、`uv run python` 调用 `MarketService().sector_panorama()` 验证输出结构、`./scripts/check.sh`
+- Notes: 当前版本不新增行业全景表，直接基于最新 `sector_trend_snapshot` 和观察池映射实时生成，避免过早扩大数据模型。
 
 ### P1-001: 新增基金数据管线
 
