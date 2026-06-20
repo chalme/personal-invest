@@ -11,7 +11,8 @@
 1. 可用性：确保页面按钮、API、每日任务和线上访问真实可用。
 2. 数据可信度：明确真实数据、样本数据、数据日期和数据来源。
 3. 股票 + 基金双资产：股票和基金都要能进入观察、分析、持仓、信号和复盘。
-4. 个人持仓 + 分级建议：持仓要能解释组合暴露，建议要由规则生成并可追溯。
+4. 个人持仓 + 分级建议：持仓要能解释组合暴露，建议要由规则生成、可追溯，并用具象话说明原因。
+5. 市场 + 行业全景：市场分析要覆盖热门、冷门、轮动、防守、过热行业，并映射到股票、ETF、基金。
 
 ## Status
 
@@ -77,9 +78,19 @@
 - Priority: `P0`
 - Goal: 让系统支持默认个人组合，并为股票、ETF、场外基金生成可追溯的分级买卖建议。
 - Files: `backend/migrations/001_init.sql`, `scripts/init_db.py`, `backend/app/services/portfolio_service.py`, `worker/strategy/signal_engine.py`, `backend/app/services/ai_service.py`, `frontend/src/api/types.ts`
-- Concrete Changes: 明确单组合持仓口径；新增建议等级；建议结果包含触发原因、关键指标、风险说明、置信度和数据日期；AI 只解释规则生成的建议。
-- Acceptance: 持仓页能区分观察资产和真实持仓；股票、ETF、基金能展示 `继续观察`、`买入关注`、`持有`、`减仓关注`、`卖出关注` 等建议等级和依据。
+- Concrete Changes: 明确单组合持仓口径；新增建议等级；建议结果包含一句话结论、触发原因、关键指标、风险说明、复核动作、置信度和数据日期；AI 只解释规则生成的建议。
+- Acceptance: 持仓页能区分观察资产和真实持仓；股票、ETF、基金能展示 `继续观察`、`买入关注`、`持有`、`减仓关注`、`卖出关注` 等建议等级，并用具象话说明为什么今天需要关注。
 - Detail: 后续开始执行时拆到 `docs/tasks/P0-004-holdings-advice.md`。
+
+### P1-007: 市场与行业全景分析
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 市场分析不只展示市场分数和少数强势行业，而是覆盖热门、冷门、轮动、防守、过热行业，并映射到股票、ETF、基金观察对象。
+- Files: `worker/factor/market_trend.py`, `backend/app/services/market_service.py`, `backend/app/services/dashboard_service.py`, `frontend/src/pages/MarketPage.tsx`, `frontend/src/pages/SectorsPage.tsx`, `frontend/src/pages/Dashboard.tsx`
+- Concrete Changes: 增加行业分组、完整强弱排名、行业变化解释、行业到观察资产的映射；Dashboard 展示摘要，行业页展示完整分析。
+- Acceptance: 用户能看到市场里哪些方向热、哪些方向冷、哪些方向正在轮动，以及这些方向对应哪些股票、ETF 或基金。
+- Detail: 暂不拆分。
 
 ### P1-001: 新增基金数据管线
 
