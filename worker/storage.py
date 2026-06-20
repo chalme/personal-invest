@@ -40,10 +40,21 @@ def rows_to_dicts(rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
 def get_watchlist(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        SELECT symbol, name, asset_type, market, group_name, priority
-        FROM watchlist
-        WHERE status = 'ACTIVE'
-        ORDER BY priority DESC, symbol ASC
+        SELECT
+            w.symbol,
+            COALESCE(i.name, w.name) AS name,
+            COALESCE(i.asset_type, w.asset_type) AS asset_type,
+            COALESCE(i.market, w.market) AS market,
+            w.group_name,
+            i.sector_code,
+            COALESCE(i.sector_name, w.group_name) AS sector_name,
+            i.fund_type,
+            i.risk_level,
+            w.priority
+        FROM watchlist w
+        LEFT JOIN instrument i ON i.symbol = w.symbol
+        WHERE w.status = 'ACTIVE'
+        ORDER BY w.priority DESC, w.symbol ASC
         """
     ).fetchall()
     return rows_to_dicts(rows)

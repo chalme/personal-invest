@@ -85,6 +85,8 @@ def generate_signals() -> dict[str, Any]:
     market_score = float(market["market_score"])
     values: list[tuple[Any, ...]] = []
     for row in stocks:
+        if infer_asset_type(row["symbol"]) != "STOCK":
+            continue
         score = float(row["total_score"])
         if score >= params["high_quality_score"] and market_score >= params["high_quality_market_score"]:
             signal_type = "高质量观察"
@@ -114,7 +116,8 @@ def generate_signals() -> dict[str, Any]:
             reason = f"基金综合评分降至 {score:.0f}，低于风险阈值 {params['risk_score']:.0f}，需关注回撤和波动。"
         else:
             continue
-        values.append((strategy_code, row["symbol"], row["name"], "FUND", trade_date, signal_type, score, reason, risk_level, row["data_version"], now))
+        asset_type = infer_asset_type(row["symbol"])
+        values.append((strategy_code, row["symbol"], row["name"], asset_type, trade_date, signal_type, score, reason, risk_level, row["data_version"], now))
     with connect_db() as conn:
         count = upsert_many(conn, """
             INSERT INTO strategy_signal(
@@ -285,7 +288,7 @@ def generate_investment_advice(account_id: int = 1) -> dict[str, Any]:
     for symbol, asset in assets.items():
         asset_type = str(asset.get("asset_type") or infer_asset_type(symbol)).upper()
         position = position_by_symbol.get(symbol)
-        if asset_type == "FUND":
+        if asset_type != "STOCK":
             analysis = fund_by_symbol.get(symbol)
             if not analysis:
                 continue

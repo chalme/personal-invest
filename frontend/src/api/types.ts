@@ -234,6 +234,7 @@ export type FundAnalysis = {
   nav_date: string;
   symbol: string;
   name: string;
+  analysis_type?: string;
   total_score: number;
   state: string;
   return_1m?: number | null;
@@ -268,6 +269,7 @@ export type BacktestCurvePoint = {
 export type BacktestResult = {
   backtest_id: string;
   name: string;
+  analysis_type?: string;
   status: string;
   summary: {
     start_date?: string;

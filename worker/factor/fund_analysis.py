@@ -7,6 +7,9 @@ import pandas as pd
 
 from worker.storage import connect_db, now_iso, read_parquet_dataset, upsert_many
 
+FUND_NAV_ANALYSIS = 'FUND_NAV'
+PRICE_ANALYSIS = "ETF" + "_PRICE"
+
 
 @dataclass(frozen=True)
 class FundMetrics:
@@ -112,7 +115,7 @@ def _calculate_metrics(group: pd.DataFrame) -> FundMetrics:
 def calculate_fund_analysis() -> dict[str, Any]:
     df = read_parquet_dataset("fund_nav")
     if df.empty:
-        return {"status": "skipped", "count": 0, "latest_nav_date": None}
+        df = pd.DataFrame(columns=["symbol", "name", "nav_date", "nav"])
 
     required = {"symbol", "name", "nav_date", "nav"}
     missing = required - set(df.columns)
@@ -121,7 +124,7 @@ def calculate_fund_analysis() -> dict[str, Any]:
 
     df = df.copy()
     df["nav_date"] = pd.to_datetime(df["nav_date"]).dt.date.astype(str)
-    latest_nav_date = str(df["nav_date"].max())
+    latest_nav_date = str(df["nav_date"].max()) if not df.empty else ""
     now = now_iso()
     values: list[tuple[Any, ...]] = []
 
@@ -133,6 +136,7 @@ def calculate_fund_analysis() -> dict[str, Any]:
             latest_nav_date,
             str(symbol),
             str(latest.get("name") or symbol),
+            FUND_NAV_ANALYSIS,
             metrics.total_score,
             metrics.state,
             metrics.return_1m,
@@ -148,16 +152,64 @@ def calculate_fund_analysis() -> dict[str, Any]:
             now,
         ))
 
+    daily_bar = read_parquet_dataset("daily_bar")
+    if not daily_bar.empty:
+        with connect_db() as conn:
+            etf_rows = conn.execute(
+                """
+                SELECT w.symbol, COALESCE(i.name, w.name) AS name
+                FROM watchlist w
+                LEFT JOIN instrument i ON i.symbol = w.symbol
+                WHERE w.status = 'ACTIVE' AND COALESCE(i.asset_type, w.asset_type) = 'ETF'
+                """
+            ).fetchall()
+        etfs = {row["symbol"]: row["name"] for row in etf_rows}
+        if etfs:
+            etf_frame = daily_bar[daily_bar["symbol"].isin(etfs.keys())].copy()
+            if not etf_frame.empty:
+                etf_frame["nav_date"] = pd.to_datetime(etf_frame["trade_date"]).dt.date.astype(str)
+                latest_etf_date = str(etf_frame["nav_date"].max())
+                for symbol, group in etf_frame.groupby("symbol"):
+                    group = group.sort_values("nav_date").copy()
+                    group["nav"] = pd.to_numeric(group["close"], errors="coerce")
+                    group = group.dropna(subset=["nav"])
+                    if group.empty:
+                        continue
+                    metrics = _calculate_metrics(group)
+                    values.append((
+                        latest_etf_date,
+                        str(symbol),
+                        str(etfs.get(str(symbol)) or symbol),
+                        PRICE_ANALYSIS,
+                        metrics.total_score,
+                        metrics.state,
+                        metrics.return_1m,
+                        metrics.return_3m,
+                        metrics.return_6m,
+                        metrics.max_drawdown,
+                        metrics.volatility,
+                        metrics.trend_score,
+                        metrics.risk_score,
+                        metrics.conclusion.replace("基金", "ETF价格", 1),
+                        metrics.risk_note,
+                        f"etf_price_{latest_etf_date}",
+                        now,
+                    ))
+                latest_nav_date = max(latest_nav_date, latest_etf_date)
+
+    if not values:
+        return {"status": "skipped", "count": 0, "latest_nav_date": None}
     with connect_db() as conn:
         count = upsert_many(
             conn,
             """
             INSERT INTO fund_analysis_snapshot(
-                nav_date, symbol, name, total_score, state, return_1m, return_3m, return_6m,
+                nav_date, symbol, name, analysis_type, total_score, state, return_1m, return_3m, return_6m,
                 max_drawdown, volatility, trend_score, risk_score, conclusion, risk_note, data_version, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(nav_date, symbol) DO UPDATE SET
                 name = excluded.name,
+                analysis_type = excluded.analysis_type,
                 total_score = excluded.total_score,
                 state = excluded.state,
                 return_1m = excluded.return_1m,

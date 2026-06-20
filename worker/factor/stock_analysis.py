@@ -65,9 +65,9 @@ def calculate_stock_analysis() -> dict[str, Any]:
     df = df.copy()
     df["trade_date"] = df["trade_date"].astype(str)
     with connect_db() as conn:
-        watchlist = conn.execute("SELECT symbol, name, group_name FROM watchlist WHERE status = 'ACTIVE'").fetchall()
+        watchlist = conn.execute(""" SELECT w.symbol, COALESCE(i.name, w.name) AS name, w.group_name, COALESCE(i.asset_type, w.asset_type) AS asset_type FROM watchlist w LEFT JOIN instrument i ON i.symbol = w.symbol WHERE w.status = 'ACTIVE' """).fetchall()
         sector_rows = conn.execute("SELECT sector_name, trend_score FROM sector_trend_snapshot WHERE trade_date = (SELECT MAX(trade_date) FROM sector_trend_snapshot)").fetchall()
-    watch = {row["symbol"]: dict(row) for row in watchlist}
+    watch = {row["symbol"]: dict(row) for row in watchlist if str(row["asset_type"]).upper() == 'STOCK'}
     sector_scores = {row["sector_name"]: float(row["trend_score"]) for row in sector_rows}
     latest = _features(df)
     latest = latest[latest["symbol"].isin(watch.keys())].copy()

@@ -208,17 +208,17 @@
 
 ### P0-007: 修正 ETF 独立分析口径
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Goal: 让 ETF 使用价格型分析口径，不再进入股票基本面、估值和公司质量分析路径。
 - Details: `docs/tasks/P0-007-etf-analysis-type.md`
 - Files: `backend/migrations/004_fund_analysis_type.sql`, `worker/factor/stock_analysis.py`, `worker/factor/fund_analysis.py`, `worker/strategy/signal_engine.py`
 - Concrete Changes: `fund_analysis_snapshot` 增加 `analysis_type`；`FUND` 使用 `FUND_NAV`，`ETF` 使用 `ETF_PRICE`；基金页文案区分基金净值分析和 ETF 价格分析。
 - Acceptance: ETF 不再新写入 `stock_analysis_snapshot`；ETF 信号和建议优先读取 `fund_analysis_snapshot where analysis_type = 'ETF_PRICE'`；页面能展示 ETF 分析来源。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/004_fund_analysis_type.sql`, `worker/factor/stock_analysis.py`, `worker/factor/fund_analysis.py`, `worker/strategy/signal_engine.py`, `worker/storage.py`, `backend/app/services/fund_service.py`, `frontend/src/api/types.ts`, `frontend/src/pages/FundsPage.tsx`
+- Verification: 迁移应用、股票/基金分析函数执行通过，`./scripts/check.sh` 返回 `exit:0`。
+- Notes: ETF 进入 `fund_analysis_snapshot` 的价格分析口径，股票分析和股票信号路径跳过非 STOCK 资产。
 
 ### P1-008: 拆分 advice_engine 并增加规则追溯
 
