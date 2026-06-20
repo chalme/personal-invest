@@ -13,6 +13,7 @@ from worker.factor.fund_analysis import calculate_fund_analysis
 from worker.factor.market_trend import calculate_market_trend, calculate_sector_trend
 from worker.factor.stock_analysis import calculate_stock_analysis
 from worker.ingest.market_data import sync_fund_data, sync_market_data
+from worker.portfolio.snapshot import build_portfolio_snapshot
 from worker.report.report_builder import build_daily_report
 from worker.risk.risk_engine import run_risk_check
 from worker.storage import DB_PATH, connect_db
@@ -81,6 +82,9 @@ def run(job_id: int | None = None) -> None:
             update_job(conn, job_id, "RUNNING", 85, "执行持仓风控")
             risks = run_risk_check()
 
+            update_job(conn, job_id, "RUNNING", 90, "沉淀组合快照")
+            snapshot = build_portfolio_snapshot()
+
             update_job(conn, job_id, "RUNNING", 95, "生成每日投资报告")
             report_path = build_daily_report()
 
@@ -95,6 +99,7 @@ def run(job_id: int | None = None) -> None:
                     f"基金 {funds.get('count', 0)} 个，信号 {signals.get('count', 0)} 条，"
                     f"建议 {advice.get('count', 0)} 条，"
                     f"风险 {risks.get('count', 0)} 条，"
+                    f"快照 {snapshot.get('snapshot_date')}，"
                     f"报告 {report_path}"
                 ),
             )

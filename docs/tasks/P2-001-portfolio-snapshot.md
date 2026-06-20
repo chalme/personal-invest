@@ -1,10 +1,10 @@
 # P2-001: 新增组合历史快照
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -34,7 +34,7 @@
 
 ## Completion Markers
 
-- Completed At:
+- Completed At: 2026-06-21
 - Changed Files:
 - Verification:
 - Notes:

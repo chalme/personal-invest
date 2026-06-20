@@ -75,6 +75,14 @@ class PortfolioService:
 
     def portfolio_overview(self) -> dict:
         positions = self.list_positions()
+        latest_snapshot = self.repo.fetch_one(
+            """
+            SELECT * FROM portfolio_snapshot
+            WHERE account_id = 1
+            ORDER BY snapshot_date DESC
+            LIMIT 1
+            """
+        )
         latest_analysis_date = self.repo.fetch_one("SELECT MAX(trade_date) AS trade_date FROM stock_analysis_snapshot")
         latest_risk_date = self.repo.fetch_one("SELECT MAX(trade_date) AS trade_date FROM risk_event")
         analysis_date = latest_analysis_date.get("trade_date") if latest_analysis_date else None
@@ -180,7 +188,9 @@ class PortfolioService:
                 "risk_date": risk_date,
                 "fund_analysis_date": fund_analysis_date,
                 "advice_date": advice_date,
+                "snapshot_date": latest_snapshot.get("snapshot_date") if latest_snapshot else None,
             },
+            "latest_snapshot": latest_snapshot,
             "positions": enriched_positions,
             "watching_advice": watching_advice,
             "portfolio_risks": portfolio_risks,

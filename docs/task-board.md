@@ -250,17 +250,17 @@
 
 ### P2-001: 新增组合历史快照
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 每日沉淀组合总览，支持组合曲线、风险变化、建议摘要和日报复盘。
 - Details: `docs/tasks/P2-001-portfolio-snapshot.md`
 - Files: `backend/migrations/007_portfolio_snapshot.sql`, `worker/daily_job.py`, `backend/app/services/portfolio_service.py`
 - Concrete Changes: 新增 `portfolio_snapshot`；第一版只做日级总览，不做复杂归因、多账户或现金管理。
 - Acceptance: 每日快照包含市值、成本、盈亏、股票/ETF/基金市值、集中度、风险数和建议摘要。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/007_portfolio_snapshot.sql`, `worker/portfolio/__init__.py`, `worker/portfolio/snapshot.py`, `worker/daily_job.py`, `backend/app/services/portfolio_service.py`
+- Verification: 迁移应用、`build_portfolio_snapshot()` 生成 2026-06-19 快照、Python 编译和前端构建通过。
+- Notes: 第一版只沉淀日级总览，不做现金、多账户、行业归因或收益归因。
 
 ## Completed Tasks
 
