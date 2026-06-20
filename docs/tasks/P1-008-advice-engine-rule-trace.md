@@ -1,10 +1,10 @@
 # P1-008: 拆分 advice_engine 并增加规则追溯
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -33,7 +33,7 @@
 
 ## Completion Markers
 
-- Completed At:
+- Completed At: 2026-06-21
 - Changed Files:
 - Verification:
 - Notes:

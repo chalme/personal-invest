@@ -222,17 +222,17 @@
 
 ### P1-008: 拆分 advice_engine 并增加规则追溯
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 将投资建议生成从策略信号文件中拆出，并让每条建议能追溯规则版本、来源快照和变化原因。
 - Details: `docs/tasks/P1-008-advice-engine-rule-trace.md`
 - Files: `backend/migrations/005_advice_rule_trace.sql`, `worker/advice/`, `worker/strategy/signal_engine.py`, `worker/daily_job.py`
 - Concrete Changes: 新增 advice 模块；`investment_advice` 增加规则追溯字段并预留 `rule_result`；保持原有建议结果尽量不变。
 - Acceptance: 建议结果行为不大变；每条建议包含规则版本、来源快照、上一建议等级和变化原因；AI 和日报仍解释规则结果。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/005_advice_rule_trace.sql`, `worker/advice/__init__.py`, `worker/advice/engine.py`, `worker/strategy/signal_engine.py`, `worker/daily_job.py`
+- Verification: 迁移应用、`generate_investment_advice()` 返回建议记录、`./scripts/check.sh` 通过。
+- Notes: 建议规则结果迁入 `worker/advice`，策略信号文件只保留信号生成；建议表新增规则版本、来源快照、上一建议等级、变化原因和规则调试 JSON。
 
 ### P1-009: 新增资产行业/主题映射
 

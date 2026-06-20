@@ -16,7 +16,8 @@ from worker.ingest.market_data import sync_fund_data, sync_market_data
 from worker.report.report_builder import build_daily_report
 from worker.risk.risk_engine import run_risk_check
 from worker.storage import DB_PATH, connect_db
-from worker.strategy.signal_engine import generate_investment_advice, generate_signals
+from worker.strategy.signal_engine import generate_signals
+from worker.advice.engine import generate_investment_advice
 
 
 def update_job(conn: sqlite3.Connection, job_id: int, status: str, progress: int, message: str, error: str | None = None) -> None:
