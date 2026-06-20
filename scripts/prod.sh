@@ -21,6 +21,7 @@ uv sync
 pnpm -C frontend install
 uv run python scripts/init_db.py
 pnpm -C frontend build
+uv run python scripts/write_runtime_config.py --output "$FRONTEND_DIST_DIR/config.js"
 
 mkdir -p .run logs
 

@@ -17,4 +17,5 @@ export VITE_API_BASE="${VITE_API_BASE:-}"
 
 pnpm -C frontend install
 pnpm -C frontend build
+uv run python scripts/write_runtime_config.py --output "$FRONTEND_DIST_DIR/config.js"
 uv run python scripts/static_frontend.py --host "$FRONTEND_HOST" --port "$FRONTEND_PORT" --directory "$FRONTEND_DIST_DIR"

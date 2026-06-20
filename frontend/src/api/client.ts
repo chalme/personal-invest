@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE ?? '';
+const runtimeApiBase = window.__APP_CONFIG__?.apiBase;
+const buildApiBase = import.meta.env.VITE_API_BASE;
+const API_BASE = (runtimeApiBase ?? buildApiBase ?? '').replace(/\/$/, '');
 
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
