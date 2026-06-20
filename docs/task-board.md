@@ -8,11 +8,11 @@
 
 当前主线：
 
-1. 可用性：确保页面按钮、API、每日任务和线上访问真实可用。
-2. 数据可信度：明确真实数据、样本数据、数据日期和数据来源。
-3. 股票 + 基金双资产：股票和基金都要能进入观察、分析、持仓、信号和复盘。
-4. 个人持仓 + 分级建议：持仓要能解释组合暴露，建议要由规则生成、可追溯，并用具象话说明原因。
-5. 市场 + 行业全景：市场分析要覆盖热门、冷门、轮动、防守、过热行业，并映射到股票、ETF、基金。
+1. 模型稳定：先补轻量迁移体系和资产主数据，避免继续把新表和字段堆进旧初始化逻辑。
+2. 规则可追溯：建议由规则生成，必须能追溯规则版本、来源快照、关键指标和变化原因。
+3. ETF 口径一致：ETF 不再复用股票基本面/估值口径，改用价格、波动、回撤、流动性和主题暴露。
+4. 行业/主题映射：市场全景不只依赖观察池分组，逐步引入资产到行业、主题、指数、地区和风格的正式映射。
+5. 组合历史复盘：持仓不只看当前表格，后续要沉淀日级组合快照，支持组合曲线、风险变化和日报复盘。
 
 ## Status
 
@@ -176,6 +176,92 @@
 - Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
 - Notes: 详情见 `docs/tasks/P1-006-fund-signals-reports-ai.md`。
 
+## Next Phase: 模型收敛
+
+### P0-005: 建立轻量迁移体系
+
+- Status: `TODO`
+- Priority: `P0`
+- Goal: 建立可重复执行的数据库迁移机制，让后续新增表和字段不再混入 `001_init.sql` 或临时补列逻辑。
+- Details: `docs/tasks/P0-005-schema-migration.md`
+- Files: `backend/migrations/002_schema_migration.sql`, `scripts/migrate_db.py`, `scripts/init_db.py`
+- Concrete Changes: 新增 `schema_migration(version, name, applied_at)`；新增迁移 runner；`init_db.py` 接入迁移；后续迁移使用稳定版本命名。
+- Acceptance: 重复执行迁移幂等；迁移体系任务不混入业务字段；后续迁移可按 `003_instrument.sql` 这类文件顺序执行。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes:
+
+### P0-006: 引入资产主数据 instrument
+
+- Status: `TODO`
+- Priority: `P0`
+- Goal: 新增资产主数据表，统一股票、ETF、场外基金的名称、类型、市场、行业/主题基础信息和来源。
+- Details: `docs/tasks/P0-006-instrument-master.md`
+- Files: `backend/migrations/003_instrument.sql`, `scripts/init_db.py`, `backend/app/core/asset_type.py`
+- Concrete Changes: 新增 `instrument` 表并包含 `source` 字段；从观察池、持仓、信号和建议回填资产；旧字段短期保留。
+- Acceptance: `instrument` 能覆盖已有观察资产、持仓资产、信号资产和建议资产；读取路径逐步优先使用 `instrument`；资产类型归一走 `core.asset_type`。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes:
+
+### P0-007: 修正 ETF 独立分析口径
+
+- Status: `TODO`
+- Priority: `P0`
+- Goal: 让 ETF 使用价格型分析口径，不再进入股票基本面、估值和公司质量分析路径。
+- Details: `docs/tasks/P0-007-etf-analysis-type.md`
+- Files: `backend/migrations/004_fund_analysis_type.sql`, `worker/factor/stock_analysis.py`, `worker/factor/fund_analysis.py`, `worker/strategy/signal_engine.py`
+- Concrete Changes: `fund_analysis_snapshot` 增加 `analysis_type`；`FUND` 使用 `FUND_NAV`，`ETF` 使用 `ETF_PRICE`；基金页文案区分基金净值分析和 ETF 价格分析。
+- Acceptance: ETF 不再新写入 `stock_analysis_snapshot`；ETF 信号和建议优先读取 `fund_analysis_snapshot where analysis_type = 'ETF_PRICE'`；页面能展示 ETF 分析来源。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes:
+
+### P1-008: 拆分 advice_engine 并增加规则追溯
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 将投资建议生成从策略信号文件中拆出，并让每条建议能追溯规则版本、来源快照和变化原因。
+- Details: `docs/tasks/P1-008-advice-engine-rule-trace.md`
+- Files: `backend/migrations/005_advice_rule_trace.sql`, `worker/advice/`, `worker/strategy/signal_engine.py`, `worker/daily_job.py`
+- Concrete Changes: 新增 advice 模块；`investment_advice` 增加规则追溯字段并预留 `rule_result`；保持原有建议结果尽量不变。
+- Acceptance: 建议结果行为不大变；每条建议包含规则版本、来源快照、上一建议等级和变化原因；AI 和日报仍解释规则结果。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes:
+
+### P1-009: 新增资产行业/主题映射
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 建立资产到行业、主题、指数、地区和风格的正式暴露映射，替代单纯依赖 `watchlist.group_name` 的弱映射。
+- Details: `docs/tasks/P1-009-instrument-sector-map.md`
+- Files: `backend/migrations/006_instrument_sector_map.sql`, `backend/app/services/market_service.py`, `worker/factor/market_trend.py`
+- Concrete Changes: 新增 `instrument_sector_map`；字段包含 `map_type`；行业全景优先读取映射表，无映射时 fallback 到 `watchlist.group_name`。
+- Acceptance: 一个资产可以映射多个行业/主题；行业全景能用正式映射关联股票、ETF、基金；旧分组仍可兜底。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes:
+
+### P2-001: 新增组合历史快照
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 每日沉淀组合总览，支持组合曲线、风险变化、建议摘要和日报复盘。
+- Details: `docs/tasks/P2-001-portfolio-snapshot.md`
+- Files: `backend/migrations/007_portfolio_snapshot.sql`, `worker/daily_job.py`, `backend/app/services/portfolio_service.py`
+- Concrete Changes: 新增 `portfolio_snapshot`；第一版只做日级总览，不做复杂归因、多账户或现金管理。
+- Acceptance: 每日快照包含市值、成本、盈亏、股票/ETF/基金市值、集中度、风险数和建议摘要。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes:
+
 ## Completed Tasks
 
 ### DOC-003: 业务规划加入个人持仓与分级买卖建议
@@ -222,3 +308,9 @@
 - `docs/tasks/P1-002-fund-analysis.md`
 - `docs/tasks/P1-003-fund-page.md`
 - `docs/tasks/P1-007-market-sector-panorama.md`
+- `docs/tasks/P0-005-schema-migration.md`
+- `docs/tasks/P0-006-instrument-master.md`
+- `docs/tasks/P0-007-etf-analysis-type.md`
+- `docs/tasks/P1-008-advice-engine-rule-trace.md`
+- `docs/tasks/P1-009-instrument-sector-map.md`
+- `docs/tasks/P2-001-portfolio-snapshot.md`
