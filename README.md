@@ -168,3 +168,34 @@ VITE_API_BASE=http://<server-ip>:8000 make dev
 5173：前端页面
 8000：后端 API
 ```
+
+## 本地 / 服务器启动
+
+本地开发：
+
+```bash
+cp .env.example .env
+make dev
+```
+
+服务器开发，使用已配置的域名：
+
+```bash
+cp .env.server.example .env.server
+make dev:server
+```
+
+当前服务器域名配置：
+
+```text
+前端：https://invest.chalme.indevs.in
+后端：https://api.chalme.indevs.in
+```
+
+关键环境变量：
+
+```env
+VITE_API_BASE=https://api.chalme.indevs.in
+FRONTEND_ALLOWED_HOSTS=invest.chalme.indevs.in,localhost,127.0.0.1
+BACKEND_CORS_ORIGINS=https://invest.chalme.indevs.in,http://localhost:5173,http://127.0.0.1:5173
+```

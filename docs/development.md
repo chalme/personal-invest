@@ -138,3 +138,47 @@ logs/frontend.log
 - 不使用 npm 作为默认包管理器。
 - 不在项目里锁死旧 pnpm 版本，默认跟随 `pnpm@latest`。
 - 不使用 pip/venv 作为默认 Python 依赖管理方式。
+
+## 本地与服务器域名配置
+
+项目支持通过环境文件切换本地和服务器启动配置。
+
+### 本地开发
+
+```bash
+cp .env.example .env
+make dev
+```
+
+默认访问：
+
+```text
+前端：http://localhost:5173
+后端：http://localhost:8000
+```
+
+本地默认 `VITE_API_BASE` 留空，前端请求 `/api`，由 Vite 代理到本机后端。
+
+### 服务器开发
+
+```bash
+cp .env.server.example .env.server
+make dev:server
+```
+
+当前服务器域名建议配置：
+
+```env
+VITE_API_BASE=https://api.chalme.indevs.in
+FRONTEND_ALLOWED_HOSTS=invest.chalme.indevs.in,localhost,127.0.0.1
+BACKEND_CORS_ORIGINS=https://invest.chalme.indevs.in,http://localhost:5173,http://127.0.0.1:5173
+```
+
+访问：
+
+```text
+前端：https://invest.chalme.indevs.in
+后端：https://api.chalme.indevs.in
+```
+
+`FRONTEND_ALLOWED_HOSTS` 解决 Vite dev server 的 Host 白名单问题；`BACKEND_CORS_ORIGINS` 解决浏览器跨域访问后端 API 的问题。

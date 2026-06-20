@@ -1,10 +1,13 @@
-.PHONY: setup dev backend frontend init daily check clean
+.PHONY: setup dev dev\:server backend frontend init daily check clean
 
 setup:
 	./scripts/setup.sh
 
 dev:
 	./scripts/dev.sh
+
+dev\:server:
+	ENV_FILE=.env.server ./scripts/dev.sh
 
 backend:
 	./scripts/backend.sh

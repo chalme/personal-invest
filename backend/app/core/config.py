@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -16,9 +17,16 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 
+def _parse_csv(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
+    cors_override = os.environ.get("BACKEND_CORS_ORIGINS") or os.environ.get("CORS_ORIGINS")
+    if cors_override:
+        settings.cors_origins = _parse_csv(cors_override)
     settings.storage_dir.mkdir(parents=True, exist_ok=True)
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     settings.reports_dir.mkdir(parents=True, exist_ok=True)

@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 source "$ROOT_DIR/scripts/lib.sh"
+load_env_file "${ENV_FILE:-.env}"
 
 ensure_pnpm_latest
 

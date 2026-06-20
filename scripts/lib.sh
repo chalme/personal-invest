@@ -29,3 +29,14 @@ ensure_pnpm_latest() {
 
   echo "pnpm: $(pnpm --version)"
 }
+
+load_env_file() {
+  local file="${1:-.env}"
+  if [ -f "$file" ]; then
+    echo "loading env: $file"
+    set -a
+    # shellcheck disable=SC1090
+    source "$file"
+    set +a
+  fi
+}

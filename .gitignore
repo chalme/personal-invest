@@ -29,3 +29,8 @@ logs/
 # TypeScript
 frontend/*.tsbuildinfo
 frontend/**/*.tsbuildinfo
+
+# Local environment overrides
+.env
+.env.local
+.env.server
