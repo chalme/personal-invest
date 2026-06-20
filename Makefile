@@ -1,4 +1,4 @@
-.PHONY: setup dev dev\:server backend frontend init daily check clean
+.PHONY: setup dev dev\:server doctor doctor-server backend frontend init daily check clean
 
 setup:
 	./scripts/setup.sh
@@ -8,6 +8,12 @@ dev:
 
 dev\:server:
 	ENV_FILE=.env.server ./scripts/dev.sh
+
+doctor:
+	./scripts/doctor.sh
+
+doctor-server:
+	ENV_FILE=.env.server ./scripts/doctor.sh
 
 backend:
 	./scripts/backend.sh

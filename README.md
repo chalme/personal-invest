@@ -92,6 +92,8 @@ make frontend   # 只启动 React/Vite
 make init       # 初始化 SQLite
 make daily      # 执行每日任务，生成日报
 make check      # Python 编译检查 + 前端构建
+make doctor     # 检查本地环境配置
+make doctor-server # 检查服务器域名配置
 make clean      # 清理依赖缓存和运行文件
 ```
 
@@ -182,6 +184,7 @@ make dev
 
 ```bash
 cp .env.server.example .env.server
+make doctor-server
 make dev:server
 ```
 
