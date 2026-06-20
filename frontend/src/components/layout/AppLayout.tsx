@@ -1,4 +1,4 @@
-import { BarChart3, BrainCircuit, Briefcase, CandlestickChart, Gauge, Home, LineChart, Newspaper, Settings, Star } from 'lucide-react';
+import { BarChart3, BrainCircuit, Briefcase, CandlestickChart, Gauge, Home, LineChart, Newspaper, Settings, SlidersHorizontal, Star } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const nav = [
@@ -8,6 +8,7 @@ const nav = [
   { key: 'stocks', label: '个股分析', icon: CandlestickChart },
   { key: 'watchlist', label: '自选股', icon: Star },
   { key: 'portfolio', label: '持仓', icon: Briefcase },
+  { key: 'strategies', label: '策略配置', icon: SlidersHorizontal },
   { key: 'signals', label: '策略信号', icon: LineChart },
   { key: 'reports', label: '日报', icon: Newspaper },
   { key: 'ai', label: 'AI 分析', icon: BrainCircuit },

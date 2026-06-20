@@ -10,6 +10,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { AiAnalysisPage } from './pages/AiAnalysisPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SignalsPage } from './pages/SignalsPage';
+import { StrategiesPage } from './pages/StrategiesPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ErrorBoundary } from './components/system/ErrorBoundary';
 
@@ -22,6 +23,7 @@ export function App() {
       case 'stocks': return <StocksPage />;
       case 'watchlist': return <WatchlistPage />;
       case 'portfolio': return <PortfolioPage />;
+      case 'strategies': return <StrategiesPage />;
       case 'signals': return <SignalsPage />;
       case 'reports': return <ReportsPage />;
       case 'ai': return <AiAnalysisPage />;

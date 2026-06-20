@@ -90,6 +90,19 @@ def seed(conn: sqlite3.Connection) -> None:
         positions,
     )
 
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO strategy_config(strategy_code, strategy_name, enabled, config_json, updated_at)
+        VALUES (?, ?, 1, ?, ?)
+        """,
+        (
+            "personal_watch_v1",
+            "个人观察策略 V1",
+            '{"high_quality_score": 80, "high_quality_market_score": 45, "trend_watch_score": 65, "trend_watch_market_score": 55, "risk_score": 45}',
+            now,
+        ),
+    )
+
     signals = [
         ("market_trend_v1", "510300.SH", "沪深300ETF", today, "进入观察", 72, "市场震荡偏强，宽基趋势改善。", "MEDIUM", "seed", now),
         ("quality_watch_v1", "600519.SH", "贵州茅台", today, "高质量观察", 82, "基本面质量高，但估值需要等待更好位置。", "LOW", "seed", now),

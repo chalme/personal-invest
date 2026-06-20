@@ -123,3 +123,17 @@ export type AppSettings = {
     density: string;
   };
 };
+
+export type StrategyConfig = {
+  strategy_code: string;
+  strategy_name: string;
+  enabled: boolean;
+  params: {
+    high_quality_score: number;
+    high_quality_market_score: number;
+    trend_watch_score: number;
+    trend_watch_market_score: number;
+    risk_score: number;
+  };
+  updated_at?: string;
+};
