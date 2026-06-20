@@ -10,6 +10,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { AiAnalysisPage } from './pages/AiAnalysisPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SignalsPage } from './pages/SignalsPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { ErrorBoundary } from './components/system/ErrorBoundary';
 
 export function App() {
@@ -24,7 +25,7 @@ export function App() {
       case 'signals': return <SignalsPage />;
       case 'reports': return <ReportsPage />;
       case 'ai': return <AiAnalysisPage />;
-      case 'settings': return <PlaceholderPage title="设置" description="数据源、主题、风控阈值和策略参数。" />;
+      case 'settings': return <SettingsPage />;
       default: return <Dashboard />;
     }
   })();

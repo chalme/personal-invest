@@ -99,3 +99,27 @@ export type DashboardResponse = {
   };
 };
 
+
+
+export type AppSettings = {
+  risk: {
+    market_weak_score: number;
+    single_position_limit: number;
+    stock_weak_score: number;
+    enable_stop_loss_check: boolean;
+  };
+  data: {
+    source_mode: string;
+    prefer_akshare: boolean;
+    fallback_to_sample: boolean;
+  };
+  ai: {
+    enabled: boolean;
+    provider: string;
+    external_llm_enabled: boolean;
+  };
+  ui: {
+    theme: string;
+    density: string;
+  };
+};
