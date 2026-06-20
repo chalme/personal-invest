@@ -25,6 +25,11 @@ def get_sector_trends() -> dict:
     return {"data": MarketService().latest_sectors()}
 
 
+@router.get("/sectors/panorama")
+def get_sector_panorama() -> dict:
+    return {"data": MarketService().sector_panorama()}
+
+
 @router.get("/sectors/history")
 def get_sector_trend_history(limit: int = 20) -> dict:
     return {"data": MarketService().sector_history(limit)}

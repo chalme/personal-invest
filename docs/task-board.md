@@ -87,7 +87,7 @@
 
 ### P1-007: 市场与行业全景分析
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 市场分析不只展示市场分数和少数强势行业，而是覆盖热门、冷门、轮动、防守、过热行业，并映射到股票、ETF、基金观察对象。
 - Files: `worker/factor/market_trend.py`, `backend/app/services/market_service.py`, `backend/app/services/dashboard_service.py`, `frontend/src/pages/MarketPage.tsx`, `frontend/src/pages/SectorsPage.tsx`, `frontend/src/pages/Dashboard.tsx`
@@ -218,3 +218,4 @@
 - `docs/tasks/P1-001-fund-data-pipeline.md`
 - `docs/tasks/P1-002-fund-analysis.md`
 - `docs/tasks/P1-003-fund-page.md`
+- `docs/tasks/P1-007-market-sector-panorama.md`

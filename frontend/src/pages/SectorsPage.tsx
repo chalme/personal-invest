@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
-import type { SectorTrend, SectorTrendHistory } from '../api/types';
+import type { SectorPanorama, SectorPanoramaItem, SectorTrend, SectorTrendHistory } from '../api/types';
 import { SectorBar } from '../components/charts/SectorBar';
 import { SectorHeatmap } from '../components/charts/SectorHeatmap';
 import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
@@ -11,19 +11,49 @@ function trendTone(score: number): 'good' | 'warn' | 'bad' | 'neutral' {
   return 'bad';
 }
 
+function categoryTone(category: string): 'good' | 'warn' | 'bad' | 'neutral' {
+  if (category === 'hot' || category === 'defensive') return 'good';
+  if (category === 'overheat' || category === 'rotation') return 'warn';
+  if (category === 'cold') return 'bad';
+  return 'neutral';
+}
+
+function SectorGroup({ title, items }: { title: string; items: SectorPanoramaItem[] }) {
+  if (!items.length) return null;
+  return (
+    <Card title={title} description="展示行业状态、解释和映射到观察池的股票、ETF、基金。">
+      <div className="list-stack">
+        {items.map((item) => (
+          <div className="list-item" key={`${item.category}-${item.sector_code}`}>
+            <Badge tone={categoryTone(item.category)}>{item.category_label}</Badge>
+            <div>
+              <strong>{item.sector_name} · {item.trend_score}</strong>
+              <p>{item.explanation}</p>
+              <small>{item.mapped_assets.length > 0 ? item.mapped_assets.map((asset) => `${asset.name || asset.symbol}(${asset.asset_type})`).join(' / ') : '暂无观察资产映射'}</small>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function SectorsPage() {
   const [rows, setRows] = useState<SectorTrend[]>([]);
   const [history, setHistory] = useState<SectorTrendHistory[]>([]);
+  const [panorama, setPanorama] = useState<SectorPanorama | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     Promise.all([
       apiGet<{ data: SectorTrend[] }>('/api/market/sectors'),
       apiGet<{ data: SectorTrendHistory[] }>('/api/market/sectors/history?limit=20'),
+      apiGet<{ data: SectorPanorama }>('/api/market/sectors/panorama'),
     ])
-      .then(([latest, hist]) => {
+      .then(([latest, hist, pano]) => {
         setRows(latest.data);
         setHistory(hist.data);
+        setPanorama(pano.data);
       })
       .catch((err) => setError(String(err)));
   }, []);
@@ -51,6 +81,24 @@ export function SectorsPage() {
         <MetricCard label="弱势行业" value={weakCount} hint="评分 < 45" tone={weakCount > 0 ? 'bad' : 'neutral'} />
         <MetricCard label="平均评分" value={averageScore.toFixed(1)} hint="行业扩散度" tone={trendTone(averageScore)} />
       </div>
+
+      {panorama && (
+        <Card title="行业全景结论" description="同时观察热门、冷门、轮动、防守和过热方向。">
+          <div className="portfolio-brief">
+            <div><span>全景判断</span><strong>{panorama.summary.main_message}</strong><small>数据日期 {panorama.summary.trade_date ?? '-'}</small></div>
+            <div><span>方向分布</span><strong>热门 {panorama.summary.hot_count} / 过热 {panorama.summary.overheat_count} / 轮动 {panorama.summary.rotation_count}</strong><small>防守 {panorama.summary.defensive_count} / 冷门 {panorama.summary.cold_count}</small></div>
+          </div>
+        </Card>
+      )}
+
+      {panorama && (
+        <div className="grid-two">
+          <SectorGroup title="过热与热门方向" items={[...(panorama.groups.overheat ?? []), ...(panorama.groups.hot ?? [])]} />
+          <SectorGroup title="轮动与防守方向" items={[...(panorama.groups.rotation ?? []), ...(panorama.groups.defensive ?? [])]} />
+          <SectorGroup title="冷门方向" items={panorama.groups.cold ?? []} />
+          <SectorGroup title="中性观察" items={panorama.groups.neutral ?? []} />
+        </div>
+      )}
 
       <div className="grid-two">
         <Card title="行业强弱柱状图" description="当前交易日行业趋势评分排序。">

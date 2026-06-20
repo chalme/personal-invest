@@ -43,6 +43,41 @@ export type SectorTrendHistory = SectorTrend & {
   trade_date: string;
 };
 
+export type SectorMappedAsset = {
+  symbol: string;
+  name?: string;
+  asset_type?: string;
+  group_name?: string;
+  reason?: string;
+  priority?: number;
+  status?: string;
+};
+
+export type SectorPanoramaItem = SectorTrend & {
+  category: string;
+  category_label: string;
+  explanation: string;
+  mapped_assets: SectorMappedAsset[];
+};
+
+export type SectorPanorama = {
+  summary: {
+    trade_date?: string | null;
+    total_sector_count: number;
+    overheat_count: number;
+    hot_count: number;
+    rotation_count: number;
+    defensive_count: number;
+    cold_count: number;
+    top_sector?: SectorPanoramaItem | null;
+    bottom_sector?: SectorPanoramaItem | null;
+    main_message: string;
+  };
+  groups: Record<string, SectorPanoramaItem[]>;
+  labels: Record<string, string>;
+  sectors: SectorPanoramaItem[];
+};
+
 export type Position = {
   symbol: string;
   name?: string;
@@ -122,6 +157,7 @@ export type RiskEvent = {
 
 export type DashboardResponse = {
   data_source?: DataSourceSummary;
+  sector_panorama?: SectorPanorama['summary'];
   market: MarketTrend | null;
   sectors: SectorTrend[];
   positions: Position[];

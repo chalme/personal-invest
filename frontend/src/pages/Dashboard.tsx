@@ -136,6 +136,7 @@ export function Dashboard() {
   const currentMarketTone = marketTone(data.market?.market_score ?? 0);
   const latestJobStatus = String(data.latest_job?.status ?? '暂无任务');
   const source = data.data_source;
+  const sectorPanorama = data.sector_panorama;
 
   return (
     <div className="page-stack dashboard-page">
@@ -201,6 +202,15 @@ export function Dashboard() {
           </div>
         </Card>
       </div>
+
+      {sectorPanorama && (
+        <Card title="市场与行业全景" description="把热门、过热、轮动、防守和冷门方向放在一起看。">
+          <div className="portfolio-brief">
+            <div><span>全景结论</span><strong>{sectorPanorama.main_message}</strong><small>行业数 {sectorPanorama.total_sector_count} · 日期 {sectorPanorama.trade_date ?? '-'}</small></div>
+            <div><span>方向分布</span><strong>热门 {sectorPanorama.hot_count} / 过热 {sectorPanorama.overheat_count} / 轮动 {sectorPanorama.rotation_count}</strong><small>防守 {sectorPanorama.defensive_count} / 冷门 {sectorPanorama.cold_count}</small></div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid-two dashboard-hero-grid">
         <Card title="市场评分趋势" description="观察市场评分是否持续改善，而不是只看单日变化。">

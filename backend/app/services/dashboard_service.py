@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.repositories.sqlite_repo import SQLiteRepository
 from app.services.data_source_service import DataSourceService
+from app.services.market_service import MarketService
 
 
 class DashboardService:
@@ -35,9 +36,11 @@ class DashboardService:
         total_pnl = sum(float(item.get("pnl") or 0) for item in positions)
 
         data_source = DataSourceService().market_source_summary()
+        sector_panorama = MarketService(self.repo).sector_panorama()
 
         return {
             "data_source": data_source,
+            "sector_panorama": sector_panorama.get("summary"),
             "market": market,
             "sectors": sectors,
             "risks": risks,
