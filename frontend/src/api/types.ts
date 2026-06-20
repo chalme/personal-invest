@@ -12,6 +12,7 @@ export type MarketTrend = {
 };
 
 export type SectorTrend = {
+  trade_date?: string;
   sector_code: string;
   sector_name: string;
   trend_score: number;
@@ -24,6 +25,10 @@ export type SectorTrend = {
   risk_note?: string;
 };
 
+export type SectorTrendHistory = SectorTrend & {
+  trade_date: string;
+};
+
 export type Position = {
   symbol: string;
   name?: string;
@@ -34,6 +39,28 @@ export type Position = {
   pnl?: number;
   pnl_ratio?: number;
   position_ratio?: number;
+  computed_position_ratio?: number;
+  risk_count?: number;
+  max_risk_severity?: number;
+  analysis?: Record<string, string | number | null> | null;
+  risks?: RiskEvent[];
+};
+
+export type PortfolioOverview = {
+  summary: {
+    total_market_value: number;
+    total_cost: number;
+    total_pnl: number;
+    total_pnl_ratio: number;
+    position_count: number;
+    portfolio_risk_count: number;
+    symbol_risk_count: number;
+    concentration_hhi: number;
+    analysis_date?: string | null;
+    risk_date?: string | null;
+  };
+  positions: Position[];
+  portfolio_risks: RiskEvent[];
 };
 
 export type Signal = {

@@ -23,6 +23,11 @@ def list_positions() -> dict:
     return {"data": PortfolioService().list_positions()}
 
 
+@router.get("/overview")
+def get_portfolio_overview() -> dict:
+    return {"data": PortfolioService().portfolio_overview()}
+
+
 @router.post("/positions")
 def upsert_position(payload: PositionUpsert) -> dict:
     item_id = PortfolioService().upsert_position(payload.model_dump())
