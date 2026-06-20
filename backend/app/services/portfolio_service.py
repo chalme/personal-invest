@@ -10,15 +10,44 @@ import duckdb
 from app.core.asset_type import infer_asset_type
 from app.core.config import get_settings
 from app.repositories.sqlite_repo import SQLiteRepository
+from app.services.instrument_service import InstrumentService
 
 
 class PortfolioService:
     def __init__(self, repo: SQLiteRepository | None = None) -> None:
         self.repo = repo or SQLiteRepository()
+        self.instruments = InstrumentService(self.repo)
 
     def list_positions(self) -> list[dict]:
         return self.repo.fetch_all(
-            "SELECT * FROM portfolio_position ORDER BY position_ratio DESC, market_value DESC"
+            """
+            SELECT
+                p.id,
+                p.account_id,
+                p.symbol,
+                COALESCE(i.name, p.name) AS name,
+                COALESCE(i.asset_type, p.asset_type) AS asset_type,
+                i.market,
+                i.exchange,
+                i.sector_code,
+                i.sector_name,
+                i.fund_type,
+                i.risk_level,
+                p.quantity,
+                p.avg_cost,
+                p.current_price,
+                p.market_value,
+                p.pnl,
+                p.pnl_ratio,
+                p.position_ratio,
+                p.buy_reason,
+                p.stop_loss_price,
+                p.take_profit_price,
+                p.updated_at
+            FROM portfolio_position p
+            LEFT JOIN instrument i ON i.symbol = p.symbol
+            ORDER BY p.position_ratio DESC, p.market_value DESC
+            """
         )
 
     def latest_fund_navs(self, symbols: list[str]) -> dict[str, float]:
@@ -167,7 +196,7 @@ class PortfolioService:
         asset_type = infer_asset_type(payload["symbol"], explicit=payload.get("asset_type"))
         now = datetime.now().isoformat(timespec="seconds")
 
-        return self.repo.execute(
+        row_id = self.repo.execute(
             """
             INSERT INTO portfolio_position(
                 account_id, symbol, name, asset_type, quantity, avg_cost, current_price,
@@ -207,6 +236,13 @@ class PortfolioService:
                 now,
             ),
         )
+        self.instruments.upsert(
+            symbol=payload["symbol"],
+            name=payload.get("name", payload["symbol"]),
+            asset_type=asset_type,
+            source="PORTFOLIO",
+        )
+        return row_id
 
     def remove_position(self, symbol: str, account_id: int = 1) -> None:
         self.repo.execute(

@@ -194,17 +194,17 @@
 
 ### P0-006: 引入资产主数据 instrument
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Goal: 新增资产主数据表，统一股票、ETF、场外基金的名称、类型、市场、行业/主题基础信息和来源。
 - Details: `docs/tasks/P0-006-instrument-master.md`
 - Files: `backend/migrations/003_instrument.sql`, `scripts/init_db.py`, `backend/app/core/asset_type.py`
 - Concrete Changes: 新增 `instrument` 表并包含 `source` 字段；从观察池、持仓、信号和建议回填资产；旧字段短期保留。
 - Acceptance: `instrument` 能覆盖已有观察资产、持仓资产、信号资产和建议资产；读取路径逐步优先使用 `instrument`；资产类型归一走 `core.asset_type`。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/003_instrument.sql`, `backend/app/services/instrument_service.py`, `backend/app/services/watchlist_service.py`, `backend/app/services/portfolio_service.py`
+- Verification: `make init`、重复迁移、SQLite 查询 `schema_migration` 与 `instrument` 回填结果通过。
+- Notes: 旧表中的 `name` 和 `asset_type` 字段继续保留，读取路径优先使用 `instrument` 兜底旧字段。
 
 ### P0-007: 修正 ETF 独立分析口径
 

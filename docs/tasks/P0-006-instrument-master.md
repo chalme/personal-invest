@@ -1,10 +1,10 @@
 # P0-006: 引入资产主数据 instrument
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -33,7 +33,7 @@
 
 ## Completion Markers
 
-- Completed At:
+- Completed At: 2026-06-21
 - Changed Files:
 - Verification:
 - Notes:
