@@ -6,7 +6,6 @@ __pycache__/
 .pytest_cache/
 
 # Node / frontend
-.pnpm-store/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
