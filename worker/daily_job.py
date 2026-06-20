@@ -16,7 +16,7 @@ from worker.ingest.market_data import sync_fund_data, sync_market_data
 from worker.report.report_builder import build_daily_report
 from worker.risk.risk_engine import run_risk_check
 from worker.storage import DB_PATH, connect_db
-from worker.strategy.signal_engine import generate_signals
+from worker.strategy.signal_engine import generate_investment_advice, generate_signals
 
 
 def update_job(conn: sqlite3.Connection, job_id: int, status: str, progress: int, message: str, error: str | None = None) -> None:
@@ -74,6 +74,9 @@ def run(job_id: int | None = None) -> None:
             update_job(conn, job_id, "RUNNING", 78, "生成策略信号")
             signals = generate_signals()
 
+            update_job(conn, job_id, "RUNNING", 82, "生成分级建议")
+            advice = generate_investment_advice()
+
             update_job(conn, job_id, "RUNNING", 85, "执行持仓风控")
             risks = run_risk_check()
 
@@ -89,6 +92,7 @@ def run(job_id: int | None = None) -> None:
                     f"完成：行情 {market_sync['rows']} 行，基金净值 {fund_sync['rows']} 行，市场 {market['trend_state']}，"
                     f"行业 {sectors.get('count', 0)} 个，个股 {stocks.get('count', 0)} 个，"
                     f"基金 {funds.get('count', 0)} 个，信号 {signals.get('count', 0)} 条，"
+                    f"建议 {advice.get('count', 0)} 条，"
                     f"风险 {risks.get('count', 0)} 条，"
                     f"报告 {report_path}"
                 ),

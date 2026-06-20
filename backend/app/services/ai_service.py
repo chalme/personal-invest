@@ -51,6 +51,14 @@ class AIService:
     def explain_portfolio(self) -> dict:
         positions = self.repo.fetch_all("SELECT * FROM portfolio_position ORDER BY position_ratio DESC, market_value DESC")
         risks = self.repo.fetch_all("SELECT * FROM risk_event ORDER BY trade_date DESC, severity DESC, id DESC LIMIT 8")
+        advice = self.repo.fetch_all(
+            """
+            SELECT * FROM investment_advice
+            WHERE advice_date = (SELECT MAX(advice_date) FROM investment_advice)
+            ORDER BY confidence DESC, id DESC
+            LIMIT 8
+            """
+        )
         if not positions:
             return self._empty_result("portfolio", "暂无持仓数据", "请先录入持仓。")
 
@@ -62,8 +70,9 @@ class AIService:
             {"title": "组合概览", "content": f"当前持仓 {len(positions)} 个，总市值约 {total_value:.2f}，浮动盈亏 {total_pnl:.2f}。"},
             {"title": "集中度", "content": f"最大持仓为 {top.get('name') or top['symbol']}，仓位占比 {float(top.get('position_ratio') or 0) * 100:.2f}%。"},
             {"title": "主要风险", "content": "；".join(item["message"] for item in risks[:5]) if risk_count else "暂无风险事件。"},
-            {"title": "复盘重点", "content": "优先检查大仓位、亏损扩大、跌破止损位和评分下降的持仓。"},
-            {"title": "操作边界", "content": "该分析只做风险解释，不直接给买卖建议。"},
+            {"title": "规则建议", "content": "；".join(f"{item['name'] or item['symbol']}：{item['advice_level']}，{item['one_liner']}" for item in advice[:5]) if advice else "暂无分级建议，请先执行每日更新。"},
+            {"title": "复盘重点", "content": "优先检查大仓位、亏损扩大、跌破止损位、评分下降以及建议等级变化的持仓。"},
+            {"title": "操作边界", "content": "AI 只解释规则生成的建议，不直接替你下单；最终买卖需要人工确认。"},
         ]
         latest_date = risks[0]["trade_date"] if risks else datetime.now().date().isoformat()
         return self._record("portfolio", "PORTFOLIO", latest_date, sections)

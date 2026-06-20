@@ -59,7 +59,24 @@ export type Position = {
   risk_count?: number;
   max_risk_severity?: number;
   analysis?: Record<string, string | number | null> | null;
+  advice?: InvestmentAdvice | null;
   risks?: RiskEvent[];
+};
+
+export type InvestmentAdvice = {
+  symbol: string;
+  name?: string;
+  asset_type?: string;
+  holding_status: 'HOLDING' | 'WATCHING' | string;
+  advice_date: string;
+  advice_level: '继续观察' | '买入关注' | '持有' | '减仓关注' | '卖出关注' | string;
+  one_liner: string;
+  trigger_reason: string;
+  key_metrics?: Record<string, number | string | null>;
+  risk_note?: string | null;
+  review_action: string;
+  confidence: number;
+  data_version?: string | null;
 };
 
 export type PortfolioOverview = {
@@ -75,8 +92,10 @@ export type PortfolioOverview = {
     analysis_date?: string | null;
     risk_date?: string | null;
     fund_analysis_date?: string | null;
+    advice_date?: string | null;
   };
   positions: Position[];
+  watching_advice?: InvestmentAdvice[];
   portfolio_risks: RiskEvent[];
 };
 

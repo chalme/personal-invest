@@ -75,6 +75,26 @@ CREATE TABLE IF NOT EXISTS strategy_signal (
     UNIQUE(strategy_code, symbol, trade_date)
 );
 
+CREATE TABLE IF NOT EXISTS investment_advice (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL DEFAULT 1,
+    symbol TEXT NOT NULL,
+    name TEXT,
+    asset_type TEXT NOT NULL DEFAULT 'STOCK',
+    holding_status TEXT NOT NULL DEFAULT 'WATCHING',
+    advice_date TEXT NOT NULL,
+    advice_level TEXT NOT NULL,
+    one_liner TEXT NOT NULL,
+    trigger_reason TEXT NOT NULL,
+    key_metrics TEXT,
+    risk_note TEXT,
+    review_action TEXT NOT NULL,
+    confidence REAL NOT NULL DEFAULT 0.5,
+    data_version TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE(account_id, symbol, advice_date)
+);
+
 CREATE TABLE IF NOT EXISTS risk_event (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     trade_date TEXT NOT NULL,

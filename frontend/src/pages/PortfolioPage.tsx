@@ -17,6 +17,13 @@ function riskTone(position: Position): 'good' | 'warn' | 'bad' | 'neutral' {
   return 'good';
 }
 
+function adviceTone(level?: string): 'good' | 'warn' | 'bad' | 'neutral' {
+  if (level === '持有' || level === '买入关注') return 'good';
+  if (level === '减仓关注') return 'warn';
+  if (level === '卖出关注') return 'bad';
+  return 'neutral';
+}
+
 type PositionForm = {
   symbol: string;
   name: string;
@@ -116,6 +123,7 @@ export function PortfolioPage() {
 
   const summary = overview?.summary;
   const positions = overview?.positions ?? [];
+  const watchingAdvice = overview?.watching_advice ?? [];
   const portfolio_risks = overview?.portfolio_risks ?? [];
   const pnlTone = (summary?.total_pnl ?? 0) >= 0 ? 'good' : 'bad';
   const concentrationTone = (summary?.concentration_hhi ?? 0) >= 0.25 ? 'bad' : (summary?.concentration_hhi ?? 0) >= 0.15 ? 'warn' : 'good';
@@ -127,7 +135,7 @@ export function PortfolioPage() {
           <h2>持仓</h2>
           <p>录入股票、ETF、基金持仓，系统会分析仓位、盈亏、集中度、评分和风险边界。</p>
         </div>
-        <Badge tone="neutral">股票分析：{summary?.analysis_date ?? '-'} / 基金分析：{summary?.fund_analysis_date ?? '-'}</Badge>
+        <Badge tone="neutral">股票分析：{summary?.analysis_date ?? '-'} / 基金分析：{summary?.fund_analysis_date ?? '-'} / 建议：{summary?.advice_date ?? '-'}</Badge>
       </div>
 
       <div className="metric-grid">
@@ -169,13 +177,30 @@ export function PortfolioPage() {
         </Card>
       )}
 
+      {watchingAdvice.length > 0 && (
+        <Card title="观察池建议" description="这些资产还不是当前持仓，用于买入候选或继续观察复核。">
+          <div className="list-stack">
+            {watchingAdvice.map((item) => (
+              <div className="list-item" key={`${item.symbol}-${item.advice_date}`}>
+                <Badge tone={adviceTone(item.advice_level)}>{item.advice_level}</Badge>
+                <div>
+                  <strong>{item.name || item.symbol}</strong> <small>{item.asset_type} / {item.symbol}</small>
+                  <p>{item.one_liner}</p>
+                  <small>{item.review_action} · 置信度 {(item.confidence * 100).toFixed(0)}%</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card title="持仓明细" description="结合股票/基金评分和风险事件，不只看盈亏。">
         {positions.length === 0 ? (
           <EmptyState title="暂无持仓" description="录入持仓后会显示仓位、盈亏、评分和风险。" />
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>标的</th><th>类型</th><th>数量/份额</th><th>成本</th><th>现价/净值</th><th>市值</th><th>盈亏</th><th>仓位</th><th>评分</th><th>状态</th><th>风险</th><th>操作</th></tr>
+              <tr><th>标的</th><th>类型</th><th>数量/份额</th><th>成本</th><th>现价/净值</th><th>市值</th><th>盈亏</th><th>仓位</th><th>评分</th><th>建议</th><th>复核动作</th><th>风险</th><th>操作</th></tr>
             </thead>
             <tbody>
               {positions.map((row) => (
@@ -189,7 +214,15 @@ export function PortfolioPage() {
                   <td><Badge tone={(row.pnl ?? 0) >= 0 ? 'good' : 'bad'}>{money(row.pnl)}</Badge></td>
                   <td>{pct(row.computed_position_ratio ?? row.position_ratio)}</td>
                   <td>{row.analysis?.total_score ?? '-'}</td>
-                  <td><Badge tone="neutral">{row.analysis?.state ?? '未分析'}</Badge></td>
+                  <td>
+                    <Badge tone={adviceTone(row.advice?.advice_level)}>{row.advice?.advice_level ?? row.analysis?.state ?? '未分析'}</Badge>
+                    <br />
+                    <small>{row.advice?.one_liner ?? row.analysis?.state ?? ''}</small>
+                  </td>
+                  <td>
+                    <small>{row.advice?.review_action ?? '-'}</small>
+                    {row.advice ? <><br /><small>置信度 {((row.advice.confidence ?? 0) * 100).toFixed(0)}%</small></> : null}
+                  </td>
                   <td><Badge tone={riskTone(row)}>{row.risk_count ?? 0} 个</Badge></td>
                   <td><button className="danger-button" onClick={() => remove(row.symbol)} type="button">删除</button></td>
                 </tr>

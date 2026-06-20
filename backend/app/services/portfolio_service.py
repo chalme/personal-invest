@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections import defaultdict
 from datetime import datetime
 from typing import Any
@@ -49,6 +50,22 @@ class PortfolioService:
         latest_risk_date = self.repo.fetch_one("SELECT MAX(trade_date) AS trade_date FROM risk_event")
         analysis_date = latest_analysis_date.get("trade_date") if latest_analysis_date else None
         risk_date = latest_risk_date.get("trade_date") if latest_risk_date else None
+
+        advice_date_row = self.repo.fetch_one("SELECT MAX(advice_date) AS advice_date FROM investment_advice WHERE account_id = 1")
+        advice_date = advice_date_row.get("advice_date") if advice_date_row else None
+        advice_rows = self.repo.fetch_all(
+            "SELECT * FROM investment_advice WHERE account_id = 1 AND advice_date = ?",
+            (advice_date,),
+        ) if advice_date else []
+        advice_by_symbol: dict[str, dict[str, Any]] = {}
+        for row in advice_rows:
+            item = dict(row)
+            try:
+                item["key_metrics"] = json.loads(item.get("key_metrics") or "{}")
+            except json.JSONDecodeError:
+                item["key_metrics"] = {}
+            advice_by_symbol[item["symbol"]] = item
+        watching_advice = [item for item in advice_by_symbol.values() if item.get("holding_status") == "WATCHING"]
 
         analyses = self.repo.fetch_all(
             "SELECT * FROM stock_analysis_snapshot WHERE trade_date = ?",
@@ -114,6 +131,7 @@ class PortfolioService:
                 **position,
                 "computed_position_ratio": round(computed_ratio, 4),
                 "analysis": analysis_by_symbol.get(symbol),
+                "advice": advice_by_symbol.get(symbol),
                 "risks": position_risks,
                 "risk_count": len(position_risks),
                 "max_risk_severity": max((int(item.get("severity") or 0) for item in position_risks), default=0),
@@ -132,8 +150,10 @@ class PortfolioService:
                 "analysis_date": analysis_date,
                 "risk_date": risk_date,
                 "fund_analysis_date": fund_analysis_date,
+                "advice_date": advice_date,
             },
             "positions": enriched_positions,
+            "watching_advice": watching_advice,
             "portfolio_risks": portfolio_risks,
         }
 

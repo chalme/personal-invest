@@ -48,6 +48,32 @@ def ensure_asset_type_columns(conn: sqlite3.Connection) -> None:
     for row in conn.execute("SELECT id, symbol FROM strategy_signal").fetchall():
         conn.execute("UPDATE strategy_signal SET asset_type = ? WHERE id = ?", (infer_asset_type(row[1]), row[0]))
 
+
+def ensure_advice_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS investment_advice (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER NOT NULL DEFAULT 1,
+            symbol TEXT NOT NULL,
+            name TEXT,
+            asset_type TEXT NOT NULL DEFAULT 'STOCK',
+            holding_status TEXT NOT NULL DEFAULT 'WATCHING',
+            advice_date TEXT NOT NULL,
+            advice_level TEXT NOT NULL,
+            one_liner TEXT NOT NULL,
+            trigger_reason TEXT NOT NULL,
+            key_metrics TEXT,
+            risk_note TEXT,
+            review_action TEXT NOT NULL,
+            confidence REAL NOT NULL DEFAULT 0.5,
+            data_version TEXT,
+            created_at TEXT NOT NULL,
+            UNIQUE(account_id, symbol, advice_date)
+        )
+        """
+    )
+
 def seed(conn: sqlite3.Connection) -> None:
     current = date.today()
     while current.weekday() >= 5:
@@ -168,6 +194,7 @@ def main() -> None:
     with sqlite3.connect(DB_PATH) as conn:
         execute_sql_file(conn, MIGRATION)
         ensure_asset_type_columns(conn)
+        ensure_advice_table(conn)
         seed(conn)
         conn.commit()
     print(f"initialized: {DB_PATH}")

@@ -74,13 +74,16 @@
 
 ### P0-004: 个人持仓与分级建议底座
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Goal: 让系统支持默认个人组合，并为股票、ETF、场外基金生成可追溯的分级买卖建议。
 - Files: `backend/migrations/001_init.sql`, `scripts/init_db.py`, `backend/app/services/portfolio_service.py`, `worker/strategy/signal_engine.py`, `backend/app/services/ai_service.py`, `frontend/src/api/types.ts`
 - Concrete Changes: 明确单组合持仓口径；新增建议等级；建议结果包含一句话结论、触发原因、关键指标、风险说明、复核动作、置信度和数据日期；AI 只解释规则生成的建议。
 - Acceptance: 持仓页能区分观察资产和真实持仓；股票、ETF、基金能展示 `继续观察`、`买入关注`、`持有`、`减仓关注`、`卖出关注` 等建议等级，并用具象话说明为什么今天需要关注。
-- Detail: 后续开始执行时拆到 `docs/tasks/P0-004-holdings-advice.md`。
+- Completed At: 2026-06-20
+- Changed Files: `backend/migrations/001_init.sql`, `scripts/init_db.py`, `worker/strategy/signal_engine.py`, `worker/daily_job.py`, `backend/app/services/portfolio_service.py`, `backend/app/services/ai_service.py`, `frontend/src/api/types.ts`, `frontend/src/pages/PortfolioPage.tsx`
+- Verification: 初始化、daily job、SQLite 建议生成校验、前端构建和 `make check` 通过。
+- Notes: 详情见 `docs/tasks/P0-004-holdings-advice.md`。
 
 ### P1-007: 市场与行业全景分析
 
