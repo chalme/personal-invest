@@ -81,3 +81,8 @@ button { font: inherit; }
 .analysis-summary div { border: 1px solid rgba(148, 163, 184, 0.14); border-radius: 16px; padding: 14px; background: rgba(15, 23, 42, 0.42); }
 .analysis-summary span { display: block; color: #94a3b8; margin-bottom: 6px; font-size: 13px; }
 .analysis-summary strong { color: #f8fafc; line-height: 1.55; font-weight: 600; }
+
+.table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.table-toolbar input { width: 320px; max-width: 100%; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 14px; background: rgba(15, 23, 42, 0.72); color: #f8fafc; padding: 11px 12px; outline: none; }
+.table-toolbar input:focus { border-color: rgba(96, 165, 250, 0.62); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16); }
+.table-toolbar span { color: #94a3b8; font-size: 13px; }
