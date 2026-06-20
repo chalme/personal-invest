@@ -36,3 +36,12 @@ app.include_router(jobs.router, prefix="/api")
 def health() -> dict:
     return {"status": "ok", "app": settings.app_name, "version": settings.app_version}
 
+
+@app.get("/health/cors")
+def cors_health() -> dict:
+    return {
+        "status": "ok",
+        "frontend_public_url": settings.frontend_public_url,
+        "cors_origins": settings.cors_origins,
+    }
+
