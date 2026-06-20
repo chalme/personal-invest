@@ -180,17 +180,17 @@
 
 ### P0-005: 建立轻量迁移体系
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Goal: 建立可重复执行的数据库迁移机制，让后续新增表和字段不再混入 `001_init.sql` 或临时补列逻辑。
 - Details: `docs/tasks/P0-005-schema-migration.md`
 - Files: `backend/migrations/002_schema_migration.sql`, `scripts/migrate_db.py`, `scripts/init_db.py`
 - Concrete Changes: 新增 `schema_migration(version, name, applied_at)`；新增迁移 runner；`init_db.py` 接入迁移；后续迁移使用稳定版本命名。
 - Acceptance: 重复执行迁移幂等；迁移体系任务不混入业务字段；后续迁移可按 `003_instrument.sql` 这类文件顺序执行。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/002_schema_migration.sql`, `scripts/migrate_db.py`, `scripts/init_db.py`
+- Verification: 重复执行 `uv run python scripts/init_db.py` 和 `uv run python scripts/migrate_db.py`，迁移表只记录 `001_init` 与 `002_schema_migration`，无重复应用。
+- Notes: 本任务只建立迁移基础设施，没有引入业务模型字段。
 
 ### P0-006: 引入资产主数据 instrument
 

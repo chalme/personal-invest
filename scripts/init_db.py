@@ -4,6 +4,8 @@ import sqlite3
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from migrate_db import run_migrations
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT / "storage" / "invest.db"
@@ -197,6 +199,7 @@ def main() -> None:
         ensure_advice_table(conn)
         seed(conn)
         conn.commit()
+    run_migrations(DB_PATH)
     print(f"initialized: {DB_PATH}")
 
 
