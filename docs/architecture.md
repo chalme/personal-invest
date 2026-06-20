@@ -57,6 +57,8 @@ FastAPI API Server
 
 ## 模块边界
 
+股票、ETF 和场外基金的业务定义以 `business-information-architecture.md` 为准；本文件只描述技术模块和数据流。
+
 | 模块 | 职责 |
 |---|---|
 | Dashboard | 展示市场、持仓、信号、风险总览 |

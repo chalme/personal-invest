@@ -150,6 +150,16 @@
 
 ## Completed Tasks
 
+### DOC-002: 业务与信息架构说明
+
+- Status: `DONE`
+- Priority: `P0`
+- Goal: 明确股票、ETF、场外基金在系统中的区别、数据口径、页面入口、报告口径和风险边界。
+- Completed At: 2026-06-20
+- Changed Files: `docs/business-information-architecture.md`, `docs/README.md`, `docs/purpose.md`, `docs/architecture.md`, `docs/task-board.md`
+- Verification: 文档明确回答基金是否算股票、ETF 使用哪个分析口径、场外基金如何分析、持仓页如何解释基金风险。
+- Notes: 本任务只更新文档，不实现代码、数据库或 UI。
+
 ### DOC-001: 建立任务分层文档
 
 - Status: `DONE`
