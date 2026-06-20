@@ -121,6 +121,38 @@ VITE_API_BASE=http://<server-ip>:8000 make dev
 8000 后端 API
 ```
 
+## 生产模式
+
+开发模式使用 Vite dev server，适合热更新；服务器长期运行建议使用生产模式。
+
+```bash
+make prod-server
+```
+
+生产模式会：
+
+```text
+pnpm -C frontend build
+FastAPI 非 reload 模式启动
+静态服务托管 frontend/dist
+```
+
+单独启动：
+
+```bash
+make backend-prod
+make frontend-prod
+```
+
+生产模式日志：
+
+```text
+logs/backend-prod.log
+logs/frontend-prod.log
+```
+
+边界：当前生产模式仍是进程前台运行，下一阶段可接 systemd / supervisor 保活。
+
 ## 日志
 
 `make dev` 会把日志写入：

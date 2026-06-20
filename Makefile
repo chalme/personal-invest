@@ -1,4 +1,4 @@
-.PHONY: setup dev dev\:server doctor doctor-server backend frontend init daily check clean
+.PHONY: setup dev dev\:server prod prod-server doctor doctor-server backend backend-prod frontend frontend-prod init daily check clean
 
 setup:
 	./scripts/setup.sh
@@ -9,6 +9,12 @@ dev:
 dev\:server:
 	ENV_FILE=.env.server ./scripts/dev.sh
 
+prod:
+	./scripts/prod.sh
+
+prod-server:
+	ENV_FILE=.env.server ./scripts/prod.sh
+
 doctor:
 	./scripts/doctor.sh
 
@@ -18,8 +24,14 @@ doctor-server:
 backend:
 	./scripts/backend.sh
 
+backend-prod:
+	./scripts/backend_prod.sh
+
 frontend:
 	./scripts/frontend.sh
+
+frontend-prod:
+	./scripts/frontend_prod.sh
 
 init:
 	uv run python scripts/init_db.py

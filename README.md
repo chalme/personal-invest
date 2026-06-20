@@ -138,6 +138,45 @@ personal-invest/
 └── reports/           # daily / weekly 报告
 ```
 
+## 生产模式启动
+
+开发模式 `make dev` 使用 Vite dev server，适合改代码时热更新。长期在服务器上运行时，建议使用生产模式：
+
+```bash
+make prod-server
+```
+
+生产模式会执行：
+
+```text
+1. uv sync
+2. pnpm -C frontend install
+3. pnpm -C frontend build
+4. FastAPI 非 reload 模式启动在 BACKEND_PORT
+5. React dist 静态文件服务启动在 FRONTEND_PORT
+```
+
+服务器域名仍然保持：
+
+```text
+前端：https://invest.chalme.indevs.in -> 5173 静态前端
+后端：https://api.chalme.indevs.in    -> 8000 FastAPI API
+```
+
+单独启动生产后端或前端：
+
+```bash
+make backend-prod
+make frontend-prod
+```
+
+日志文件：
+
+```text
+logs/backend-prod.log
+logs/frontend-prod.log
+```
+
 ## 运行策略
 
 - Python 依赖由根目录 `pyproject.toml` 管理。
