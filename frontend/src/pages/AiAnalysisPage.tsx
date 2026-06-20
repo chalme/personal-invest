@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
-import { Badge, Card, EmptyState } from '../components/ui';
+import { Badge, Card, EmptyState, LoadingState } from '../components/ui';
 
 type AiSection = {
   title: string;
@@ -86,7 +86,7 @@ export function AiAnalysisPage() {
       </Card>
 
       {error && <Card><div className="error-box">{error}</div></Card>}
-      {loading && <div className="skeleton-page">正在生成结构化解释...</div>}
+      {loading && <LoadingState title="正在生成结构化解释" description="基于系统数据整理市场、持仓或个股分析。" rows={3} />}
 
       {!loading && result ? (
         <Card title={`${result.target} · ${result.analysis_type}`} description={`生成时间：${result.generated_at}`}>

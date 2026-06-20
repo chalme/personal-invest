@@ -3,7 +3,7 @@ import { apiGet, apiPost } from '../api/client';
 import type { DashboardResponse, MarketTrend } from '../api/types';
 import { MarketScoreLine } from '../components/charts/MarketScoreLine';
 import { SectorBar } from '../components/charts/SectorBar';
-import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
+import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '../components/ui';
 
 export function Dashboard() {
   const [data, setData] = useState<DashboardResponse | null>(null);
@@ -37,8 +37,8 @@ export function Dashboard() {
     await load();
   }
 
-  if (loading) return <div className="skeleton-page">正在加载投资仪表盘...</div>;
-  if (error) return <EmptyState title="后端不可用" description={error} />;
+  if (loading) return <LoadingState title="正在加载投资仪表盘" description="读取市场趋势、持仓风险与策略信号。" />;
+  if (error) return <ErrorState title="后端不可用" description={error} onRetry={load} />;
   if (!data) return <EmptyState title="暂无数据" description="请先初始化数据库。" />;
 
   const pnlTone = data.summary.total_pnl >= 0 ? 'good' : 'bad';

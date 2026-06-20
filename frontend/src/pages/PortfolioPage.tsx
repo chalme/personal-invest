@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { apiDelete, apiGet, apiPost } from '../api/client';
 import type { PortfolioOverview, Position } from '../api/types';
-import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
+import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '../components/ui';
 
 function pct(value?: number) {
   return `${((value ?? 0) * 100).toFixed(2)}%`;
@@ -108,8 +108,8 @@ export function PortfolioPage() {
     }
   }
 
-  if (error && !overview) return <EmptyState title="持仓加载失败" description={error} />;
-  if (loading && !overview) return <div className="skeleton-page">正在加载持仓总览...</div>;
+  if (error && !overview) return <ErrorState title="持仓加载失败" description={error} onRetry={load} />;
+  if (loading && !overview) return <LoadingState title="正在加载持仓总览" description="读取持仓、个股评分与风险事件。" />;
 
   const summary = overview?.summary;
   const positions = overview?.positions ?? [];

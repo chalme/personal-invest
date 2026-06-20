@@ -37,3 +37,30 @@ export function EmptyState(props: { title: string; description: string }) {
   );
 }
 
+export function LoadingState(props: { title?: string; description?: string; rows?: number }) {
+  const rows = props.rows ?? 4;
+  return (
+    <div className="loading-state" aria-busy="true" aria-live="polite">
+      <div className="loading-copy">
+        <strong>{props.title ?? '正在加载数据'}</strong>
+        <p>{props.description ?? '正在读取本地数据库与分析结果。'}</p>
+      </div>
+      <div className="loading-bars">
+        {Array.from({ length: rows }).map((_, index) => (
+          <span key={index} style={{ width: `${92 - index * 11}%` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function ErrorState(props: { title?: string; description: string; onRetry?: () => void }) {
+  return (
+    <div className="error-state">
+      <strong>{props.title ?? '加载失败'}</strong>
+      <p>{props.description}</p>
+      {props.onRetry && <button className="ghost-button" onClick={props.onRetry}>重试</button>}
+    </div>
+  );
+}
+

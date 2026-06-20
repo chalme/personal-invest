@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { RefreshCcw, RotateCcw, Save } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '../api/client';
 import type { StrategyConfig } from '../api/types';
-import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
+import { Badge, Card, EmptyState, LoadingState, MetricCard } from '../components/ui';
 
 type ApiResponse<T> = { data: T };
 
@@ -106,7 +106,7 @@ export function StrategiesPage() {
   }, []);
 
   if (loading) {
-    return <EmptyState title="正在加载策略配置" description="读取本地 SQLite 中的策略参数。" />;
+    return <LoadingState title="正在加载策略配置" description="读取本地 SQLite 中的策略参数。" />;
   }
 
   return (

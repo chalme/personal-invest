@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiDelete, apiGet, apiPost } from '../api/client';
-import { Badge, Card, EmptyState } from '../components/ui';
+import { Badge, Card, EmptyState, LoadingState } from '../components/ui';
 
 type WatchlistItem = {
   id?: number;
@@ -143,7 +143,7 @@ export function WatchlistPage() {
           <button className="ghost-button" onClick={load} type="button">刷新</button>
         </div>
         {loading ? (
-          <div className="skeleton-page">正在加载自选股...</div>
+          <LoadingState title="正在加载自选股" description="读取关注列表、分组和备注。" rows={3} />
         ) : filteredRows.length === 0 ? (
           <EmptyState title="暂无自选股" description="添加关注股票后，这里会展示分组、优先级和关注理由。" />
         ) : (

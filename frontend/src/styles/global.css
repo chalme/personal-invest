@@ -54,8 +54,16 @@ button { font: inherit; }
 .data-table th { color: #94a3b8; font-size: 12px; font-weight: 500; text-align: left; padding: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.16); }
 .data-table td { padding: 14px 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1); vertical-align: top; }
 .data-table small, .muted { color: #94a3b8; }
-.empty-state, .skeleton-page { border: 1px dashed rgba(148, 163, 184, 0.3); border-radius: 20px; padding: 28px; color: #94a3b8; background: rgba(15, 23, 42, 0.44); }
+.empty-state, .skeleton-page, .loading-state, .error-state { border: 1px dashed rgba(148, 163, 184, 0.3); border-radius: 20px; padding: 28px; color: #94a3b8; background: rgba(15, 23, 42, 0.44); }
 .empty-state strong { color: #f8fafc; display: block; margin-bottom: 6px; }
+.loading-state, .error-state { display: grid; gap: 18px; }
+.loading-copy strong, .error-state strong { color: #f8fafc; display: block; margin-bottom: 6px; }
+.loading-copy p, .error-state p { margin: 0; line-height: 1.65; }
+.loading-bars { display: grid; gap: 10px; }
+.loading-bars span { display: block; height: 12px; border-radius: 999px; background: linear-gradient(90deg, rgba(51, 65, 85, 0.8), rgba(96, 165, 250, 0.32), rgba(51, 65, 85, 0.8)); background-size: 220% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+.error-state { border-color: rgba(248, 113, 113, 0.26); background: rgba(127, 29, 29, 0.14); }
+.error-state strong { color: #fecaca; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
 @media (max-width: 1180px) {
   .metric-grid, .grid-two { grid-template-columns: 1fr; }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { RefreshCcw, RotateCcw, Save } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '../api/client';
 import type { AppSettings } from '../api/types';
-import { Badge, Card, EmptyState } from '../components/ui';
+import { Badge, Card, LoadingState } from '../components/ui';
 
 type ApiResponse<T> = { data: T };
 
@@ -126,7 +126,7 @@ export function SettingsPage() {
   }, []);
 
   if (loading) {
-    return <EmptyState title="正在加载设置" description="读取本地 SQLite 配置。" />;
+    return <LoadingState title="正在加载设置" description="读取本地 SQLite 配置。" />;
   }
 
   return (
