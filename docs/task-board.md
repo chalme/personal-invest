@@ -72,13 +72,16 @@
 
 ### P1-001: 新增基金数据管线
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 基金第一版支持场外公募基金净值数据，同时兼容场内 ETF/LOF 的行情口径。
-- Files: `worker/ingest/market_data.py`, `worker/ingest/fund_data.py`, `worker/storage.py`
+- Files: `worker/ingest/market_data.py`, `worker/daily_job.py`, `worker/storage.py`
 - Concrete Changes: ETF 继续写入 `daily_bar`；场外基金新增 `fund_nav` 数据集；记录净值日期、数据来源和样本标识。
 - Acceptance: 每日任务能产出股票/ETF 日线和基金净值数据。
-- Detail: 后续开始执行时拆到 `docs/tasks/P1-001-fund-data-pipeline.md`。
+- Completed At: 2026-06-20
+- Changed Files: `worker/ingest/market_data.py`, `worker/daily_job.py`
+- Verification: daily job 和 `make check` 通过；无基金时任务会跳过基金净值同步。
+- Notes: 基金净值同步逻辑合并在 `worker/ingest/market_data.py`，详情见 `docs/tasks/P1-001-fund-data-pipeline.md`。
 
 ### P1-002: 新增基金分析快照
 

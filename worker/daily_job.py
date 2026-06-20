@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 
 from worker.factor.market_trend import calculate_market_trend, calculate_sector_trend
 from worker.factor.stock_analysis import calculate_stock_analysis
-from worker.ingest.market_data import sync_market_data
+from worker.ingest.market_data import sync_fund_data, sync_market_data
 from worker.report.report_builder import build_daily_report
 from worker.risk.risk_engine import run_risk_check
 from worker.storage import DB_PATH, connect_db
@@ -55,6 +55,9 @@ def run(job_id: int | None = None) -> None:
             update_job(conn, job_id, "RUNNING", 10, "同步行情数据")
             market_sync = sync_market_data()
 
+            update_job(conn, job_id, "RUNNING", 20, "同步基金净值数据")
+            fund_sync = sync_fund_data()
+
             update_job(conn, job_id, "RUNNING", 30, "计算市场趋势")
             market = calculate_market_trend()
 
@@ -79,7 +82,7 @@ def run(job_id: int | None = None) -> None:
                 "SUCCESS",
                 100,
                 (
-                    f"完成：行情 {market_sync['rows']} 行，市场 {market['trend_state']}，"
+                    f"完成：行情 {market_sync['rows']} 行，基金净值 {fund_sync['rows']} 行，市场 {market['trend_state']}，"
                     f"行业 {sectors.get('count', 0)} 个，个股 {stocks.get('count', 0)} 个，"
                     f"信号 {signals.get('count', 0)} 条，风险 {risks.get('count', 0)} 条，"
                     f"报告 {report_path}"

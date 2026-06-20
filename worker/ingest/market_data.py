@@ -154,3 +154,95 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
     write_json_atomic(RAW_DIR / "market" / f"{date.today().isoformat()}_manifest.json", manifest)
     target = write_partitioned_parquet(df, "daily_bar", ["trade_date"])
     return {**manifest, "status": "ok", "dataset": str(target)}
+
+
+def _fetch_fund_nav_with_akshare(symbol: str, name: str) -> pd.DataFrame | None:
+    try:
+        import akshare as ak  # type: ignore
+    except Exception:
+        return None
+    try:
+        raw = ak.fund_open_fund_info_em(symbol=_code(symbol), indicator="单位净值走势")
+    except Exception:
+        return None
+    if raw is None or raw.empty:
+        return None
+    rename_map = {"净值日期": "nav_date", "单位净值": "nav", "date": "nav_date", "value": "nav"}
+    df = raw.rename(columns={key: value for key, value in rename_map.items() if key in raw.columns})
+    if "nav_date" not in df.columns or "nav" not in df.columns:
+        return None
+    df = df[["nav_date", "nav"]].copy()
+    df["nav_date"] = pd.to_datetime(df["nav_date"]).dt.date.astype(str)
+    df["nav"] = pd.to_numeric(df["nav"], errors="coerce")
+    df = df.dropna(subset=["nav"])
+    if df.empty:
+        return None
+    df["symbol"] = symbol
+    df["name"] = name
+    df["source"] = "akshare"
+    return df
+
+
+def _generate_sample_nav(symbol: str, name: str, days: list[date]) -> pd.DataFrame:
+    seed = _stable_seed(symbol)
+    base = 0.8 + (seed % 120) / 100
+    trend = ((seed % 7) - 2) / 1500
+    rows: list[dict[str, Any]] = []
+    prev_nav = float(base)
+    for i, current in enumerate(days):
+        wave = math.sin(i / 11 + seed % 13) * 0.006
+        nav = max(0.2, prev_nav * (1 + trend + wave))
+        rows.append({
+            "symbol": symbol,
+            "name": name,
+            "nav_date": current.isoformat(),
+            "nav": round(nav, 4),
+            "accumulated_nav": round(nav * (1 + (seed % 9) / 100), 4),
+            "source": "sample",
+        })
+        prev_nav = nav
+    return pd.DataFrame(rows)
+
+
+def sync_fund_data(days: int = 180) -> dict[str, Any]:
+    with connect_db() as conn:
+        watchlist = get_watchlist(conn)
+    funds = [item for item in watchlist if str(item.get("asset_type") or "").upper() == "FUND"]
+    if not funds:
+        manifest = {
+            "generated_at": now_iso(),
+            "rows": 0,
+            "funds": [],
+            "latest_nav_date": None,
+            "source_count": {"akshare": 0, "sample": 0},
+        }
+        write_json_atomic(RAW_DIR / "fund" / f"{date.today().isoformat()}_manifest.json", manifest)
+        return {**manifest, "status": "skipped", "dataset": "fund_nav"}
+
+    business_dates = _business_dates(days)
+    frames: list[pd.DataFrame] = []
+    source_count = {"akshare": 0, "sample": 0}
+    for item in funds:
+        symbol = str(item["symbol"])
+        name = str(item.get("name") or symbol)
+        frame = _fetch_fund_nav_with_akshare(symbol, name)
+        if frame is None or frame.empty:
+            frame = _generate_sample_nav(symbol, name, business_dates)
+            source_count["sample"] += 1
+        else:
+            source_count["akshare"] += 1
+        frames.append(frame)
+
+    df = pd.concat(frames, ignore_index=True)
+    df["data_version"] = f"fund_nav_{df['nav_date'].max()}_{now_iso()}"
+    df = df.sort_values(["nav_date", "symbol"]).reset_index(drop=True)
+    manifest = {
+        "generated_at": now_iso(),
+        "rows": len(df),
+        "funds": sorted(df["symbol"].unique().tolist()),
+        "latest_nav_date": str(df["nav_date"].max()),
+        "source_count": source_count,
+    }
+    write_json_atomic(RAW_DIR / "fund" / f"{date.today().isoformat()}_manifest.json", manifest)
+    target = write_partitioned_parquet(df, "fund_nav", ["nav_date"])
+    return {**manifest, "status": "ok", "dataset": str(target)}
