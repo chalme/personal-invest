@@ -1,0 +1,30 @@
+app:
+  name: Personal Invest
+  timezone: Asia/Shanghai
+
+data_sources:
+  market:
+    primary: akshare
+    fallback: manual_seed
+  financial:
+    primary: akshare
+    fallback: manual_seed
+
+risk:
+  max_single_position_ratio: 0.20
+  max_sector_position_ratio: 0.30
+  max_drawdown_warn: 0.10
+  min_daily_amount: 300000000
+
+strategy:
+  market_trend:
+    enabled: true
+  quality_watch:
+    enabled: true
+  trend_watch:
+    enabled: true
+
+ai:
+  enabled: false
+  cache_by_data_version: true
+

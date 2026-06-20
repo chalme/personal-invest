@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.pytest_cache/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Runtime files
+data/
+reports/
+storage/*.db
+storage/*.db-wal
+storage/*.db-shm
+storage/*.duckdb
+storage/*.duckdb.wal
+logs/
+.run/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
