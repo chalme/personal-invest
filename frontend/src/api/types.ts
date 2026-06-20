@@ -172,6 +172,34 @@ export type StrategyConfig = {
   updated_at?: string;
 };
 
+
+export type FundAnalysis = {
+  nav_date: string;
+  symbol: string;
+  name: string;
+  total_score: number;
+  state: string;
+  return_1m?: number | null;
+  return_3m?: number | null;
+  return_6m?: number | null;
+  max_drawdown?: number | null;
+  volatility?: number | null;
+  trend_score?: number | null;
+  risk_score?: number | null;
+  conclusion?: string | null;
+  risk_note?: string | null;
+  data_version?: string | null;
+};
+
+export type FundNavPoint = {
+  nav_date: string;
+  symbol: string;
+  name?: string;
+  nav: number;
+  accumulated_nav?: number | null;
+  source?: string | null;
+};
+
 export type BacktestCurvePoint = {
   trade_date: string;
   equity: number;

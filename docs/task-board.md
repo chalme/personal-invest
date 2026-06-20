@@ -98,13 +98,16 @@
 
 ### P1-003: 新增基金分析 API 和页面
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 前端新增独立基金分析页，与个股分析页并列。
 - Files: `backend/app/api/funds.py`, `backend/app/services/fund_service.py`, `backend/app/main.py`, `frontend/src/pages/FundsPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/App.tsx`
 - Concrete Changes: 新增基金分析接口和净值趋势接口；前端展示基金评分、净值曲线、回撤风险和分析结论。
 - Acceptance: 用户能在基金分析页查看基金研究结论。
-- Detail: 暂不拆分。
+- Completed At: 2026-06-20
+- Changed Files: `backend/app/api/funds.py`, `backend/app/services/fund_service.py`, `backend/app/main.py`, `frontend/src/pages/FundsPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/App.tsx`, `frontend/src/api/types.ts`
+- Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
+- Notes: 详情见 `docs/tasks/P1-003-fund-page.md`。
 
 ### P1-004: 观察池支持股票和基金
 
@@ -159,3 +162,4 @@
 - `docs/tasks/P0-003-asset-type.md`
 - `docs/tasks/P1-001-fund-data-pipeline.md`
 - `docs/tasks/P1-002-fund-analysis.md`
+- `docs/tasks/P1-003-fund-page.md`

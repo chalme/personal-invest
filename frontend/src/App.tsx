@@ -8,6 +8,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard').then((module) => ({ def
 const MarketPage = lazy(() => import('./pages/MarketPage').then((module) => ({ default: module.MarketPage })));
 const SectorsPage = lazy(() => import('./pages/SectorsPage').then((module) => ({ default: module.SectorsPage })));
 const StocksPage = lazy(() => import('./pages/StocksPage').then((module) => ({ default: module.StocksPage })));
+const FundsPage = lazy(() => import('./pages/FundsPage').then((module) => ({ default: module.FundsPage })));
 const WatchlistPage = lazy(() => import('./pages/WatchlistPage').then((module) => ({ default: module.WatchlistPage })));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then((module) => ({ default: module.PortfolioPage })));
 const AiAnalysisPage = lazy(() => import('./pages/AiAnalysisPage').then((module) => ({ default: module.AiAnalysisPage })));
@@ -24,6 +25,7 @@ export function App() {
       case 'market': return <MarketPage />;
       case 'sectors': return <SectorsPage />;
       case 'stocks': return <StocksPage />;
+      case 'funds': return <FundsPage />;
       case 'watchlist': return <WatchlistPage />;
       case 'portfolio': return <PortfolioPage />;
       case 'strategies': return <StrategiesPage />;
