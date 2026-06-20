@@ -85,13 +85,16 @@
 
 ### P1-002: 新增基金分析快照
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 基金不套用股票基本面/估值评分，而使用收益、回撤、波动、类型适配等口径。
 - Files: `backend/migrations/001_init.sql`, `worker/factor/fund_analysis.py`, `worker/daily_job.py`
 - Concrete Changes: 新增 `fund_analysis_snapshot`；计算收益表现、回撤风险、波动、趋势、综合评分、结论和风险说明。
 - Acceptance: 基金分析结果可独立生成，并能解释评分来源。
-- Detail: 后续开始执行时拆到 `docs/tasks/P1-002-fund-analysis.md`。
+- Completed At: 2026-06-20
+- Changed Files: `backend/migrations/001_init.sql`, `worker/factor/fund_analysis.py`, `worker/daily_job.py`
+- Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
+- Notes: 详情见 `docs/tasks/P1-002-fund-analysis.md`。
 
 ### P1-003: 新增基金分析 API 和页面
 

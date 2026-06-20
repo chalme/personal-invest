@@ -137,6 +137,28 @@ CREATE TABLE IF NOT EXISTS stock_analysis_snapshot (
     UNIQUE(trade_date, symbol)
 );
 
+
+CREATE TABLE IF NOT EXISTS fund_analysis_snapshot (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nav_date TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    name TEXT NOT NULL,
+    total_score REAL NOT NULL,
+    state TEXT NOT NULL,
+    return_1m REAL,
+    return_3m REAL,
+    return_6m REAL,
+    max_drawdown REAL,
+    volatility REAL,
+    trend_score REAL,
+    risk_score REAL,
+    conclusion TEXT,
+    risk_note TEXT,
+    data_version TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE(nav_date, symbol)
+);
+
 CREATE TABLE IF NOT EXISTS report_index (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     report_type TEXT NOT NULL,

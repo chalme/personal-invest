@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from worker.factor.fund_analysis import calculate_fund_analysis
 from worker.factor.market_trend import calculate_market_trend, calculate_sector_trend
 from worker.factor.stock_analysis import calculate_stock_analysis
 from worker.ingest.market_data import sync_fund_data, sync_market_data
@@ -67,7 +68,10 @@ def run(job_id: int | None = None) -> None:
             update_job(conn, job_id, "RUNNING", 60, "计算个股公司分析")
             stocks = calculate_stock_analysis()
 
-            update_job(conn, job_id, "RUNNING", 75, "生成策略信号")
+            update_job(conn, job_id, "RUNNING", 70, "计算基金分析")
+            funds = calculate_fund_analysis()
+
+            update_job(conn, job_id, "RUNNING", 78, "生成策略信号")
             signals = generate_signals()
 
             update_job(conn, job_id, "RUNNING", 85, "执行持仓风控")
@@ -84,7 +88,8 @@ def run(job_id: int | None = None) -> None:
                 (
                     f"完成：行情 {market_sync['rows']} 行，基金净值 {fund_sync['rows']} 行，市场 {market['trend_state']}，"
                     f"行业 {sectors.get('count', 0)} 个，个股 {stocks.get('count', 0)} 个，"
-                    f"信号 {signals.get('count', 0)} 条，风险 {risks.get('count', 0)} 条，"
+                    f"基金 {funds.get('count', 0)} 个，信号 {signals.get('count', 0)} 条，"
+                    f"风险 {risks.get('count', 0)} 条，"
                     f"报告 {report_path}"
                 ),
             )
