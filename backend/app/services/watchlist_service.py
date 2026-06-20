@@ -39,3 +39,14 @@ class WatchlistService:
             ),
         )
 
+    def remove_item(self, symbol: str) -> None:
+        now = datetime.now().isoformat(timespec="seconds")
+        self.repo.execute(
+            """
+            UPDATE watchlist
+            SET status = 'REMOVED', updated_at = ?
+            WHERE symbol = ?
+            """,
+            (now, symbol),
+        )
+

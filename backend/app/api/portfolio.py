@@ -33,3 +33,9 @@ def upsert_position(payload: PositionUpsert) -> dict:
     item_id = PortfolioService().upsert_position(payload.model_dump())
     return {"id": item_id, "status": "ok"}
 
+
+@router.delete("/positions/{symbol}")
+def remove_position(symbol: str, account_id: int = 1) -> dict:
+    PortfolioService().remove_position(symbol=symbol, account_id=account_id)
+    return {"status": "ok"}
+

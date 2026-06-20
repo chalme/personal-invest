@@ -24,3 +24,9 @@ def add_watchlist(payload: WatchlistCreate) -> dict:
     item_id = WatchlistService().add_item(payload.model_dump())
     return {"id": item_id, "status": "ok"}
 
+
+@router.delete("/{symbol}")
+def remove_watchlist(symbol: str) -> dict:
+    WatchlistService().remove_item(symbol)
+    return {"status": "ok"}
+

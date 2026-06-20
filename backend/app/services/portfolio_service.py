@@ -129,3 +129,9 @@ class PortfolioService:
             ),
         )
 
+    def remove_position(self, symbol: str, account_id: int = 1) -> None:
+        self.repo.execute(
+            "DELETE FROM portfolio_position WHERE account_id = ? AND symbol = ?",
+            (account_id, symbol),
+        )
+
