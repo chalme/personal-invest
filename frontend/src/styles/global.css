@@ -171,6 +171,7 @@ button { font: inherit; }
 .hero-meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; color: #94a3b8; font-size: 13px; }
 .dashboard-hero-action { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; align-items: stretch; justify-content: center; min-width: 180px; }
 .hero-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.job-progress-text { color: #94a3b8; font-size: 13px; line-height: 1.5; max-width: 260px; text-align: right; }
 .grid-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .action-card .card-header { margin-bottom: 10px; }
 .action-card-body { display: grid; gap: 12px; color: #e2e8f0; line-height: 1.65; }

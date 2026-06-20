@@ -99,6 +99,23 @@ export type DashboardResponse = {
   };
 };
 
+export type JobExecution = {
+  id: number;
+  job_name: string;
+  status: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED' | string;
+  progress: number;
+  started_at?: string | null;
+  finished_at?: string | null;
+  message?: string | null;
+  error?: string | null;
+};
+
+export type CreateJobResponse = {
+  job_id: number;
+  status: string;
+  message?: string | null;
+};
+
 
 
 export type AppSettings = {

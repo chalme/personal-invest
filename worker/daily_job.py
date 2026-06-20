@@ -43,11 +43,14 @@ def create_job(conn: sqlite3.Connection) -> int:
     return int(cursor.lastrowid)
 
 
-def run() -> None:
+def run(job_id: int | None = None) -> None:
     if not DB_PATH.exists():
         raise RuntimeError("数据库不存在，请先执行 python scripts/init_db.py")
     with connect_db() as conn:
-        job_id = create_job(conn)
+        if job_id is None:
+            job_id = create_job(conn)
+        else:
+            update_job(conn, job_id, "RUNNING", 0, "开始执行每日更新")
         try:
             update_job(conn, job_id, "RUNNING", 10, "同步行情数据")
             market_sync = sync_market_data()

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Flame, PlayCircle, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
 import { apiGet, apiPost } from '../api/client';
-import type { DashboardResponse, MarketTrend, RiskEvent, Signal } from '../api/types';
+import type { CreateJobResponse, DashboardResponse, JobExecution, MarketTrend, RiskEvent, Signal } from '../api/types';
 import { MarketScoreLine } from '../components/charts/MarketScoreLine';
 import { SectorBar } from '../components/charts/SectorBar';
 import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '../components/ui';
@@ -48,6 +48,8 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [jobProgress, setJobProgress] = useState<number | null>(null);
+  const [jobMessage, setJobMessage] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -73,11 +75,34 @@ export function Dashboard() {
   async function runDailyJob() {
     try {
       setRunning(true);
-      await apiPost('/api/jobs/daily');
+      setJobProgress(0);
+      setJobMessage('正在创建每日更新任务');
+      const created = await apiPost<CreateJobResponse>('/api/jobs/daily');
+      await pollJob(created.job_id);
       await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '每日更新失败');
     } finally {
       setRunning(false);
+      setJobProgress(null);
+      setJobMessage(null);
     }
+  }
+
+  async function pollJob(jobId: number) {
+    const maxAttempts = 120;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const result = await apiGet<{ data: JobExecution }>(`/api/jobs/${jobId}`);
+      const job = result.data;
+      setJobProgress(job.progress ?? 0);
+      setJobMessage(job.message ?? job.status);
+      if (job.status === 'SUCCESS') return;
+      if (job.status === 'FAILED') {
+        throw new Error(job.error || job.message || '每日更新失败');
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+    }
+    throw new Error('每日更新超时，请稍后查看任务状态');
   }
 
   const insight = useMemo(() => marketConclusion(data?.market ?? null), [data?.market]);
@@ -112,8 +137,9 @@ export function Dashboard() {
         </div>
         <div className="dashboard-hero-action">
           <button className="primary-button hero-button" onClick={runDailyJob} disabled={running}>
-            <PlayCircle size={18} /> {running ? '更新中...' : '执行今日更新'}
+            <PlayCircle size={18} /> {running ? `更新中 ${jobProgress ?? 0}%` : '执行今日更新'}
           </button>
+          {running && <span className="job-progress-text">{jobMessage ?? '每日更新执行中'}</span>}
           <button className="ghost-button" onClick={load}>刷新工作台</button>
         </div>
       </section>
