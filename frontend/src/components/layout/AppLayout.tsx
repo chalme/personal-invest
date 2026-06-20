@@ -7,7 +7,7 @@ const nav = [
   { key: 'sectors', label: '行业强弱', icon: BarChart3 },
   { key: 'stocks', label: '个股分析', icon: CandlestickChart },
   { key: 'funds', label: '基金分析', icon: PieChart },
-  { key: 'watchlist', label: '自选股', icon: Star },
+  { key: 'watchlist', label: '观察池', icon: Star },
   { key: 'portfolio', label: '持仓', icon: Briefcase },
   { key: 'strategies', label: '策略配置', icon: SlidersHorizontal },
   { key: 'backtests', label: '回测', icon: Activity },

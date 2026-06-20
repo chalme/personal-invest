@@ -8,7 +8,16 @@ class WatchlistService:
     def __init__(self, repo: SQLiteRepository | None = None) -> None:
         self.repo = repo or SQLiteRepository()
 
-    def list_items(self) -> list[dict]:
+    def list_items(self, asset_type: str | None = None) -> list[dict]:
+        if asset_type:
+            return self.repo.fetch_all(
+                """
+                SELECT * FROM watchlist
+                WHERE status = 'ACTIVE' AND asset_type = ?
+                ORDER BY priority DESC, id DESC
+                """,
+                (asset_type.upper(),),
+            )
         return self.repo.fetch_all(
             "SELECT * FROM watchlist WHERE status = 'ACTIVE' ORDER BY priority DESC, id DESC"
         )

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from app.services.watchlist_service import WatchlistService
@@ -16,8 +16,8 @@ class WatchlistCreate(BaseModel):
 
 
 @router.get("")
-def list_watchlist() -> dict:
-    return {"data": WatchlistService().list_items()}
+def list_watchlist(asset_type: str | None = Query(default=None)) -> dict:
+    return {"data": WatchlistService().list_items(asset_type)}
 
 
 @router.post("")

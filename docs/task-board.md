@@ -111,13 +111,16 @@
 
 ### P1-004: 观察池支持股票和基金
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 自选股页升级为观察池，支持股票、ETF、场外基金。
 - Files: `frontend/src/pages/WatchlistPage.tsx`, `backend/app/api/watchlist.py`, `backend/app/services/watchlist_service.py`
 - Concrete Changes: 新增资产类型选择和筛选；文案从“自选股”调整为“观察池”。
 - Acceptance: 用户能添加基金代码，并被基金分析页识别。
-- Detail: 暂不拆分。
+- Completed At: 2026-06-20
+- Changed Files: `backend/app/api/watchlist.py`, `backend/app/services/watchlist_service.py`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/styles/global.css`
+- Verification: 后端编译、前端构建和 `make check` 通过。
+- Notes: 详情见 `docs/tasks/P1-004-observation-pool.md`。
 
 ### P1-005: 持仓页支持基金
 
