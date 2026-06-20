@@ -12,6 +12,7 @@ def build_daily_report() -> Path:
         market = conn.execute("SELECT * FROM market_trend_snapshot ORDER BY trade_date DESC LIMIT 1").fetchone()
         sectors = conn.execute("SELECT * FROM sector_trend_snapshot WHERE trade_date = (SELECT MAX(trade_date) FROM sector_trend_snapshot) ORDER BY rank ASC LIMIT 5").fetchall()
         stocks = conn.execute("SELECT * FROM stock_analysis_snapshot WHERE trade_date = (SELECT MAX(trade_date) FROM stock_analysis_snapshot) ORDER BY total_score DESC LIMIT 8").fetchall()
+        funds = conn.execute("SELECT * FROM fund_analysis_snapshot WHERE nav_date = (SELECT MAX(nav_date) FROM fund_analysis_snapshot) ORDER BY total_score DESC LIMIT 8").fetchall()
         risks = conn.execute("SELECT * FROM risk_event ORDER BY trade_date DESC, severity DESC LIMIT 8").fetchall()
         signals = conn.execute("SELECT * FROM strategy_signal ORDER BY trade_date DESC, score DESC LIMIT 8").fetchall()
     data_date = market["trade_date"] if market else today
@@ -33,11 +34,13 @@ def build_daily_report() -> Path:
     lines.extend([f"- {s['rank']}. {s['sector_name']}：{s['state']}，评分 {s['trend_score']}，{s['strength_reason']}" for s in sectors] or ["- 暂无行业数据"])
     lines.extend(["", "## 3. 个股分析重点"])
     lines.extend([f"- {s['name']}（{s['symbol']}）：{s['state']}，评分 {s['total_score']}。{s['conclusion']}" for s in stocks] or ["- 暂无个股分析"])
-    lines.extend(["", "## 4. 风险事件"])
+    lines.extend(["", "## 4. 基金观察"])
+    lines.extend([f"- {f['name']}（{f['symbol']}）：{f['state']}，评分 {f['total_score']}。{f['conclusion']} 风险：{f['risk_note']}" for f in funds] or ["- 暂无基金分析"])
+    lines.extend(["", "## 5. 风险事件"])
     lines.extend([f"- 级别 {r['severity']}：{r['message']}" for r in risks] or ["- 暂无风险事件"])
-    lines.extend(["", "## 5. 策略信号"])
-    lines.extend([f"- {s['name'] or s['symbol']}：{s['signal_type']}，{s['reason']}" for s in signals] or ["- 暂无策略信号"])
-    lines.extend(["", "## 6. 明日关注", "- 先看市场评分是否继续改善。", "- 优先处理高等级风险事件。", "- 个股信号仅作为观察，不作为自动交易指令。", ""])
+    lines.extend(["", "## 6. 策略信号"])
+    lines.extend([f"- [{s['asset_type']}] {s['name'] or s['symbol']}：{s['signal_type']}，{s['reason']}" for s in signals] or ["- 暂无策略信号"])
+    lines.extend(["", "## 7. 明日关注", "- 先看市场评分是否继续改善。", "- 优先处理高等级风险事件。", "- 股票和基金信号仅作为观察，不作为自动交易指令。", ""])
     report_path.write_text("\n".join(lines), encoding="utf-8")
     with connect_db() as conn:
         conn.execute(
@@ -50,7 +53,7 @@ def build_daily_report() -> Path:
                 summary = excluded.summary,
                 created_at = excluded.created_at
             """,
-            (data_date, f"每日投资报告 - {data_date}", str(report_path.relative_to(REPORT_DIR.parent)), "每日市场、行业、个股、风险和信号摘要", now_iso()),
+            (data_date, f"每日投资报告 - {data_date}", str(report_path.relative_to(REPORT_DIR.parent)), "每日市场、行业、个股、基金、风险和信号摘要", now_iso()),
         )
         conn.commit()
     return report_path

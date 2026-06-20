@@ -18,3 +18,8 @@ def explain_portfolio() -> dict:
 @router.get("/stock")
 def explain_stock(symbol: str = Query(..., min_length=1)) -> dict:
     return {"data": AIService().explain_stock(symbol)}
+
+
+@router.get("/fund")
+def explain_fund(symbol: str = Query(..., min_length=1)) -> dict:
+    return {"data": AIService().explain_fund(symbol)}

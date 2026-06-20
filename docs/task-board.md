@@ -137,13 +137,16 @@
 
 ### P1-006: 信号、日报、AI 同时覆盖股票和基金
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 报告和 AI 不再只解释个股，基金有独立结论和风险边界。
 - Files: `worker/strategy/signal_engine.py`, `worker/report/report_builder.py`, `backend/app/services/ai_service.py`, `frontend/src/pages/SignalsPage.tsx`, `frontend/src/pages/ReportsPage.tsx`, `frontend/src/pages/AiAnalysisPage.tsx`
 - Concrete Changes: 股票信号和基金信号使用不同解释模板；日报增加基金观察区；AI 支持基金解释。
 - Acceptance: 信号、日报、AI 输出能区分股票和基金。
-- Detail: 暂不拆分。
+- Completed At: 2026-06-20
+- Changed Files: `worker/strategy/signal_engine.py`, `worker/report/report_builder.py`, `backend/app/services/ai_service.py`, `backend/app/api/ai.py`, `frontend/src/pages/AiAnalysisPage.tsx`
+- Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
+- Notes: 详情见 `docs/tasks/P1-006-fund-signals-reports-ai.md`。
 
 ## Completed Tasks
 

@@ -91,6 +91,29 @@ class AIService:
         ]
         return self._record("stock", symbol, stock["trade_date"], sections)
 
+    def explain_fund(self, symbol: str) -> dict:
+        fund = self.repo.fetch_one(
+            """
+            SELECT * FROM fund_analysis_snapshot
+            WHERE symbol = ?
+            ORDER BY nav_date DESC, id DESC
+            LIMIT 1
+            """,
+            (symbol,),
+        )
+        if not fund:
+            return self._empty_result("fund", symbol, "暂无该基金分析数据，请先加入观察池并执行每日更新。")
+
+        sections = [
+            {"title": "综合结论", "content": f"{fund['name']} 当前状态为“{fund['state']}”，综合评分 {float(fund['total_score']):.1f}/100。"},
+            {"title": "收益表现", "content": f"近 1 月收益 {float(fund.get('return_1m') or 0):.2%}，近 3 月收益 {float(fund.get('return_3m') or 0):.2%}，近 6 月收益 {float(fund.get('return_6m') or 0):.2%}。"},
+            {"title": "回撤与波动", "content": f"最大回撤 {float(fund.get('max_drawdown') or 0):.2%}，年化波动 {float(fund.get('volatility') or 0):.2%}。"},
+            {"title": "评分来源", "content": f"趋势评分 {fund.get('trend_score')}，风险评分 {fund.get('risk_score')}，基金评分不使用股票基本面和估值模型。"},
+            {"title": "风险点", "content": str(fund.get('risk_note') or "暂无风险说明。")},
+            {"title": "操作边界", "content": "该结论用于基金观察和复盘，不构成自动申赎或交易指令。"},
+        ]
+        return self._record("fund", symbol, fund["nav_date"], sections)
+
     def _empty_result(self, analysis_type: str, target: str, message: str) -> dict:
         return {
             "analysis_type": analysis_type,

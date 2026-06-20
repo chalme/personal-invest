@@ -69,6 +69,13 @@ def generate_signals() -> dict[str, Any]:
             ORDER BY total_score DESC
             """
         ).fetchall()
+        funds = conn.execute(
+            """
+            SELECT * FROM fund_analysis_snapshot
+            WHERE nav_date = (SELECT MAX(nav_date) FROM fund_analysis_snapshot)
+            ORDER BY total_score DESC
+            """
+        ).fetchall()
     if not market:
         return {"count": 0, "strategy_code": strategy_code, "enabled": config["enabled"]}
     trade_date = market["trade_date"]
@@ -94,6 +101,20 @@ def generate_signals() -> dict[str, Any]:
         else:
             continue
         values.append((strategy_code, row["symbol"], row["name"], infer_asset_type(row["symbol"]), trade_date, signal_type, score, reason, risk_level, row["data_version"], now))
+
+    for row in funds:
+        score = float(row["total_score"])
+        if score >= params["trend_watch_score"]:
+            signal_type = "基金稳健观察"
+            risk_level = "MEDIUM"
+            reason = f"基金综合评分 {score:.0f}，趋势评分 {float(row['trend_score'] or 0):.0f}，风险评分 {float(row['risk_score'] or 0):.0f}。"
+        elif score < params["risk_score"]:
+            signal_type = "基金风险上升"
+            risk_level = "HIGH"
+            reason = f"基金综合评分降至 {score:.0f}，低于风险阈值 {params['risk_score']:.0f}，需关注回撤和波动。"
+        else:
+            continue
+        values.append((strategy_code, row["symbol"], row["name"], "FUND", trade_date, signal_type, score, reason, risk_level, row["data_version"], now))
     with connect_db() as conn:
         count = upsert_many(conn, """
             INSERT INTO strategy_signal(
