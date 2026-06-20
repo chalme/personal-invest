@@ -15,6 +15,16 @@ DEFAULT_STRATEGY_PARAMS: dict[str, float] = {
 }
 
 
+def infer_asset_type(symbol: str) -> str:
+    code = symbol.upper().split(".")[0]
+    suffix = symbol.upper().split(".")[-1] if "." in symbol else ""
+    if suffix in {"OF", "FUND"}:
+        return "FUND"
+    if code.startswith(("15", "16", "50", "51", "52", "56", "58")):
+        return "ETF"
+    return "STOCK"
+
+
 def load_strategy_config(strategy_code: str = "personal_watch_v1") -> dict[str, Any]:
     params = dict(DEFAULT_STRATEGY_PARAMS)
     enabled = True
@@ -83,14 +93,15 @@ def generate_signals() -> dict[str, Any]:
             reason = f"综合评分降至 {score:.0f}，低于风险阈值 {params['risk_score']:.0f}。"
         else:
             continue
-        values.append((strategy_code, row["symbol"], row["name"], trade_date, signal_type, score, reason, risk_level, row["data_version"], now))
+        values.append((strategy_code, row["symbol"], row["name"], infer_asset_type(row["symbol"]), trade_date, signal_type, score, reason, risk_level, row["data_version"], now))
     with connect_db() as conn:
         count = upsert_many(conn, """
             INSERT INTO strategy_signal(
-                strategy_code, symbol, name, trade_date, signal_type, score, reason, risk_level, data_version, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                strategy_code, symbol, name, asset_type, trade_date, signal_type, score, reason, risk_level, data_version, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(strategy_code, symbol, trade_date) DO UPDATE SET
                 name = excluded.name,
+                asset_type = excluded.asset_type,
                 signal_type = excluded.signal_type,
                 score = excluded.score,
                 reason = excluded.reason,

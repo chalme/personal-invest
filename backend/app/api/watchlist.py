@@ -8,6 +8,7 @@ router = APIRouter(prefix="/watchlist", tags=["watchlist"])
 class WatchlistCreate(BaseModel):
     symbol: str
     name: str | None = None
+    asset_type: str | None = None
     market: str = "A_SHARE"
     group_name: str | None = None
     reason: str | None = None

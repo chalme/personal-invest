@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from app.core.asset_type import infer_asset_type
 from app.repositories.sqlite_repo import SQLiteRepository
 
 
@@ -14,12 +15,14 @@ class WatchlistService:
 
     def add_item(self, payload: dict) -> int:
         now = datetime.now().isoformat(timespec="seconds")
+        asset_type = infer_asset_type(payload["symbol"], payload.get("market"), payload.get("asset_type"))
         return self.repo.execute(
             """
-            INSERT INTO watchlist(symbol, name, market, group_name, reason, priority, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
+            INSERT INTO watchlist(symbol, name, asset_type, market, group_name, reason, priority, status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
             ON CONFLICT(symbol) DO UPDATE SET
                 name = excluded.name,
+                asset_type = excluded.asset_type,
                 market = excluded.market,
                 group_name = excluded.group_name,
                 reason = excluded.reason,
@@ -30,6 +33,7 @@ class WatchlistService:
             (
                 payload["symbol"],
                 payload.get("name", payload["symbol"]),
+                asset_type,
                 payload.get("market", "A_SHARE"),
                 payload.get("group_name"),
                 payload.get("reason"),

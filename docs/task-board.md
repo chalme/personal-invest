@@ -59,13 +59,16 @@
 
 ### P0-003: 引入资产类型字段
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Goal: 让股票、场内 ETF/LOF、场外基金在系统内有明确资产类型。
 - Files: `backend/migrations/001_init.sql`, `scripts/init_db.py`, `backend/app/services/watchlist_service.py`, `backend/app/services/portfolio_service.py`, `frontend/src/api/types.ts`
 - Concrete Changes: 引入 `asset_type` 概念；旧数据可按代码推断；自选、持仓、信号都返回资产类型。
 - Acceptance: 股票、ETF、基金能在观察池和持仓中被区分展示。
-- Detail: 后续开始执行时拆到 `docs/tasks/P0-003-asset-type.md`。
+- Completed At: 2026-06-20
+- Changed Files: `backend/migrations/001_init.sql`, `scripts/init_db.py`, `backend/app/core/asset_type.py`, `backend/app/services/watchlist_service.py`, `backend/app/services/portfolio_service.py`, `worker/strategy/signal_engine.py`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/SignalsPage.tsx`
+- Verification: 初始化、daily job、后端编译、前端构建和 `make check` 通过。
+- Notes: 详情见 `docs/tasks/P0-003-asset-type.md`。
 
 ### P1-001: 新增基金数据管线
 

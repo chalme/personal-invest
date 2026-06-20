@@ -9,6 +9,7 @@ class PositionUpsert(BaseModel):
     account_id: int = 1
     symbol: str
     name: str | None = None
+    asset_type: str | None = None
     quantity: float
     avg_cost: float
     current_price: float | None = None

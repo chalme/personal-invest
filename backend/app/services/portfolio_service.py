@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime
 
+from app.core.asset_type import infer_asset_type
 from app.repositories.sqlite_repo import SQLiteRepository
 
 
@@ -88,17 +89,19 @@ class PortfolioService:
         market_value = quantity * current_price
         pnl = quantity * (current_price - avg_cost)
         pnl_ratio = ((current_price / avg_cost) - 1) if avg_cost > 0 else 0
+        asset_type = infer_asset_type(payload["symbol"], explicit=payload.get("asset_type"))
         now = datetime.now().isoformat(timespec="seconds")
 
         return self.repo.execute(
             """
             INSERT INTO portfolio_position(
-                account_id, symbol, name, quantity, avg_cost, current_price,
+                account_id, symbol, name, asset_type, quantity, avg_cost, current_price,
                 market_value, pnl, pnl_ratio, position_ratio, buy_reason,
                 stop_loss_price, take_profit_price, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(account_id, symbol) DO UPDATE SET
                 name = excluded.name,
+                asset_type = excluded.asset_type,
                 quantity = excluded.quantity,
                 avg_cost = excluded.avg_cost,
                 current_price = excluded.current_price,
@@ -115,6 +118,7 @@ class PortfolioService:
                 int(payload.get("account_id") or 1),
                 payload["symbol"],
                 payload.get("name", payload["symbol"]),
+                asset_type,
                 quantity,
                 avg_cost,
                 current_price,

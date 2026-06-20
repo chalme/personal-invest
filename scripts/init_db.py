@@ -14,6 +14,40 @@ def execute_sql_file(conn: sqlite3.Connection, path: Path) -> None:
     conn.executescript(path.read_text(encoding="utf-8"))
 
 
+
+
+def infer_asset_type(symbol: str, market: str | None = None, explicit: str | None = None) -> str:
+    if explicit and explicit.upper() in {"STOCK", "ETF", "FUND"}:
+        return explicit.upper()
+    if (market or "").upper() in {"FUND", "MUTUAL_FUND"}:
+        return "FUND"
+    code = symbol.upper().split(".")[0]
+    suffix = symbol.upper().split(".")[-1] if "." in symbol else ""
+    if suffix in {"OF", "FUND"}:
+        return "FUND"
+    if code.startswith(("15", "16", "50", "51", "52", "56", "58")):
+        return "ETF"
+    return "STOCK"
+
+
+def table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def ensure_asset_type_columns(conn: sqlite3.Connection) -> None:
+    if "asset_type" not in table_columns(conn, "watchlist"):
+        conn.execute("ALTER TABLE watchlist ADD COLUMN asset_type TEXT NOT NULL DEFAULT 'STOCK'")
+    if "asset_type" not in table_columns(conn, "portfolio_position"):
+        conn.execute("ALTER TABLE portfolio_position ADD COLUMN asset_type TEXT NOT NULL DEFAULT 'STOCK'")
+    if "asset_type" not in table_columns(conn, "strategy_signal"):
+        conn.execute("ALTER TABLE strategy_signal ADD COLUMN asset_type TEXT NOT NULL DEFAULT 'STOCK'")
+    for row in conn.execute("SELECT id, symbol, market FROM watchlist").fetchall():
+        conn.execute("UPDATE watchlist SET asset_type = ? WHERE id = ?", (infer_asset_type(row[1], row[2]), row[0]))
+    for row in conn.execute("SELECT id, symbol FROM portfolio_position").fetchall():
+        conn.execute("UPDATE portfolio_position SET asset_type = ? WHERE id = ?", (infer_asset_type(row[1]), row[0]))
+    for row in conn.execute("SELECT id, symbol FROM strategy_signal").fetchall():
+        conn.execute("UPDATE strategy_signal SET asset_type = ? WHERE id = ?", (infer_asset_type(row[1]), row[0]))
+
 def seed(conn: sqlite3.Connection) -> None:
     current = date.today()
     while current.weekday() >= 5:
@@ -64,28 +98,28 @@ def seed(conn: sqlite3.Connection) -> None:
     )
 
     watchlist = [
-        ("600519.SH", "贵州茅台", "A_SHARE", "消费", "高质量龙头，长期观察", 9, "ACTIVE", now, now),
-        ("510300.SH", "沪深300ETF", "A_SHARE", "ETF", "观察市场 Beta", 8, "ACTIVE", now, now),
-        ("000001.SZ", "平安银行", "A_SHARE", "银行", "低估值银行样本", 6, "ACTIVE", now, now),
+        ("600519.SH", "贵州茅台", "STOCK", "A_SHARE", "消费", "高质量龙头，长期观察", 9, "ACTIVE", now, now),
+        ("510300.SH", "沪深300ETF", "ETF", "A_SHARE", "ETF", "观察市场 Beta", 8, "ACTIVE", now, now),
+        ("000001.SZ", "平安银行", "STOCK", "A_SHARE", "银行", "低估值银行样本", 6, "ACTIVE", now, now),
     ]
     conn.executemany(
         """
-        INSERT OR IGNORE INTO watchlist(symbol, name, market, group_name, reason, priority, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO watchlist(symbol, name, asset_type, market, group_name, reason, priority, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         watchlist,
     )
 
     positions = [
-        (1, "510300.SH", "沪深300ETF", 1000, 3.80, 3.95, 3950, 150, 0.0395, 0.35, "核心宽基观察仓", 3.55, 4.3, now),
-        (1, "000001.SZ", "平安银行", 500, 10.20, 10.55, 5275, 175, 0.0343, 0.22, "低估值修复观察", 9.60, 12.0, now),
+        (1, "510300.SH", "沪深300ETF", "ETF", 1000, 3.80, 3.95, 3950, 150, 0.0395, 0.35, "核心宽基观察仓", 3.55, 4.3, now),
+        (1, "000001.SZ", "平安银行", "STOCK", 500, 10.20, 10.55, 5275, 175, 0.0343, 0.22, "低估值修复观察", 9.60, 12.0, now),
     ]
     conn.executemany(
         """
         INSERT OR IGNORE INTO portfolio_position(
-            account_id, symbol, name, quantity, avg_cost, current_price, market_value,
+            account_id, symbol, name, asset_type, quantity, avg_cost, current_price, market_value,
             pnl, pnl_ratio, position_ratio, buy_reason, stop_loss_price, take_profit_price, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         positions,
     )
@@ -104,14 +138,14 @@ def seed(conn: sqlite3.Connection) -> None:
     )
 
     signals = [
-        ("market_trend_v1", "510300.SH", "沪深300ETF", today, "进入观察", 72, "市场震荡偏强，宽基趋势改善。", "MEDIUM", "seed", now),
-        ("quality_watch_v1", "600519.SH", "贵州茅台", today, "高质量观察", 82, "基本面质量高，但估值需要等待更好位置。", "LOW", "seed", now),
+        ("market_trend_v1", "510300.SH", "沪深300ETF", "ETF", today, "进入观察", 72, "市场震荡偏强，宽基趋势改善。", "MEDIUM", "seed", now),
+        ("quality_watch_v1", "600519.SH", "贵州茅台", "STOCK", today, "高质量观察", 82, "基本面质量高，但估值需要等待更好位置。", "LOW", "seed", now),
     ]
     conn.executemany(
         """
         INSERT OR IGNORE INTO strategy_signal(
-            strategy_code, symbol, name, trade_date, signal_type, score, reason, risk_level, data_version, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            strategy_code, symbol, name, asset_type, trade_date, signal_type, score, reason, risk_level, data_version, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         signals,
     )
@@ -133,6 +167,7 @@ def main() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(DB_PATH) as conn:
         execute_sql_file(conn, MIGRATION)
+        ensure_asset_type_columns(conn)
         seed(conn)
         conn.commit()
     print(f"initialized: {DB_PATH}")

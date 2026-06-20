@@ -7,6 +7,7 @@ type Signal = {
   strategy_code: string;
   symbol: string;
   name?: string;
+  asset_type?: string;
   trade_date: string;
   signal_type: string;
   score?: number;
@@ -79,12 +80,13 @@ export function SignalsPage() {
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>股票</th><th>信号</th><th>评分</th><th>风险</th><th>策略</th><th>原因</th><th>版本</th></tr>
+              <tr><th>标的</th><th>类型</th><th>信号</th><th>评分</th><th>风险</th><th>策略</th><th>原因</th><th>版本</th></tr>
             </thead>
             <tbody>
               {filtered.map((item) => (
                 <tr key={item.id}>
                   <td><strong>{item.name || item.symbol}</strong><br /><small>{item.symbol}</small></td>
+                  <td><Badge tone="neutral">{item.asset_type ?? 'STOCK'}</Badge></td>
                   <td><Badge tone="good">{item.signal_type}</Badge></td>
                   <td>{item.score ?? '-'}</td>
                   <td><Badge tone={riskTone(item.risk_level)}>{item.risk_level ?? 'UNKNOWN'}</Badge></td>

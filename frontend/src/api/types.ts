@@ -46,6 +46,7 @@ export type SectorTrendHistory = SectorTrend & {
 export type Position = {
   symbol: string;
   name?: string;
+  asset_type?: string;
   quantity: number;
   avg_cost: number;
   current_price?: number;
@@ -81,6 +82,7 @@ export type Signal = {
   strategy_code?: string;
   symbol: string;
   name?: string;
+  asset_type?: string;
   signal_type: string;
   score?: number;
   reason?: string;

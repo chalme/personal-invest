@@ -40,7 +40,7 @@ def rows_to_dicts(rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
 def get_watchlist(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        SELECT symbol, name, group_name, priority
+        SELECT symbol, name, asset_type, market, group_name, priority
         FROM watchlist
         WHERE status = 'ACTIVE'
         ORDER BY priority DESC, symbol ASC

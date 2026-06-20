@@ -6,6 +6,7 @@ type WatchlistItem = {
   id?: number;
   symbol: string;
   name: string;
+  asset_type?: string;
   market?: string;
   group_name?: string | null;
   reason?: string | null;
@@ -16,6 +17,7 @@ type WatchlistItem = {
 type WatchlistForm = {
   symbol: string;
   name: string;
+  asset_type: string;
   group_name: string;
   reason: string;
   priority: number;
@@ -24,6 +26,7 @@ type WatchlistForm = {
 const initialForm: WatchlistForm = {
   symbol: '',
   name: '',
+  asset_type: 'STOCK',
   group_name: '',
   reason: '',
   priority: 5,
@@ -72,6 +75,7 @@ export function WatchlistPage() {
       await apiPost('/api/watchlist', {
         symbol: form.symbol.trim().toUpperCase(),
         name: form.name.trim() || form.symbol.trim().toUpperCase(),
+        asset_type: form.asset_type,
         market: 'A_SHARE',
         group_name: form.group_name.trim() || null,
         reason: form.reason.trim() || null,
@@ -119,6 +123,14 @@ export function WatchlistPage() {
             <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="贵州茅台" />
           </label>
           <label>
+            资产类型
+            <select value={form.asset_type} onChange={(event) => setForm({ ...form, asset_type: event.target.value })}>
+              <option value="STOCK">股票</option>
+              <option value="ETF">ETF / LOF</option>
+              <option value="FUND">场外基金</option>
+            </select>
+          </label>
+          <label>
             分组 / 行业
             <input value={form.group_name} onChange={(event) => setForm({ ...form, group_name: event.target.value })} placeholder="消费" />
           </label>
@@ -148,11 +160,12 @@ export function WatchlistPage() {
           <EmptyState title="暂无自选股" description="添加关注股票后，这里会展示分组、优先级和关注理由。" />
         ) : (
           <table className="data-table">
-            <thead><tr><th>股票</th><th>分组</th><th>优先级</th><th>关注理由</th><th>状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>标的</th><th>类型</th><th>分组</th><th>优先级</th><th>关注理由</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
               {filteredRows.map((row) => (
                 <tr key={row.symbol}>
                   <td><strong>{row.name}</strong><br /><small>{row.symbol}</small></td>
+                  <td><Badge tone="neutral">{row.asset_type ?? 'STOCK'}</Badge></td>
                   <td>{row.group_name ?? '-'}</td>
                   <td>{row.priority ?? 0}</td>
                   <td>{row.reason ?? '-'}</td>

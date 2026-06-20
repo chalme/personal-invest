@@ -20,6 +20,7 @@ function riskTone(position: Position): 'good' | 'warn' | 'bad' | 'neutral' {
 type PositionForm = {
   symbol: string;
   name: string;
+  asset_type: string;
   quantity: number;
   avg_cost: number;
   current_price: number;
@@ -31,6 +32,7 @@ type PositionForm = {
 const initialForm: PositionForm = {
   symbol: '',
   name: '',
+  asset_type: 'STOCK',
   quantity: 0,
   avg_cost: 0,
   current_price: 0,
@@ -80,6 +82,7 @@ export function PortfolioPage() {
         account_id: 1,
         symbol: form.symbol.trim().toUpperCase(),
         name: form.name.trim() || form.symbol.trim().toUpperCase(),
+        asset_type: form.asset_type,
         quantity: Number(form.quantity),
         avg_cost: Number(form.avg_cost),
         current_price: Number(form.current_price || form.avg_cost),
@@ -138,6 +141,7 @@ export function PortfolioPage() {
         <form className="form-grid" onSubmit={submit}>
           <label>股票代码<input value={form.symbol} onChange={(event) => setForm({ ...form, symbol: event.target.value })} placeholder="600519.SH" /></label>
           <label>名称<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="贵州茅台" /></label>
+          <label>资产类型<select value={form.asset_type} onChange={(event) => setForm({ ...form, asset_type: event.target.value })}><option value="STOCK">股票</option><option value="ETF">ETF / LOF</option><option value="FUND">场外基金</option></select></label>
           <label>数量<input type="number" min={0} step="0.01" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: Number(event.target.value) })} /></label>
           <label>成本价<input type="number" min={0} step="0.01" value={form.avg_cost} onChange={(event) => setForm({ ...form, avg_cost: Number(event.target.value) })} /></label>
           <label>现价<input type="number" min={0} step="0.01" value={form.current_price} onChange={(event) => setForm({ ...form, current_price: Number(event.target.value) })} /></label>
@@ -171,12 +175,13 @@ export function PortfolioPage() {
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>股票</th><th>数量</th><th>成本</th><th>现价</th><th>市值</th><th>盈亏</th><th>仓位</th><th>个股评分</th><th>状态</th><th>风险</th><th>操作</th></tr>
+              <tr><th>标的</th><th>类型</th><th>数量</th><th>成本</th><th>现价</th><th>市值</th><th>盈亏</th><th>仓位</th><th>评分</th><th>状态</th><th>风险</th><th>操作</th></tr>
             </thead>
             <tbody>
               {positions.map((row) => (
                 <tr key={row.symbol}>
                   <td><strong>{row.name}</strong><br /><small>{row.symbol}</small></td>
+                  <td><Badge tone="neutral">{row.asset_type ?? 'STOCK'}</Badge></td>
                   <td>{row.quantity}</td>
                   <td>{row.avg_cost}</td>
                   <td>{row.current_price}</td>
