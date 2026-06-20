@@ -1,10 +1,10 @@
 # P1-009: 新增资产行业/主题映射
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -32,7 +32,7 @@
 
 ## Completion Markers
 
-- Completed At:
+- Completed At: 2026-06-21
 - Changed Files:
 - Verification:
 - Notes:

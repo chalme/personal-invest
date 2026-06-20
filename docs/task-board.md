@@ -236,17 +236,17 @@
 
 ### P1-009: 新增资产行业/主题映射
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 建立资产到行业、主题、指数、地区和风格的正式暴露映射，替代单纯依赖 `watchlist.group_name` 的弱映射。
 - Details: `docs/tasks/P1-009-instrument-sector-map.md`
 - Files: `backend/migrations/006_instrument_sector_map.sql`, `backend/app/services/market_service.py`, `worker/factor/market_trend.py`
 - Concrete Changes: 新增 `instrument_sector_map`；字段包含 `map_type`；行业全景优先读取映射表，无映射时 fallback 到 `watchlist.group_name`。
 - Acceptance: 一个资产可以映射多个行业/主题；行业全景能用正式映射关联股票、ETF、基金；旧分组仍可兜底。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/006_instrument_sector_map.sql`, `backend/app/services/market_service.py`, `frontend/src/api/types.ts`
+- Verification: 迁移应用、`MarketService().sector_panorama()` 返回正式映射资产、前端构建通过。
+- Notes: 行业全景优先读取 `instrument_sector_map`，没有正式映射时继续 fallback 到 `watchlist.group_name`。
 
 ### P2-001: 新增组合历史快照
 
