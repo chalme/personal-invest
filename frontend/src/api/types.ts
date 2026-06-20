@@ -51,6 +51,11 @@ export type SectorMappedAsset = {
   reason?: string;
   priority?: number;
   status?: string;
+  map_type?: string;
+  sector_code?: string;
+  sector_name?: string;
+  weight?: number;
+  source?: string;
 };
 
 export type SectorPanoramaItem = SectorTrend & {

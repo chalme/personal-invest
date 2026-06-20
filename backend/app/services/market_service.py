@@ -36,6 +36,35 @@ class MarketService:
     def __init__(self, repo: SQLiteRepository | None = None) -> None:
         self.repo = repo or SQLiteRepository()
 
+    def _sector_mapped_assets(self) -> dict[str, list[dict]]:
+        mapped_rows = self.repo.fetch_all(
+            """
+            SELECT
+                m.sector_code,
+                m.sector_name,
+                m.map_type,
+                m.weight,
+                m.source,
+                i.symbol,
+                COALESCE(i.name, w.name, m.symbol) AS name,
+                COALESCE(i.asset_type, w.asset_type) AS asset_type,
+                w.group_name,
+                w.reason,
+                w.priority,
+                COALESCE(w.status, i.status) AS status
+            FROM instrument_sector_map m
+            LEFT JOIN instrument i ON i.symbol = m.symbol
+            LEFT JOIN watchlist w ON w.symbol = m.symbol AND w.status = 'ACTIVE'
+            WHERE COALESCE(w.status, i.status) = 'ACTIVE'
+            ORDER BY COALESCE(w.priority, 0) DESC, m.weight DESC
+            """
+        )
+        assets_by_group: dict[str, list[dict]] = {}
+        for item in mapped_rows:
+            key = str(item.get("sector_code") or item.get("sector_name") or "未分组").upper().replace(" ", "_")
+            assets_by_group.setdefault(key, []).append(item)
+        return assets_by_group
+
     def latest_market_trend(self) -> dict | None:
         return self.repo.fetch_one(
             "SELECT * FROM market_trend_snapshot ORDER BY trade_date DESC, id DESC LIMIT 1"
@@ -83,9 +112,17 @@ class MarketService:
             ORDER BY priority DESC, updated_at DESC
             """
         )
-        assets_by_group: dict[str, list[dict]] = {}
+        assets_by_group = self._sector_mapped_assets()
+        mapped_symbols = {
+            (key, str(item.get("symbol")))
+            for key, items in assets_by_group.items()
+            for item in items
+        }
         for item in watchlist:
             key = str(item.get("group_name") or "未分组").upper().replace(" ", "_")
+            if (key, str(item.get("symbol"))) in mapped_symbols:
+                continue
+            item = {**item, "map_type": "FALLBACK", "weight": 1.0, "source": "WATCHLIST_GROUP"}
             assets_by_group.setdefault(key, []).append(item)
 
         groups: dict[str, list[dict]] = {key: [] for key in ["overheat", "hot", "rotation", "defensive", "cold", "neutral"]}
