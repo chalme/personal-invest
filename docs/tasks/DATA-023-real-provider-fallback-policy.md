@@ -2,7 +2,7 @@
 
 ## Status
 
-`TODO`
+`DONE`
 
 ## Priority
 
@@ -131,3 +131,8 @@ PYTHONPATH=backend:. uv run python scripts/probe_market_sources.py --timeout 8
 - 本任务是历史行情 pipeline 标准化，不代表所有 provider 都必须同时可用。
 - Fallback 的目标是提高真实数据可用性，不是降低真实性要求。
 
+
+## Completion
+
+- 历史行情 provider 顺序已标准化为 BaoStock -> Eastmoney -> Tencent，指数/ETF 链路继续保持真实源 fallback 与 MISSING 边界。
+- Verification: py_compile, targeted ruff, typed quote smoke, frontend TypeScript, Vite build, git diff --check.

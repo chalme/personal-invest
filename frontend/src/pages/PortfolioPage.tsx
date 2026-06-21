@@ -6,8 +6,9 @@ import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '.
 export type PortfolioPrefill = {
   symbol: string;
   name?: string | null;
-  asset_type?: string | null;
+  asset_type: 'STOCK' | 'ETF' | 'FUND';
   buy_reason?: string | null;
+  source_page?: 'stocks' | 'funds' | 'watchlist' | 'etf';
 };
 
 type PortfolioPageProps = {
@@ -41,6 +42,36 @@ function quoteTone(mode?: string): 'good' | 'warn' | 'bad' | 'neutral' {
   if (mode === 'REAL_CACHED') return 'warn';
   if (mode === 'MISSING') return 'bad';
   return 'neutral';
+}
+
+function quoteButtonText(assetType: string) {
+  if (assetType === 'FUND') return '获取最新净值';
+  if (assetType === 'ETF') return '获取交易价格';
+  return '获取实时价格';
+}
+
+function quantityLabel(assetType: string) {
+  return assetType === 'STOCK' ? '数量' : '份额';
+}
+
+function costLabel(assetType: string) {
+  return assetType === 'FUND' ? '成本净值' : '成本价';
+}
+
+function priceLabel(assetType: string, quote?: QuoteResponse | null) {
+  if (quote?.price_label) return quote.price_label;
+  if (assetType === 'FUND') return '单位净值';
+  if (assetType === 'ETF') return '交易价格';
+  return '当前价';
+}
+
+function sourceText(quote?: QuoteResponse | null, loading = false) {
+  if (loading) return '正在获取真实价格/净值';
+  if (!quote) return '尚未获取报价/净值';
+  if (quote.source_mode === 'REAL_QUOTE') return '已获取实时真实报价/最新真实净值';
+  if (quote.source_mode === 'REAL_CACHED') return '已使用本地真实缓存';
+  if (quote.source_mode === 'MISSING') return '未找到真实价格/净值，可手动录入临时价格';
+  return quote.source_mode;
 }
 
 function reviewReason(position: Position): string | null {
@@ -113,7 +144,7 @@ export function PortfolioPage({ prefillPosition, onPrefillConsumed }: PortfolioP
     }
   }
 
-  async function lookupQuote(symbolValue = form.symbol) {
+  async function lookupQuote(symbolValue = form.symbol, assetTypeValue = form.asset_type) {
     const value = symbolValue.trim();
     if (!value) {
       setQuoteError('请输入标的代码后再获取真实报价');
@@ -122,14 +153,14 @@ export function PortfolioPage({ prefillPosition, onPrefillConsumed }: PortfolioP
     setQuoteLoading(true);
     setQuoteError('');
     try {
-      const res = await apiGet<{ data: QuoteResponse }>(`/api/quotes/${encodeURIComponent(value)}`);
+      const res = await apiGet<{ data: QuoteResponse }>(`/api/quotes/${encodeURIComponent(value)}?asset_type=${encodeURIComponent(assetTypeValue)}`);
       const item = res.data;
       setQuote(item);
       setForm((current) => ({
         ...current,
         symbol: item.symbol || current.symbol.trim().toUpperCase(),
         name: item.name || current.name || item.symbol,
-        asset_type: item.asset_type || current.asset_type,
+        asset_type: assetTypeValue,
         current_price: item.price != null && !manualPrice ? Number(item.price) : current.current_price,
       }));
     } catch (err) {
@@ -146,16 +177,19 @@ export function PortfolioPage({ prefillPosition, onPrefillConsumed }: PortfolioP
 
   useEffect(() => {
     if (!prefillPosition?.symbol) return;
+    const prefillAssetType = prefillPosition.asset_type ?? 'STOCK';
     setManualPrice(false);
     setQuote(null);
+    setQuoteError('');
     setForm((current) => ({
       ...current,
       symbol: prefillPosition.symbol,
       name: prefillPosition.name ?? current.name,
-      asset_type: prefillPosition.asset_type ?? current.asset_type,
+      asset_type: prefillAssetType,
+      current_price: 0,
       buy_reason: prefillPosition.buy_reason ?? current.buy_reason,
     }));
-    void lookupQuote(prefillPosition.symbol);
+    void lookupQuote(prefillPosition.symbol, prefillAssetType);
     onPrefillConsumed?.();
   }, [prefillPosition, onPrefillConsumed]);
 
@@ -291,24 +325,50 @@ export function PortfolioPage({ prefillPosition, onPrefillConsumed }: PortfolioP
 
       <Card title="新增 / 更新持仓" description="输入代码后获取真实报价；失败时可手动录入，但只作为持仓快照估算。">
         <form className="form-grid" onSubmit={submit}>
+          <label>
+            资产类型
+            <select
+              value={form.asset_type}
+              onChange={(event) => {
+                setQuote(null);
+                setQuoteError('');
+                setManualPrice(false);
+                setForm({ ...form, asset_type: event.target.value, current_price: 0 });
+              }}
+            >
+              <option value="STOCK">股票</option>
+              <option value="ETF">ETF / 场内基金</option>
+              <option value="FUND">场外基金</option>
+            </select>
+          </label>
           <label className="form-wide">
-            资产识别
+            资产代码
             <div className="inline-form-row">
-              <input value={form.symbol} onChange={(event) => setForm({ ...form, symbol: event.target.value })} placeholder="600519.SH / 510300.SH / 000001.OF" />
-              <button className="secondary-button" disabled={quoteLoading} onClick={() => lookupQuote()} type="button">{quoteLoading ? '获取中...' : '获取真实报价'}</button>
+              <input
+                value={form.symbol}
+                onChange={(event) => {
+                  setQuote(null);
+                  setQuoteError('');
+                  setManualPrice(false);
+                  setForm({ ...form, symbol: event.target.value, current_price: 0 });
+                }}
+                placeholder="600519 / 510300 / 161725"
+              />
+              <button className="secondary-button" disabled={quoteLoading} onClick={() => lookupQuote()} type="button">
+                {quoteLoading ? '获取中...' : quoteButtonText(form.asset_type)}
+              </button>
             </div>
           </label>
           <label>名称<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="自动补齐或手动填写" /></label>
-          <label>资产类型<select value={form.asset_type} onChange={(event) => setForm({ ...form, asset_type: event.target.value })}><option value="STOCK">股票</option><option value="ETF">ETF / LOF</option><option value="FUND">场外基金</option></select></label>
           <div className="form-wide quote-status-card">
             <Badge tone={quoteTone(quote?.source_mode)}>{quote?.source_mode ?? (quoteLoading ? 'QUERYING' : 'NO_QUOTE')}</Badge>
-            <span>{quote?.source_provider ? `${quote.source_provider}.${quote.source_interface}` : '尚未获取报价'}</span>
-            <small>{quote?.trade_date || quote?.price_time ? `数据时间：${quote.trade_date ?? quote.price_time}` : '实时源不可用时会降级到本地真实缓存。'}</small>
+            <span>{quote?.source_provider ? `${quote.source_provider}.${quote.source_interface}` : sourceText(quote, quoteLoading)}</span>
+            <small>{quote?.trade_date || quote?.price_time ? `数据时间：${quote.trade_date ?? quote.price_time}` : '真实源不可用时会降级到本地真实缓存。'}</small>
             {(quote?.warning || quoteError || manualPrice) && <small className="form-error">{manualPrice ? '现价已被手动修改，仅作为持仓快照估算，不写入真实行情源。' : quote?.warning || quoteError}</small>}
           </div>
-          <label>{form.asset_type === 'FUND' ? '份额' : '数量'}<input type="number" min={0} step="0.01" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: Number(event.target.value) })} /></label>
-          <label>{form.asset_type === 'FUND' ? '成本净值' : '成本价'}<input type="number" min={0} step="0.01" value={form.avg_cost} onChange={(event) => setForm({ ...form, avg_cost: Number(event.target.value) })} /></label>
-          <label>{form.asset_type === 'FUND' ? '当前净值' : '现价'}<input type="number" min={0} step="0.01" value={form.current_price} onChange={(event) => { setManualPrice(true); setForm({ ...form, current_price: Number(event.target.value) }); }} /></label>
+          <label>{quantityLabel(form.asset_type)}<input type="number" min={0} step="0.01" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: Number(event.target.value) })} /></label>
+          <label>{costLabel(form.asset_type)}<input type="number" min={0} step="0.01" value={form.avg_cost} onChange={(event) => setForm({ ...form, avg_cost: Number(event.target.value) })} /></label>
+          <label>{priceLabel(form.asset_type, quote)}<input type="number" min={0} step="0.01" value={form.current_price} onChange={(event) => { setManualPrice(true); setForm({ ...form, current_price: Number(event.target.value) }); }} /></label>
           <label>止损观察价<input value={form.stop_loss_price} onChange={(event) => setForm({ ...form, stop_loss_price: event.target.value })} placeholder="可选" /></label>
           <label>止盈观察价<input value={form.take_profit_price} onChange={(event) => setForm({ ...form, take_profit_price: event.target.value })} placeholder="可选" /></label>
           <label className="form-wide">买入理由<input value={form.buy_reason} onChange={(event) => setForm({ ...form, buy_reason: event.target.value })} placeholder="例如：来自观察池、行业龙头、宽基配置、基金经理观察" /></label>
@@ -317,7 +377,7 @@ export function PortfolioPage({ prefillPosition, onPrefillConsumed }: PortfolioP
             <span>预估市值：{money(preview.marketValue)}</span>
             <span>浮盈亏：{money(preview.pnl)} / {pct(preview.pnlRatio)}</span>
             <span>预计仓位：{pct(preview.weight)}</span>
-            <span>价格来源：{manualPrice ? '手动价格' : quote?.source_mode ?? '未获取'}</span>
+            <span>价格/净值来源：{manualPrice ? '手动临时价格' : quote?.source_mode ?? '未获取'}</span>
             {duplicate && <small className="form-error">该资产已有持仓，本次保存将更新当前持仓快照。</small>}
           </div>
           <div className="form-actions form-wide">

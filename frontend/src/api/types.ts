@@ -486,10 +486,12 @@ export type QuoteResponse = {
   name?: string | null;
   asset_type: 'STOCK' | 'ETF' | 'FUND' | string;
   price?: number | null;
+  price_label?: string | null;
   price_time?: string | null;
   trade_date?: string | null;
   source_mode: 'REAL_QUOTE' | 'REAL_CACHED' | 'MISSING' | string;
   source_provider?: string | null;
   source_interface?: string | null;
+  fallback_reason?: string | null;
   warning?: string | null;
 };

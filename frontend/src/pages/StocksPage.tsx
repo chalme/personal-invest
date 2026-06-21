@@ -3,6 +3,7 @@ import { apiGet } from '../api/client';
 import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
 import { PriceLine, type PriceBar } from '../components/charts/PriceLine';
 import { ScoreRadar } from '../components/charts/ScoreRadar';
+import type { PortfolioPrefill } from './PortfolioPage';
 
 type StockAnalysis = Record<string, string | number | null>;
 type StockFinancial = { statement: Record<string, string | number | null> | null; metrics: Record<string, string | number | null> | null; valuation: Record<string, string | number | null> | null; quality: Record<string, string | number | null> | null; };
@@ -64,7 +65,11 @@ function nextObservation(selected: StockAnalysis | undefined, financial: StockFi
   return '保留观察，等待趋势、行业或估值出现更明确变化。';
 }
 
-export function StocksPage() {
+type StocksPageProps = {
+  onAddToPortfolio?: (prefill: PortfolioPrefill) => void;
+};
+
+export function StocksPage({ onAddToPortfolio }: StocksPageProps) {
   const [rows, setRows] = useState<StockAnalysis[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
   const [prices, setPrices] = useState<PriceBar[]>([]);
@@ -113,7 +118,22 @@ export function StocksPage() {
           <h2>个股公司分析</h2>
           <p>从趋势、基本面、估值、资金、行业、风险拆分判断，并联动价格趋势。</p>
         </div>
-        {selected && <Badge tone={badgeTone(selected.state)}>{selected.trade_date}</Badge>}
+        {selected && (
+          <div className="inline-form-row">
+            <Badge tone={badgeTone(selected.state)}>{selected.trade_date}</Badge>
+            <button
+              className="secondary-button"
+              onClick={() => onAddToPortfolio?.({
+                symbol: String(selected.symbol),
+                name: String(selected.name ?? selected.symbol),
+                asset_type: 'STOCK',
+                buy_reason: `来自股票研究页：${textValue(selected.conclusion)}`,
+                source_page: 'stocks',
+              })}
+              type="button"
+            >加入持仓</button>
+          </div>
+        )}
       </div>
 
       {selected ? (

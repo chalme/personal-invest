@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Query
 
 from app.services.quote_service import QuoteService
@@ -11,5 +13,8 @@ def search_quotes(q: str = Query(..., min_length=1), limit: int = 20) -> dict:
 
 
 @router.get("/{symbol}")
-def get_quote(symbol: str) -> dict:
-    return {"data": QuoteService().quote(symbol)}
+def get_quote(
+    symbol: str,
+    asset_type: Literal["STOCK", "ETF", "FUND"] | None = Query(default=None),
+) -> dict:
+    return {"data": QuoteService().quote(symbol, asset_type=asset_type)}

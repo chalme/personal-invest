@@ -2,7 +2,7 @@
 
 ## Status
 
-`TODO`
+`DONE`
 
 ## Priority
 
@@ -169,3 +169,8 @@ git diff --check
 ## Notes
 
 本任务是对 `QUOTE-001` 的类型安全修正。核心原则是：用户或调用方选择的资产类型是主约束，系统不能用代码规则覆盖它。
+
+## Completion
+
+- Typed Quote 查询已完成：API 支持 asset_type，QuoteService 按 STOCK/ETF/FUND 标准化 symbol 和分链路查询。
+- Verification: py_compile, targeted ruff, typed quote smoke, frontend TypeScript, Vite build, git diff --check.

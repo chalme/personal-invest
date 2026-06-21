@@ -3,6 +3,7 @@ import { apiGet } from '../api/client';
 import type { FundAnalysis, FundNavPoint } from '../api/types';
 import { Badge, Card, EmptyState, MetricCard } from '../components/ui';
 import { PriceLine, type PriceBar } from '../components/charts/PriceLine';
+import type { PortfolioPrefill } from './PortfolioPage';
 
 function badgeTone(state: unknown): 'good' | 'warn' | 'bad' | 'neutral' {
   const text = String(state ?? '');
@@ -29,7 +30,11 @@ function analysisLabel(row?: FundAnalysis): string {
   return row?.analysis_type === 'ETF' + '_PRICE' ? 'ETF 价格分析' : '基金净值分析';
 }
 
-export function FundsPage() {
+type FundsPageProps = {
+  onAddToPortfolio?: (prefill: PortfolioPrefill) => void;
+};
+
+export function FundsPage({ onAddToPortfolio }: FundsPageProps) {
   const [rows, setRows] = useState<FundAnalysis[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
   const [navPoints, setNavPoints] = useState<FundNavPoint[]>([]);
@@ -61,6 +66,7 @@ export function FundsPage() {
 
   const selected = useMemo(() => rows.find((row) => row.symbol === selectedSymbol) ?? rows[0], [rows, selectedSymbol]);
   const navLine: PriceBar[] = navPoints.map((item) => ({ trade_date: item.nav_date, close: Number(item.nav) }));
+  const selectedAssetType: 'ETF' | 'FUND' = selected?.analysis_type === 'ETF_PRICE' ? 'ETF' : 'FUND';
 
   return (
     <div className="page-stack">
@@ -69,7 +75,22 @@ export function FundsPage() {
           <h2>基金分析</h2>
           <p>基金使用净值分析，ETF 使用价格分析；两者都独立于股票基本面和估值模型。</p>
         </div>
-        {selected && <Badge tone={badgeTone(selected.state)}>{analysisLabel(selected)} · {selected.nav_date}</Badge>}
+        {selected && (
+          <div className="inline-form-row">
+            <Badge tone={badgeTone(selected.state)}>{analysisLabel(selected)} · {selected.nav_date}</Badge>
+            <button
+              className="secondary-button"
+              onClick={() => onAddToPortfolio?.({
+                symbol: selected.symbol,
+                name: selected.name,
+                asset_type: selectedAssetType,
+                buy_reason: `来自基金/ETF 分析页：${selected.conclusion ?? '继续观察'}`,
+                source_page: selectedAssetType === 'ETF' ? 'etf' : 'funds',
+              })}
+              type="button"
+            >加入持仓</button>
+          </div>
+        )}
       </div>
 
       {error && <div className="alert-card bad">基金数据加载失败：{error}</div>}

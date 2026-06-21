@@ -2,7 +2,7 @@
 
 ## Status
 
-`TODO`
+`DONE`
 
 ## Priority
 
@@ -126,3 +126,8 @@ git diff --check
 ## Notes
 
 这是对 `PORT-002` 的上下文增强。原则是：如果用户从一个已知资产类型的页面发起持仓录入，系统应继承该类型，而不是重新猜。
+
+## Completion
+
+- 观察池、股票页、基金/ETF 页进入持仓录入时会携带 asset_type 和上下文。
+- Verification: py_compile, targeted ruff, typed quote smoke, frontend TypeScript, Vite build, git diff --check.

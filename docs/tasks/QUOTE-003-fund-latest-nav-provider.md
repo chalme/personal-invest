@@ -2,7 +2,7 @@
 
 ## Status
 
-`TODO`
+`DONE`
 
 ## Priority
 
@@ -136,3 +136,8 @@ git diff --check
 ## Notes
 
 场外基金报价在页面上应展示为“最新净值”或“单位净值”，不能展示为“实时价格”。
+
+## Completion
+
+- 场外基金最新净值真实源已接入：FUND 优先查询 fund_open_fund_info_em，失败后降级 local fund_nav 或 MISSING。
+- Verification: py_compile, targeted ruff, typed quote smoke, frontend TypeScript, Vite build, git diff --check.

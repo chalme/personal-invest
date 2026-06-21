@@ -2,7 +2,7 @@
 
 ## Status
 
-`TODO`
+`DONE`
 
 ## Priority
 
@@ -144,3 +144,8 @@ ETF + 510300 -> 查询按钮为“获取交易价格”
 ## Notes
 
 这是 `PORT-001` 的安全性修正：持仓录入可以低摩擦，但不能为了少一步选择而误判资产类型。
+
+## Completion
+
+- 持仓录入已改为先选资产类型再查询，并按类型切换按钮、字段文案和旧报价清空逻辑。
+- Verification: py_compile, targeted ruff, typed quote smoke, frontend TypeScript, Vite build, git diff --check.

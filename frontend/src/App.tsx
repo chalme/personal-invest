@@ -42,13 +42,18 @@ export function App() {
       })
       .catch(() => undefined);
   }, []);
+  const openPortfolio = (prefill: PortfolioPrefill) => {
+    setPortfolioPrefill(prefill);
+    setActive('portfolio');
+  };
+
   const page = (() => {
     switch (active) {
       case 'market': return <MarketPage />;
       case 'sectors': return <SectorsPage />;
-      case 'stocks': return <StocksPage />;
-      case 'funds': return <FundsPage />;
-      case 'watchlist': return <WatchlistPage onAddToPortfolio={(prefill) => { setPortfolioPrefill(prefill); setActive('portfolio'); }} />;
+      case 'stocks': return <StocksPage onAddToPortfolio={openPortfolio} />;
+      case 'funds': return <FundsPage onAddToPortfolio={openPortfolio} />;
+      case 'watchlist': return <WatchlistPage onAddToPortfolio={openPortfolio} />;
       case 'portfolio': return <PortfolioPage prefillPosition={portfolioPrefill} onPrefillConsumed={() => setPortfolioPrefill(null)} />;
       case 'review': return <ReviewPage />;
       case 'strategies': return <StrategiesPage />;

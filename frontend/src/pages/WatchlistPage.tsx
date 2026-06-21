@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiDelete, apiGet, apiPost } from '../api/client';
 import { Badge, Card, EmptyState, LoadingState } from '../components/ui';
+import type { PortfolioPrefill } from './PortfolioPage';
 
 type WatchlistItem = {
   id?: number;
@@ -57,7 +58,7 @@ function nextStep(row: WatchlistItem) {
 }
 
 type WatchlistPageProps = {
-  onAddToPortfolio?: (prefill: { symbol: string; name?: string | null; asset_type?: string | null; buy_reason?: string | null }) => void;
+  onAddToPortfolio?: (prefill: PortfolioPrefill) => void;
 };
 
 export function WatchlistPage({ onAddToPortfolio }: WatchlistPageProps) {
@@ -141,8 +142,9 @@ export function WatchlistPage({ onAddToPortfolio }: WatchlistPageProps) {
     onAddToPortfolio?.({
       symbol: row.symbol,
       name: row.name,
-      asset_type: row.asset_type ?? 'STOCK',
+      asset_type: (row.asset_type === 'ETF' || row.asset_type === 'FUND' ? row.asset_type : 'STOCK'),
       buy_reason: reason,
+      source_page: 'watchlist',
     });
   }
 

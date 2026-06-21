@@ -2,7 +2,7 @@
 
 ## Status
 
-`TODO`
+`DONE`
 
 ## Priority
 
@@ -150,3 +150,8 @@ pnpm -C frontend build
 - 本任务是报价层 fallback，不替代 `DATA-023` 的历史行情同步 fallback。
 - 第一版可以不引入新依赖；如果引入 `easyquotation`，必须单独评估依赖体积、维护状态、字段稳定性和超时控制。
 
+
+## Completion
+
+- 实时报价 fallback 已标准化：STOCK/ETF/FUND 分链路，ETF 使用 fund_etf_spot_em，全部保持只读 real-only。
+- Verification: py_compile, targeted ruff, typed quote smoke, frontend TypeScript, Vite build, git diff --check.
