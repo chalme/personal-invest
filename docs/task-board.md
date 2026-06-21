@@ -10,7 +10,7 @@
 
 1. 复盘闭环验收：确认 `review_task`、`decision_record`、`decision_outcome` 形成低打扰、可解释、可持续使用的复盘链路。
 2. 股票财报分析规划：先设计 `STOCK` 财报、财务指标、估值、财报事件和股票质量口径，不直接进入实现。
-3. 基金深度分析规划：先设计 `FUND`、`ETF`、`LOF` 的基金画像、基准/同类比较、风险收益和 ETF 跟踪质量口径。
+3. 场外基金深度分析规划：先设计 `FUND` 的基金画像、基准/同类比较、风险收益和持有体验口径；ETF 深度分析单独排期。
 
 ## Status
 
@@ -73,19 +73,33 @@
 - Verification:
 - Notes: 本任务只产出设计规划，不实现代码。
 
-### P2-004: 基金深度分析规划
+### P2-004: 场外基金深度分析规划
 
 - Status: `TODO`
 - Priority: `P2`
-- Goal: 为 `FUND`、`ETF`、`LOF` 设计基金画像、基准/同类比较、风险收益、暴露适配和 ETF 跟踪质量口径。
+- Goal: 为 `FUND` 设计基金画像、基金经理/公司、基准/同类比较、风险收益、风格稳定性和持有体验口径。
 - Details: `docs/tasks/P2-004-fund-deep-analysis-planning.md`
 - Files: `docs/tasks/P2-004-fund-deep-analysis-planning.md`, `docs/fund-deep-analysis-design.md`
-- Concrete Changes: 输出设计文档，覆盖基金画像、基金经理/基金公司、基准比较、同类比较、风险收益、ETF 跟踪质量、暴露适配、worker 流程、API 范围、页面范围、`review_task` 接入点和 AI 解释边界。
-- Acceptance: 规划明确基金深度分析不套股票模型；FUND 看产品、经理、策略和风险收益；ETF 看指数、主题、流动性、跟踪误差、折溢价和暴露；基金异常能进入风险、重要事项、日报和 AI 解释链路。
+- Concrete Changes: 输出设计文档，覆盖基金画像、基金经理/基金公司、基准比较、同类比较、风险收益、风格和持仓暴露、worker 流程、API 范围、页面范围、`review_task` 接入点和 AI 解释边界。
+- Acceptance: 规划明确场外基金深度分析不套股票模型，也不混入 ETF 深度口径；FUND 看产品、经理、策略、风险收益、基准/同类比较和持有体验；基金异常能进入风险、重要事项、日报和 AI 解释链路。
 - Completed At:
 - Changed Files:
 - Verification:
 - Notes: 本任务只产出设计规划，不实现代码。
+
+### P2-005: ETF 深度分析规划
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 为 `ETF` / `LOF` 单独设计指数、主题、流动性、跟踪质量、折溢价、规模、成交额和交易风险分析口径。
+- Details: `docs/tasks/P2-005-etf-deep-analysis-planning.md`
+- Files: `docs/tasks/P2-005-etf-deep-analysis-planning.md`, `docs/etf-deep-analysis-design.md`
+- Concrete Changes: 输出设计文档，覆盖跟踪指数、主题/行业/地区/风格暴露、成交额、流动性、跟踪误差、折溢价、规模、交易风险、worker 流程、API 范围、页面范围、`review_task` 接入点和 AI 解释边界。
+- Acceptance: 规划明确 ETF 不使用股票财报模型，也不混入场外基金经理/净值持有体验模型；ETF 继续保留现有 `ETF_PRICE` 基础分析，深度分析独立排期。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 优先级低于 `P2-003` 和 `P2-004`，暂缓实现。
 
 ### P1-011: Review Task 持久化
 
@@ -461,3 +475,4 @@
 - `docs/tasks/P1-016-review-loop-acceptance.md`
 - `docs/tasks/P2-003-stock-financial-analysis-planning.md`
 - `docs/tasks/P2-004-fund-deep-analysis-planning.md`
+- `docs/tasks/P2-005-etf-deep-analysis-planning.md`
