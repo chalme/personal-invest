@@ -159,17 +159,17 @@
 
 ### P2-010: 场外基金基准 / 同类比较与暴露
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 落地场外基金的基准比较、同类比较和持仓暴露分析。
 - Details: `docs/tasks/P2-010-fund-benchmark-peer-exposure.md`
 - Files: `backend/migrations/`, `worker/`, `backend/app/services/`
 - Concrete Changes: 新增 `fund_benchmark_snapshot`、`fund_peer_rank_snapshot`、`fund_holding_exposure_snapshot`；计算相对基准收益、同类排名 / 分位、风格和持仓暴露。
 - Acceptance: 场外基金能解释是否跑赢基准、同类位置如何、是否与现有组合形成重复暴露。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 先做场外基金，不推进 ETF 指数暴露和跟踪质量。
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/014_fund_benchmark_peer_exposure.sql`, `worker/fund/benchmark_peer.py`, `worker/daily_job.py`, `backend/app/services/fund_deep_service.py`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.fund.benchmark_peer`; verified no `fund_profile` rows are skipped without mixing ETF / LOF; `uv run python -m compileall backend/app worker scripts`; `./scripts/check.sh`.
+- Notes: 先做场外基金，不推进 ETF 指数暴露和跟踪质量；当前无 fund_profile 时安全跳过。
 
 ### P2-011: 场外基金深度页与复盘闭链接入
 

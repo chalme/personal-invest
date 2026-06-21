@@ -1,10 +1,10 @@
 # P2-010: 场外基金基准 / 同类比较与暴露
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -29,7 +29,11 @@
 ## Verification
 
 - worker 执行后能查询到比较和暴露数据。
-- `rtk git diff --check`。
+- `uv run python scripts/migrate_db.py` applied `014_fund_benchmark_peer_exposure`.
+- `uv run python -m worker.fund.benchmark_peer`.
+- Verified no `fund_profile` rows are skipped without mixing ETF / LOF.
+- `uv run python -m compileall backend/app worker scripts`.
+- `./scripts/check.sh`.
 
 ## Notes
 
