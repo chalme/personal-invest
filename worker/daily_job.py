@@ -15,6 +15,7 @@ from worker.factor.stock_analysis import calculate_stock_analysis
 from worker.ingest.market_data import sync_fund_data, sync_market_data
 from worker.portfolio.snapshot import build_portfolio_snapshot
 from worker.report.report_builder import build_daily_report
+from worker.review.task_generator import generate_review_tasks
 from worker.risk.risk_engine import run_risk_check
 from worker.storage import DB_PATH, connect_db
 from worker.strategy.signal_engine import generate_signals
@@ -85,6 +86,9 @@ def run(job_id: int | None = None) -> None:
             update_job(conn, job_id, "RUNNING", 90, "沉淀组合快照")
             snapshot = build_portfolio_snapshot()
 
+            update_job(conn, job_id, "RUNNING", 93, "沉淀复盘重要事项")
+            review_tasks = generate_review_tasks()
+
             update_job(conn, job_id, "RUNNING", 95, "生成每日投资报告")
             report_path = build_daily_report()
 
@@ -100,6 +104,7 @@ def run(job_id: int | None = None) -> None:
                     f"建议 {advice.get('count', 0)} 条，"
                     f"风险 {risks.get('count', 0)} 条，"
                     f"快照 {snapshot.get('snapshot_date')}，"
+                    f"重要事项新增 {review_tasks.get('inserted', 0)} 条，"
                     f"报告 {report_path}"
                 ),
             )

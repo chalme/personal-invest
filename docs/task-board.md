@@ -33,16 +33,16 @@
 
 ### P1-011: Review Task 持久化
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 将当前只读重要事项聚合沉淀为 `review_task`，支持去重、状态、延后和自动失效。
 - Details: `docs/tasks/P1-011-review-task-persistence.md`
 - Files: `backend/migrations/008_review_task.sql`, `backend/app/services/review_service.py`, `backend/app/api/review.py`, `worker/review/task_generator.py`, `worker/daily_job.py`
 - Concrete Changes: 新增 `review_task` 表；使用 `dedupe_key` 防重复；支持 `OPEN`、`ACKNOWLEDGED`、`SNOOZED`、`RESOLVED`、`AUTO_EXPIRED`；`NO_MAJOR_RISK` 不生成事项。
 - Acceptance: 同一事项不会重复刷屏；延后事项默认不出现在 OPEN 列表；过期事项可自动失效；Dashboard 仍保持低打扰摘要。
-- Completed At:
-- Changed Files:
-- Verification:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/008_review_task.sql`, `backend/app/services/review_service.py`, `backend/app/api/review.py`, `worker/review/task_generator.py`, `worker/daily_job.py`
+- Verification: `uv run python scripts/migrate_db.py`; repeated `uv run python -m worker.review.task_generator`; ReviewService task count / NO_MAJOR_RISK check; `uv run python -m compileall backend/app worker scripts`; `cd frontend && pnpm build`; `./scripts/check.sh`.
 - Notes: UI 文案仍使用“重要事项 / 复核 / 延后 / 已解决”，避免把产品做成每日待办系统。
 
 ### P1-012: ReviewPage 接入持久化事项

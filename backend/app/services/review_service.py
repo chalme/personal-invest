@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta
 from typing import Any
 
+from app.core.database import get_db
 from app.repositories.sqlite_repo import SQLiteRepository
 from app.services.data_source_service import DataSourceService
 
@@ -67,6 +69,164 @@ class ReviewService:
             "latest_job": latest_job,
             "review_windows": self._review_windows(),
         }
+
+    def list_tasks(
+        self,
+        status: str | None = "OPEN",
+        include_snoozed: bool = False,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        self.expire_tasks()
+        params: list[Any] = []
+        where: list[str] = []
+        if status:
+            if status == "OPEN" and not include_snoozed:
+                where.append("status = 'OPEN'")
+            else:
+                where.append("status = ?")
+                params.append(status)
+        if not include_snoozed:
+            where.append("(status != 'SNOOZED' OR snoozed_until IS NULL OR snoozed_until <= ?)")
+            params.append(self._now())
+        sql = "SELECT * FROM review_task"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY CASE priority WHEN 'HIGH' THEN 0 WHEN 'MEDIUM' THEN 1 WHEN 'LOW' THEN 2 ELSE 3 END, source_date DESC, id DESC LIMIT ?"
+        params.append(max(1, min(limit, 500)))
+        return self.repo.fetch_all(sql, tuple(params))
+
+    def update_task(self, task_id: int, payload: dict[str, Any]) -> dict[str, Any]:
+        status = str(payload.get("status") or "").upper()
+        if status not in {"OPEN", "ACKNOWLEDGED", "SNOOZED", "RESOLVED", "AUTO_EXPIRED"}:
+            raise ValueError("Unsupported review task status")
+        now = self._now()
+        snoozed_until = payload.get("snoozed_until")
+        acknowledged_at = now if status == "ACKNOWLEDGED" else None
+        resolved_at = now if status in {"RESOLVED", "AUTO_EXPIRED"} else None
+        with get_db() as conn:
+            conn.execute(
+                """
+                UPDATE review_task
+                SET status = ?,
+                    updated_at = ?,
+                    acknowledged_at = COALESCE(?, acknowledged_at),
+                    snoozed_until = CASE WHEN ? = 'SNOOZED' THEN ? ELSE snoozed_until END,
+                    resolved_at = COALESCE(?, resolved_at)
+                WHERE id = ?
+                """,
+                (status, now, acknowledged_at, status, snoozed_until, resolved_at, task_id),
+            )
+        task = self.repo.fetch_one("SELECT * FROM review_task WHERE id = ?", (task_id,))
+        if not task:
+            raise ValueError("Review task not found")
+        return task
+
+    def sync_tasks_from_overview(self) -> dict[str, Any]:
+        self.expire_tasks()
+        overview = self.overview()
+        items = overview.get("important_items") or []
+        now = self._now()
+        values: list[tuple[Any, ...]] = []
+        for item in items:
+            if item.get("type") == "NO_MAJOR_RISK":
+                continue
+            dedupe_key = self._task_dedupe_key(item)
+            expires_at = self._task_expires_at(str(item.get("type") or ""), str(item.get("date") or ""))
+            values.append((
+                dedupe_key,
+                item.get("type") or "REVIEW",
+                item.get("priority") or "INFO",
+                "OPEN",
+                item.get("symbol"),
+                item.get("name"),
+                item.get("asset_type"),
+                item.get("title") or "重要事项",
+                item.get("message"),
+                item.get("source") or "review_service",
+                item.get("source_id"),
+                item.get("date"),
+                item.get("data_version"),
+                item.get("review_reason") or item.get("message"),
+                item.get("suggested_action") or self._suggested_action(str(item.get("type") or "")),
+                now,
+                now,
+                expires_at,
+            ))
+        inserted = 0
+        if values:
+            with get_db() as conn:
+                before = conn.total_changes
+                conn.executemany(
+                    """
+                    INSERT OR IGNORE INTO review_task(
+                        dedupe_key, task_type, priority, status, symbol, name, asset_type,
+                        title, summary, source_type, source_id, source_date, data_version,
+                        review_reason, suggested_action, created_at, updated_at, expires_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    values,
+                )
+                inserted = conn.total_changes - before
+        return {"count": len(values), "inserted": inserted}
+
+    def expire_tasks(self) -> int:
+        now = self._now()
+        with get_db() as conn:
+            before = conn.total_changes
+            conn.execute(
+                """
+                UPDATE review_task
+                SET status = 'AUTO_EXPIRED', updated_at = ?, resolved_at = ?
+                WHERE status IN ('OPEN', 'SNOOZED', 'ACKNOWLEDGED')
+                  AND expires_at IS NOT NULL
+                  AND expires_at < ?
+                """,
+                (now, now, now),
+            )
+            conn.execute(
+                """
+                UPDATE review_task
+                SET status = 'OPEN', updated_at = ?
+                WHERE status = 'SNOOZED'
+                  AND snoozed_until IS NOT NULL
+                  AND snoozed_until <= ?
+                """,
+                (now, now),
+            )
+            return conn.total_changes - before
+
+    def _now(self) -> str:
+        return datetime.now().isoformat(timespec="seconds")
+
+    def _task_dedupe_key(self, item: dict[str, Any]) -> str:
+        task_type = str(item.get("type") or "REVIEW")
+        date = str(item.get("date") or "unknown")[:10]
+        symbol = str(item.get("symbol") or "GLOBAL")
+        source = str(item.get("source") or "review_service")
+        source_id = str(item.get("source_id") or item.get("title") or "item")
+        return f"{task_type}:{source}:{symbol}:{date}:{source_id}"
+
+    def _task_expires_at(self, task_type: str, source_date: str) -> str:
+        base = datetime.fromisoformat(source_date[:10]) if source_date and len(source_date) >= 10 else datetime.now()
+        days = {
+            "JOB_FAILURE": 3,
+            "DATA_ISSUE": 7,
+            "MARKET_CHANGE": 3,
+            "RISK": 14,
+            "ADVICE_CHANGE": 14,
+            "PORTFOLIO_CHANGE": 14,
+        }.get(task_type, 7)
+        return (base + timedelta(days=days)).isoformat(timespec="seconds")
+
+    def _suggested_action(self, task_type: str) -> str:
+        return {
+            "JOB_FAILURE": "重新执行今日更新，并检查失败日志。",
+            "DATA_ISSUE": "确认数据来源，避免把样本数据当作真实信号。",
+            "MARKET_CHANGE": "复核新增风险暴露，必要时降低主动进攻仓位。",
+            "RISK": "检查对应资产或组合风险，并决定是否处理。",
+            "ADVICE_CHANGE": "复核建议变化，记录真实决策或延后观察。",
+            "PORTFOLIO_CHANGE": "检查组合集中度、风险数量和仓位暴露。",
+        }.get(task_type, "复核该事项，并记录是否需要后续处理。")
 
     def _latest_market(self) -> dict[str, Any] | None:
         return self.repo.fetch_one(
@@ -194,6 +354,7 @@ class ReviewService:
                 "message": latest_job.get("error") or latest_job.get("message") or "请重新执行今日更新。",
                 "date": latest_job.get("finished_at") or latest_job.get("started_at"),
                 "source": "job_execution",
+                "source_id": latest_job.get("id"),
             })
         if data_status.get("mode") in {"sample", "mixed", "unknown"}:
             priority = "MEDIUM" if data_status.get("mode") != "real" else "INFO"
@@ -204,6 +365,7 @@ class ReviewService:
                 "message": data_status.get("warning") or f"当前数据模式为 {data_status.get('mode') or 'unknown'}。",
                 "date": data_status.get("latest_trade_date"),
                 "source": "market_data_manifest",
+                "source_id": f"{data_status.get('mode')}:{data_status.get('latest_trade_date')}",
             })
         if market and float(market.get("market_score") or 0) < 45:
             items.append({
@@ -213,6 +375,7 @@ class ReviewService:
                 "message": market.get("summary") or "市场评分低于 45，新增风险暴露需要更谨慎。",
                 "date": market.get("trade_date"),
                 "source": "market_trend_snapshot",
+                "source_id": market.get("id"),
             })
         for risk in risks:
             items.append({
@@ -223,6 +386,7 @@ class ReviewService:
                 "date": risk.get("trade_date"),
                 "symbol": risk.get("symbol"),
                 "source": "risk_event",
+                "source_id": risk.get("id"),
             })
         for advice in advice_changes[:6]:
             level = str(advice.get("advice_level") or "")
@@ -233,7 +397,13 @@ class ReviewService:
                 "message": advice.get("one_liner") or advice.get("trigger_reason") or "建议发生变化，请复核。",
                 "date": advice.get("advice_date"),
                 "symbol": advice.get("symbol"),
+                "name": advice.get("name"),
+                "asset_type": advice.get("asset_type"),
                 "source": "investment_advice",
+                "source_id": advice.get("id"),
+                "data_version": advice.get("data_version"),
+                "review_reason": advice.get("trigger_reason"),
+                "suggested_action": advice.get("review_action"),
             })
         if portfolio_change:
             if portfolio_change.get("risk_delta", 0) > 0:
@@ -244,6 +414,7 @@ class ReviewService:
                     "message": f"风险数量较上一快照增加 {portfolio_change['risk_delta']} 条。",
                     "date": portfolio_change.get("snapshot_date"),
                     "source": "portfolio_snapshot",
+                    "source_id": portfolio_change.get("snapshot_date"),
                 })
             if float(portfolio_change.get("concentration_hhi") or 0) >= 0.35:
                 items.append({
@@ -253,6 +424,7 @@ class ReviewService:
                     "message": f"当前集中度 HHI 为 {portfolio_change['concentration_hhi']:.2f}，需要检查单一资产暴露。",
                     "date": portfolio_change.get("snapshot_date"),
                     "source": "portfolio_snapshot",
+                    "source_id": portfolio_change.get("snapshot_date"),
                 })
         priority_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2, "INFO": 3}
         return sorted(items, key=lambda item: (priority_order.get(str(item.get("priority")), 9), str(item.get("date") or "")), reverse=False)[:12]

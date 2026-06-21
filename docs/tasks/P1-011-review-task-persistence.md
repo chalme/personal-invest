@@ -1,10 +1,10 @@
 # P1-011: Review Task 持久化
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -39,3 +39,18 @@
 ## Notes
 
 - `review_task` 是重要事项沉淀表，不是每日待办表。
+
+
+## Completed Changes
+
+- Added `review_task` with stable `dedupe_key`, status, source metadata, snooze and expiry fields.
+- Added `ReviewService.sync_tasks_from_overview()`, `list_tasks()`, `update_task()` and automatic expiry handling.
+- Added `worker/review/task_generator.py` and daily job integration after risk/advice/snapshot generation.
+- Added `/api/review/tasks`, `/api/review/tasks/generate`, and `/api/review/tasks/{task_id}` status update endpoints.
+
+## Completed Verification
+
+- Migration applied through `scripts/migrate_db.py`.
+- Generator executed twice: first run inserted tasks, second run inserted `0` duplicate tasks.
+- Confirmed `NO_MAJOR_RISK` does not create `review_task`.
+- Python compile, frontend build and `./scripts/check.sh` passed.
