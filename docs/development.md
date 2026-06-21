@@ -292,6 +292,14 @@ sudo systemctl restart personal-invest-backend.service
 sudo systemctl restart personal-invest-frontend.service
 ```
 
+项目也提供 Makefile 快捷入口：
+
+```bash
+make prod-restart          # 重启 backend + frontend systemd 服务
+make prod-restart-backend  # 只重启后端服务
+make prod-restart-frontend # 只重启前端服务
+```
+
 模板默认：
 
 - 工作目录：`/root/remote/personal-invest`
@@ -301,5 +309,19 @@ sudo systemctl restart personal-invest-frontend.service
 - 前端 systemd 模板：`FRONTEND_BUILD_ON_START=0`，只服务已构建的 `frontend/dist`，避免运行时依赖 `pnpm`
 - Python 运行时：`/root/remote/personal-invest/.venv/bin/python`
 - 异常退出自动重启：`Restart=on-failure`
+
+脚本执行链路：
+
+```text
+personal-invest-backend.service
+  -> scripts/backend_prod.sh
+  -> .venv/bin/python -m uvicorn app.main:app --app-dir backend
+
+personal-invest-frontend.service
+  -> scripts/frontend_prod.sh
+  -> .venv/bin/python -m http.server --directory frontend/dist
+```
+
+生产服务重启时不执行 `uv sync`、`pnpm install` 或 `pnpm build`。这些属于部署 / 构建阶段，应在 `systemctl restart` 前手动完成。前端服务要求 `frontend/dist/index.html` 和 `frontend/dist/config.js` 已存在。
 
 注意：模板只提供长期运行基础，不负责 Cloudflare Access、防火墙、Secret 管理或人工浏览器验收。

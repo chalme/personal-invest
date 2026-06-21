@@ -1,4 +1,4 @@
-.PHONY: setup dev dev\:server prod prod-server doctor doctor-server health health-server backend backend-prod frontend frontend-prod init daily check backup clean
+.PHONY: setup dev dev\:server prod prod-server prod-restart prod-restart-backend prod-restart-frontend doctor doctor-server health health-server backend backend-prod frontend frontend-prod init daily check backup clean
 
 setup:
 	./scripts/setup.sh
@@ -14,6 +14,16 @@ prod:
 
 prod-server:
 	ENV_FILE=.env.server ./scripts/prod.sh
+
+prod-restart:
+	sudo systemctl restart personal-invest-backend.service
+	sudo systemctl restart personal-invest-frontend.service
+
+prod-restart-backend:
+	sudo systemctl restart personal-invest-backend.service
+
+prod-restart-frontend:
+	sudo systemctl restart personal-invest-frontend.service
 
 doctor:
 	./scripts/doctor.sh

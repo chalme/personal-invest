@@ -229,6 +229,15 @@ systemd 模板默认直接调用生产脚本：
 - 后端：`scripts/backend_prod.sh`，运行时使用 `.venv/bin/python`，不依赖 `uv` 在 systemd PATH 中。
 - 前端：`scripts/frontend_prod.sh`，systemd 模板设置 `FRONTEND_BUILD_ON_START=0`，运行时只服务已构建的 `frontend/dist`；手动执行脚本时仍可构建。
 
+脚本执行链路：
+
+```text
+backend service -> scripts/backend_prod.sh -> .venv/bin/python -> uvicorn
+frontend service -> scripts/frontend_prod.sh -> .venv/bin/python -> http.server(frontend/dist)
+```
+
+因此，生产重启只重启长期运行进程；依赖安装、前端构建和 runtime config 生成必须在重启前完成。
+
 启用前先在项目根目录执行 `uv sync`，确保 `.venv/bin/python` 存在。更新模板后执行 `sudo systemctl daemon-reload`，如服务已经失败过可执行 `sudo systemctl reset-failed personal-invest-backend.service`。
 
 
