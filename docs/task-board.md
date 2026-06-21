@@ -13,6 +13,7 @@
 3. 真实行情多源容错阶段已完成第一轮：东方财富行情源失败时切换腾讯等真实备用源；所有真实源失败时只能进入真实历史缓存或 `MISSING`。
 4. Code Agent 当前进入 real-only 历史状态一致性修复：清理旧事件污染、修正旧 manifest 的 sample/mixed 残留、收敛页面主视图展示。
 5. 数据源可以 fallback，数据真实性不能 fallback；后续任务不得恢复 sample 兜底，也不得通过清空全库掩盖历史污染。
+6. 下一阶段补强免费真实行情源：优先评估并接入 BaoStock 作为 A股历史日线与估值字段补充源，AKShare 继续作为广覆盖入口和腾讯/新浪 fallback 封装层。
 
 ## Status
 
@@ -245,6 +246,18 @@
 - Completed At: `2026-06-21`
 - Changed Files: `scripts/audit_real_only.py`, `scripts/purge_non_real_data.py`, `backend/app/services/data_credibility_service.py`, `frontend/src/api/types.ts`, `frontend/src/components/ui.tsx`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `docs/tasks/DATA-021-real-only-state-consistency.md`, `docs/task-board.md`
 - Verification: Python compile smoke; data credibility smoke confirms polluted manifest is excluded from current market module; audit smoke detects `financial_event` 4 rows, `etf_deep_event` 3 rows and 2 polluted manifests; per-file `git diff --check` passed. Direct destructive apply is blocked in MCP and must run from server shell if needed.
+
+### DATA-022: 接入 BaoStock 作为 A股真实历史行情补充源
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 在 real-only 约束下，把 BaoStock 加入 A股日线 provider chain，补强 AKShare 东财/腾讯接口不稳定或字段不足的问题。
+- Details: `docs/tasks/DATA-022-baostock-astock-provider.md`
+- Files: `pyproject.toml`, `uv.lock`, `worker/ingest/market_providers.py`, `worker/ingest/market_data.py`, `scripts/probe_market_sources.py`, `backend/app/services/data_credibility_service.py`
+- Scope: 接入 BaoStock 登录/退出、A股代码转换、历史日线字段标准化、provider 元数据、健康探针和失败降级。
+- Out of Scope: 不替换 AKShare；不接 Tushare Pro token；不接 QUANTAXIS；不恢复 sample/mock/demo/estimated；不把 BaoStock 缺失字段伪造成真实字段。
+- Acceptance: `600519.SH`、`000001.SZ` 可通过 BaoStock 返回真实日线；manifest/provider metadata 能显示 `source_provider=baostock`；失败时进入其他真实 provider、真实历史缓存或 `MISSING`；全链路不产生 sample。
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 
