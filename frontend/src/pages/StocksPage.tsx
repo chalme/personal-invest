@@ -28,8 +28,8 @@ function textValue(value: unknown, fallback = '暂无'): string {
 function sourceModeLabel(mode?: unknown) {
   const text = String(mode ?? '').toUpperCase();
   if (text === 'REAL') return '真实数据';
-  if (text === 'ESTIMATED') return '估算数据';
-  if (text === 'SAMPLE') return '样本数据';
+  if (text === 'ESTIMATED') return '历史估算污染';
+  if (text === 'SAMPLE') return '历史样本污染';
   if (text === 'MISSING') return '数据缺失';
   if (text === 'MIXED') return '混合数据';
   return '来源未知';
@@ -155,7 +155,7 @@ export function StocksPage() {
             </Card>
           </div>
 
-          <Card title="财报与估值快照" description="股票财报分析只适用于 STOCK；样本或估算数据会明确标注来源，不单独构成交易依据。">
+          <Card title="财报与估值快照" description="股票财报分析只适用于 STOCK；没有真实财报源时显示缺失，历史样本或估算污染不可作为依据。">
             {financial?.quality ? (
               <div className="analysis-summary">
                 <div><span>公司质量</span><strong>{financial.quality.quality_state} · {numberValue(financial.quality.total_score).toFixed(1)}</strong></div>

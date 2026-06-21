@@ -49,7 +49,7 @@ function watchTone(state: string): 'good' | 'warn' | 'bad' | 'neutral' {
 
 function nextStep(row: WatchlistItem) {
   const state = watchState(row);
-  if (state === '重点研究') return '继续跟踪价格、估值和风险事件，不因样本数据提升排序。';
+  if (state === '重点研究') return '继续跟踪价格、估值和风险事件，不因历史非真实数据提升排序。';
   if (state === '数据待补齐') return '补充关注理由、分组或执行每日更新后再判断优先级。';
   if (state === '低优先级') return '保留低频观察，若长期没有新证据可考虑移除。';
   if (state === '关注失效') return '复核是否仍有研究价值，必要时从观察池移除。';

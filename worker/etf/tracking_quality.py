@@ -1,10 +1,21 @@
 from __future__ import annotations
 
+# ruff: noqa: E501
 from typing import Any
 
 import pandas as pd
 
 from worker.storage import connect_db, now_iso, read_parquet_dataset, upsert_many
+
+NON_REAL_SOURCE_VALUES = {
+    "sample",
+    "estimated",
+    "built_in_sample",
+    "deterministic_estimate",
+    "instrument_estimate",
+    "mock",
+    "demo",
+}
 
 
 def _profiles() -> list[dict[str, Any]]:
@@ -34,10 +45,10 @@ def _quality(score: float | None) -> tuple[str, str]:
     if score is None:
         return "UNKNOWN", "缺少指数或净值数据，暂不能形成高置信跟踪质量判断。"
     if score >= 75:
-        return "GOOD", "估算跟踪质量较好，后续仍需接入真实净值和指数数据复核。"
+        return "GOOD", "基于真实价格序列的阶段跟踪拟合较好，后续仍需接入真实净值或 IOPV 复核。"
     if score >= 55:
-        return "WATCH", "估算跟踪质量中性，需继续观察跟踪偏离。"
-    return "WEAK", "估算跟踪质量偏弱，后续需重点复核。"
+        return "WATCH", "基于真实价格序列的阶段跟踪拟合中性，需继续观察跟踪偏离。"
+    return "WEAK", "基于真实价格序列的阶段跟踪拟合偏弱，后续需重点复核。"
 
 
 def build_etf_tracking_quality() -> dict[str, Any]:
@@ -54,25 +65,106 @@ def build_etf_tracking_quality() -> dict[str, Any]:
         name = str(profile.get("name") or symbol)
         tracking_index = profile.get("tracking_index")
         index_symbol = _index_symbol(str(tracking_index) if tracking_index else None)
-        etf = bars[bars.get("symbol", pd.Series(dtype=str)).astype(str) == symbol].copy() if not bars.empty else pd.DataFrame()
-        index = bars[bars.get("symbol", pd.Series(dtype=str)).astype(str) == index_symbol].copy() if index_symbol and not bars.empty else pd.DataFrame()
+        etf = (
+            bars[bars.get("symbol", pd.Series(dtype=str)).astype(str) == symbol].copy()
+            if not bars.empty
+            else pd.DataFrame()
+        )
+        index = (
+            bars[bars.get("symbol", pd.Series(dtype=str)).astype(str) == index_symbol].copy()
+            if index_symbol and not bars.empty
+            else pd.DataFrame()
+        )
         if etf.empty or index.empty:
             version = f"etf_tracking_missing_{today}_{now}"
             level, note = _quality(None)
-            rows.append((today, symbol, name, tracking_index, index_symbol, None, None, None, None, level, note, "daily_bar", "MISSING", today, version, now))
+            rows.append(
+                (
+                    today,
+                    symbol,
+                    name,
+                    tracking_index,
+                    index_symbol,
+                    None,
+                    None,
+                    None,
+                    None,
+                    level,
+                    note,
+                    "daily_bar",
+                    "MISSING",
+                    today,
+                    version,
+                    now,
+                )
+            )
             continue
 
         etf["trade_date"] = etf["trade_date"].astype(str)
         index["trade_date"] = index["trade_date"].astype(str)
-        merged = etf[["trade_date", "close", "source"]].rename(columns={"close": "etf_close", "source": "etf_source"}).merge(
-            index[["trade_date", "close", "source"]].rename(columns={"close": "index_close", "source": "index_source"}),
-            on="trade_date",
-            how="inner",
-        ).sort_values("trade_date")
+        merged = (
+            etf[["trade_date", "close", "source"]]
+            .rename(columns={"close": "etf_close", "source": "etf_source"})
+            .merge(
+                index[["trade_date", "close", "source"]].rename(
+                    columns={"close": "index_close", "source": "index_source"}
+                ),
+                on="trade_date",
+                how="inner",
+            )
+            .sort_values("trade_date")
+        )
         if len(merged) < 30:
             version = f"etf_tracking_missing_{today}_{now}"
             level, note = _quality(None)
-            rows.append((today, symbol, name, tracking_index, index_symbol, None, None, None, None, level, "可比价格序列不足 30 日，暂不能形成高置信跟踪质量判断。", "daily_bar", "MISSING", today, version, now))
+            rows.append(
+                (
+                    today,
+                    symbol,
+                    name,
+                    tracking_index,
+                    index_symbol,
+                    None,
+                    None,
+                    None,
+                    None,
+                    level,
+                    "可比价格序列不足 30 日，暂不能形成高置信跟踪质量判断。",
+                    "daily_bar",
+                    "MISSING",
+                    today,
+                    version,
+                    now,
+                )
+            )
+            continue
+
+        if (
+            str(merged["etf_source"].iloc[-1]).lower() in NON_REAL_SOURCE_VALUES
+            or str(merged["index_source"].iloc[-1]).lower() in NON_REAL_SOURCE_VALUES
+        ):
+            version = f"etf_tracking_missing_{today}_{now}"
+            level, _ = _quality(None)
+            rows.append(
+                (
+                    today,
+                    symbol,
+                    name,
+                    tracking_index,
+                    index_symbol,
+                    None,
+                    None,
+                    None,
+                    None,
+                    level,
+                    "ETF 或指数价格序列命中历史非真实污染，等待清理或真实行情补齐。",
+                    "daily_bar",
+                    "MISSING",
+                    today,
+                    version,
+                    now,
+                )
+            )
             continue
 
         etf_close = pd.to_numeric(merged["etf_close"], errors="coerce")
@@ -80,16 +172,41 @@ def build_etf_tracking_quality() -> dict[str, Any]:
         etf_ret = etf_close.pct_change().dropna()
         index_ret = index_close.pct_change().dropna()
         diff = (etf_ret - index_ret).dropna()
-        tracking_error = round(float(diff.std() * (252 ** 0.5)), 4) if len(diff) > 2 else None
-        tracking_deviation = round(float((etf_close.iloc[-1] / etf_close.iloc[0] - 1) - (index_close.iloc[-1] / index_close.iloc[0] - 1)), 4)
-        fit_score = round(max(0, min(100, 85 - abs(tracking_deviation) * 500 - (tracking_error or 0) * 160)), 2)
+        tracking_error = round(float(diff.std() * (252**0.5)), 4) if len(diff) > 2 else None
+        tracking_deviation = round(
+            float(
+                (etf_close.iloc[-1] / etf_close.iloc[0] - 1)
+                - (index_close.iloc[-1] / index_close.iloc[0] - 1)
+            ),
+            4,
+        )
+        fit_score = round(
+            max(0, min(100, 85 - abs(tracking_deviation) * 500 - (tracking_error or 0) * 160)), 2
+        )
         level, note = _quality(fit_score)
         latest_date = str(merged["trade_date"].iloc[-1])
-        source_mode = "ESTIMATED"
-        if str(merged["etf_source"].iloc[-1]).lower() != "sample" and str(merged["index_source"].iloc[-1]).lower() != "sample":
-            source_mode = "ESTIMATED"
+        source_mode = "REAL"
         version = f"etf_tracking_{latest_date}_{now}"
-        rows.append((latest_date, symbol, name, tracking_index, index_symbol, tracking_error, tracking_deviation, None, fit_score, level, note + " 折溢价依赖净值或 IOPV 数据，当前未生成确定性结论。", "daily_bar", source_mode, latest_date, version, now))
+        rows.append(
+            (
+                latest_date,
+                symbol,
+                name,
+                tracking_index,
+                index_symbol,
+                tracking_error,
+                tracking_deviation,
+                None,
+                fit_score,
+                level,
+                note + " 折溢价依赖真实净值或 IOPV 数据，当前未生成确定性结论。",
+                "daily_bar",
+                source_mode,
+                latest_date,
+                version,
+                now,
+            )
+        )
 
     with connect_db() as conn:
         count = upsert_many(conn, _SQL, rows)

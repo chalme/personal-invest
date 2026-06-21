@@ -1,10 +1,10 @@
 # DATA-011: 真实数据 Only 策略与 source mode 合约
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -50,3 +50,9 @@
 ## Notes
 
 本任务是治理入口，不直接改业务代码。核心取舍是牺牲演示完整性，换取投资数据可信度：宁可页面显示缺失，也不能造数据。
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files: `docs/data-pipeline.md`, `docs/task-board.md`, `docs/tasks/DATA-011-real-only-source-policy.md`
+- Verification: `git diff --check`; 文档检查确认 Real-only 合约、允许/禁止状态、fallback 决策表和后续验收口径已存在。
+- Notes: 本任务作为治理入口完成状态标记；运行时实现由 DATA-012 到 DATA-015 承接。

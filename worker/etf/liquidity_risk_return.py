@@ -1,10 +1,21 @@
 from __future__ import annotations
 
+# ruff: noqa: E501
 from typing import Any
 
 import pandas as pd
 
 from worker.storage import connect_db, now_iso, read_parquet_dataset, upsert_many
+
+NON_REAL_SOURCE_VALUES = {
+    "sample",
+    "estimated",
+    "built_in_sample",
+    "deterministic_estimate",
+    "instrument_estimate",
+    "mock",
+    "demo",
+}
 
 
 def _assets() -> list[dict[str, Any]]:
@@ -41,7 +52,7 @@ def _vol(series: pd.Series) -> float | None:
     returns = series.dropna().astype(float).pct_change().dropna()
     if len(returns) < 2:
         return None
-    return round(float(returns.std() * (252 ** 0.5)), 4)
+    return round(float(returns.std() * (252**0.5)), 4)
 
 
 def _liq(avg_amount: float | None, avg_volume: float | None) -> tuple[float, str, str]:
@@ -54,7 +65,9 @@ def _liq(avg_amount: float | None, avg_volume: float | None) -> tuple[float, str
     return 40.0, "HIGH", "近 20 日成交额偏低，交易时需警惕流动性风险。"
 
 
-def _rr_score(ret_3m: float | None, drawdown: float | None, volatility: float | None) -> tuple[float, str, str]:
+def _rr_score(
+    ret_3m: float | None, drawdown: float | None, volatility: float | None
+) -> tuple[float, str, str]:
     score = 50 + (ret_3m or 0) * 260 - abs(drawdown or 0) * 180 - (volatility or 0) * 80
     score = round(max(0, min(100, score)), 2)
     if score >= 70:
@@ -77,11 +90,53 @@ def build_etf_liquidity_risk_return() -> dict[str, Any]:
     for asset in assets:
         symbol = str(asset["symbol"])
         name = str(asset.get("name") or symbol)
-        group = bars[bars.get("symbol", pd.Series(dtype=str)).astype(str) == symbol].copy() if not bars.empty else pd.DataFrame()
+        group = (
+            bars[bars.get("symbol", pd.Series(dtype=str)).astype(str) == symbol].copy()
+            if not bars.empty
+            else pd.DataFrame()
+        )
         if group.empty:
             version = f"etf_liquidity_missing_{today}_{now}"
-            liquidity_rows.append((today, symbol, name, None, None, None, None, None, 35.0, "UNKNOWN", "缺少 ETF 行情成交数据，等待数据源补齐。", "daily_bar", "MISSING", today, version, now))
-            risk_rows.append((today, symbol, name, None, None, None, None, None, 35.0, "UNKNOWN", "缺少 ETF 价格序列，暂不能形成高置信风险收益判断。", "daily_bar", "MISSING", today, version, now))
+            liquidity_rows.append(
+                (
+                    today,
+                    symbol,
+                    name,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "UNKNOWN",
+                    "缺少 ETF 真实行情成交数据，等待数据源补齐。",
+                    "daily_bar",
+                    "MISSING",
+                    today,
+                    version,
+                    now,
+                )
+            )
+            risk_rows.append(
+                (
+                    today,
+                    symbol,
+                    name,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "UNKNOWN",
+                    "缺少 ETF 真实价格序列，暂不能形成风险收益判断。",
+                    "daily_bar",
+                    "MISSING",
+                    today,
+                    version,
+                    now,
+                )
+            )
             continue
 
         group["trade_date"] = group["trade_date"].astype(str)
@@ -90,14 +145,61 @@ def build_etf_liquidity_risk_return() -> dict[str, Any]:
         amount = pd.to_numeric(group.get("amount", pd.Series(dtype=float)), errors="coerce")
         volume = pd.to_numeric(group.get("volume", pd.Series(dtype=float)), errors="coerce")
         latest_date = str(group["trade_date"].iloc[-1])
-        source = str(group.get("source", pd.Series(["sample"])).iloc[-1]).lower()
-        source_mode = "ESTIMATED" if source == "sample" else "REAL"
+        source = str(group.get("source", pd.Series(["missing"])).iloc[-1]).lower()
+        if source in NON_REAL_SOURCE_VALUES:
+            version = f"etf_liquidity_missing_{today}_{now}"
+            liquidity_rows.append(
+                (
+                    today,
+                    symbol,
+                    name,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "UNKNOWN",
+                    "ETF 行情命中历史非真实污染，等待清理或真实行情补齐。",
+                    "daily_bar",
+                    "MISSING",
+                    today,
+                    version,
+                    now,
+                )
+            )
+            risk_rows.append(
+                (
+                    today,
+                    symbol,
+                    name,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "UNKNOWN",
+                    "ETF 价格序列命中历史非真实污染，暂不能形成风险收益判断。",
+                    "daily_bar",
+                    "MISSING",
+                    today,
+                    version,
+                    now,
+                )
+            )
+            continue
+        source_mode = "REAL"
         version = f"etf_liquidity_risk_{latest_date}_{now}"
 
         avg_amount = round(float(amount.tail(20).mean()), 2) if amount.dropna().any() else None
         avg_volume = round(float(volume.tail(20).mean()), 2) if volume.dropna().any() else None
-        latest_amount = round(float(amount.iloc[-1]), 2) if len(amount) and pd.notna(amount.iloc[-1]) else None
-        latest_volume = round(float(volume.iloc[-1]), 2) if len(volume) and pd.notna(volume.iloc[-1]) else None
+        latest_amount = (
+            round(float(amount.iloc[-1]), 2) if len(amount) and pd.notna(amount.iloc[-1]) else None
+        )
+        latest_volume = (
+            round(float(volume.iloc[-1]), 2) if len(volume) and pd.notna(volume.iloc[-1]) else None
+        )
         estimated_scale = round(float(avg_amount * 50), 2) if avg_amount is not None else None
         liq_score, liq_level, liq_note = _liq(avg_amount, avg_volume)
 
@@ -108,13 +210,56 @@ def build_etf_liquidity_risk_return() -> dict[str, Any]:
         vol = _vol(close)
         rr_score, rr_level, rr_note = _rr_score(ret_3m, drawdown, vol)
 
-        liquidity_rows.append((latest_date, symbol, name, avg_amount, avg_volume, latest_amount, latest_volume, estimated_scale, liq_score, liq_level, liq_note, "daily_bar", source_mode, latest_date, version, now))
-        risk_rows.append((latest_date, symbol, name, ret_1m, ret_3m, ret_6m, drawdown, vol, rr_score, rr_level, rr_note, "daily_bar", source_mode, latest_date, version, now))
+        liquidity_rows.append(
+            (
+                latest_date,
+                symbol,
+                name,
+                avg_amount,
+                avg_volume,
+                latest_amount,
+                latest_volume,
+                estimated_scale,
+                liq_score,
+                liq_level,
+                liq_note,
+                "daily_bar",
+                source_mode,
+                latest_date,
+                version,
+                now,
+            )
+        )
+        risk_rows.append(
+            (
+                latest_date,
+                symbol,
+                name,
+                ret_1m,
+                ret_3m,
+                ret_6m,
+                drawdown,
+                vol,
+                rr_score,
+                rr_level,
+                rr_note,
+                "daily_bar",
+                source_mode,
+                latest_date,
+                version,
+                now,
+            )
+        )
 
     with connect_db() as conn:
         liquidity_count = upsert_many(conn, _LIQ_SQL, liquidity_rows)
         risk_count = upsert_many(conn, _RISK_SQL, risk_rows)
-    return {"status": "ok", "count": risk_count, "liquidity_count": liquidity_count, "risk_return_count": risk_count}
+    return {
+        "status": "ok",
+        "count": risk_count,
+        "liquidity_count": liquidity_count,
+        "risk_return_count": risk_count,
+    }
 
 
 _LIQ_SQL = """

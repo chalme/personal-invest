@@ -1,10 +1,10 @@
 # DATA-014: 股票 / 基金 / ETF 非真实因子改为 MISSING
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -53,3 +53,9 @@
 ## Notes
 
 本任务会让部分页面从“看起来很完整”变成“真实数据缺失”。这是符合真实数据 only 的正确结果。
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files: `worker/factor/stock_financial.py`, `worker/fund/deep_profile.py`, `worker/fund/benchmark_peer.py`, `worker/etf/profile_exposure.py`, `worker/etf/liquidity_risk_return.py`, `worker/etf/tracking_quality.py`
+- Verification: `uv run python -m compileall backend/app worker scripts`; grep 检查 runtime worker 不再调用 built_in_sample / deterministic_estimate 生成新快照。
+- Notes: 未接真实源的财报、基金画像、基金基准/同类/暴露、ETF 画像/暴露返回 MISSING/skipped；ETF 流动性/风险/跟踪质量仅基于真实 daily_bar 计算。

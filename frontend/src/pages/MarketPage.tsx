@@ -30,7 +30,7 @@ export function MarketPage() {
       {dataSource?.warning && (
         <Card title="数据来源提示" description={`最新来源日期：${dataSource.latest_trade_date ?? '暂无'} · 模式：${dataSource.mode}`}>
           <div className="data-source-inline">
-            <Badge tone={dataSource.mode === 'sample' ? 'bad' : 'warn'}>{dataSource.mode === 'sample' ? '样本数据' : '混合数据'}</Badge>
+            <Badge tone={dataSource.mode === 'sample' ? 'bad' : 'warn'}>{dataSource.mode === 'sample' ? '历史样本污染' : '混合/缺失'}</Badge>
             <span>{dataSource.warning}</span>
             <small>来源统计：{Object.entries(dataSource.source_count ?? {}).map(([key, value]) => `${key}:${value}`).join(' / ') || '未知'}</small>
           </div>

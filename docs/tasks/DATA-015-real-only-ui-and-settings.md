@@ -1,10 +1,10 @@
 # DATA-015: 设置页与前端移除 sample 合法模式
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -53,3 +53,9 @@
 ## Notes
 
 本任务负责“用户看见和配置”的最后收口。它依赖 `DATA-011` 的语义，最好在 `DATA-012` 至少完成后执行，否则 UI 会先禁用 sample，但 worker 仍可能生成 sample。
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files: `backend/app/services/settings_service.py`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/ui.tsx`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/MarketPage.tsx`, `frontend/src/pages/StocksPage.tsx`, `frontend/src/pages/ReportsPage.tsx`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/api/types.ts`
+- Verification: `pnpm -C frontend build`; Settings 默认 fallback_to_sample=false，页面不再提供 sample 作为可选运行模式。
+- Notes: 历史 SAMPLE/ESTIMATED 仍可被展示为污染态，便于 DATA-013 清理前识别风险。

@@ -34,8 +34,8 @@ export function DataModeBadge(props: { mode?: string | null; compact?: boolean }
   const mode = String(props.mode ?? '').toUpperCase();
   const labels: Record<string, string> = {
     REAL: '真实数据',
-    ESTIMATED: '估算数据',
-    SAMPLE: '样本数据',
+    ESTIMATED: '历史估算污染',
+    SAMPLE: '历史样本污染',
     MISSING: '数据缺失',
     MIXED: '混合数据',
   };
@@ -43,9 +43,11 @@ export function DataModeBadge(props: { mode?: string | null; compact?: boolean }
     ? 'good'
     : mode === 'MISSING'
       ? 'bad'
-      : mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'MIXED'
-        ? 'warn'
-        : 'neutral';
+      : mode === 'ESTIMATED' || mode === 'SAMPLE'
+        ? 'bad'
+        : mode === 'MIXED'
+          ? 'warn'
+          : 'neutral';
   return <Badge tone={tone}>{props.compact ? (labels[mode] ?? '未知') : (labels[mode] ?? '数据未知')}</Badge>;
 }
 

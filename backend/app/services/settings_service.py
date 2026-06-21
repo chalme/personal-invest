@@ -6,7 +6,6 @@ from typing import Any
 
 from app.repositories.sqlite_repo import SQLiteRepository
 
-
 DEFAULT_SETTINGS: dict[str, Any] = {
     "risk": {
         "market_weak_score": 40,
@@ -17,7 +16,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "data": {
         "source_mode": "auto",
         "prefer_akshare": True,
-        "fallback_to_sample": True,
+        "fallback_to_sample": False,
     },
     "ai": {
         "enabled": True,
@@ -42,9 +41,11 @@ class SettingsService:
             key = str(row["key"])
             value = self._decode(row["value"])
             self._set_nested(merged, key, value)
+        self._enforce_real_only_data_settings(merged)
         return merged
 
     def update_settings(self, payload: dict[str, Any]) -> dict[str, Any]:
+        self._enforce_real_only_data_settings(payload)
         flattened = self._flatten(payload)
         now = datetime.now().isoformat(timespec="seconds")
         for key, value in flattened.items():
@@ -93,3 +94,12 @@ class SettingsService:
                 cursor[part] = current
             cursor = current
         cursor[parts[-1]] = value
+
+    @staticmethod
+    def _enforce_real_only_data_settings(settings: dict[str, Any]) -> None:
+        data = settings.setdefault("data", {})
+        if not isinstance(data, dict):
+            settings["data"] = data = {}
+        if str(data.get("source_mode") or "auto").lower() == "sample":
+            data["source_mode"] = "auto"
+        data["fallback_to_sample"] = False

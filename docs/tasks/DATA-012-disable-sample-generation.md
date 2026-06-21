@@ -1,10 +1,10 @@
 # DATA-012: 禁止行情与基金净值新增 sample 生成
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -52,3 +52,9 @@
 ## Notes
 
 本任务只阻止新增污染，不负责清除历史污染。历史 sample 数据由 `DATA-013` 处理。
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files: `worker/ingest/market_data.py`, `backend/app/services/data_credibility_service.py`, `backend/app/services/data_source_service.py`, `docs/data-pipeline.md`
+- Verification: `uv run python -m compileall backend/app worker scripts`; monkeypatch smoke 覆盖 AKShare 全失败、部分失败和基金净值失败场景；新 manifest 不再写入 source_count.sample。
+- Notes: 无真实数据且无真实历史时写入 MISSING manifest，不生成 sample parquet；akshare_cached 仍允许展示但关闭高置信建议。

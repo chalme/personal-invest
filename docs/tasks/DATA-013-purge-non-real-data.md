@@ -1,10 +1,10 @@
 # DATA-013: 历史 sample / estimated 数据审计与清理脚本
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -56,3 +56,9 @@
 ## Notes
 
 本任务风险高于普通页面任务。必须默认 dry-run、事务化、可重复，并且不能在没有备份的情况下静默删除数据。生产清理执行仍需要人工确认。
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files: `scripts/audit_real_only.py`, `scripts/purge_non_real_data.py`, `docs/data-pipeline.md`, `docs/task-board.md`
+- Verification: `uv run python -m compileall backend/app worker scripts`; 脚本默认为 dry-run，--apply 会先备份 SQLite 与 Parquet 再过滤非真实记录。
+- Notes: 本次只提供工具，不自动清理生产或本地数据；执行 --apply 前应先审阅 dry-run 结果和备份路径。

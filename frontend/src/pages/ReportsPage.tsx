@@ -36,8 +36,8 @@ function sectionItems(markdown: string, heading: string, limit = 4) {
 
 function credibilityLabel(mode?: string) {
   if (mode === 'REAL') return '真实数据';
-  if (mode === 'ESTIMATED') return '估算数据';
-  if (mode === 'SAMPLE') return '样本数据';
+  if (mode === 'ESTIMATED') return '历史估算污染';
+  if (mode === 'SAMPLE') return '历史样本污染';
   if (mode === 'MISSING') return '数据缺失';
   if (mode === 'MIXED') return '混合数据';
   return '数据未知';

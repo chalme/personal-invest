@@ -17,7 +17,7 @@ const defaultSettings: AppSettings = {
   data: {
     source_mode: 'auto',
     prefer_akshare: true,
-    fallback_to_sample: true,
+    fallback_to_sample: false,
   },
   ai: {
     enabled: true,
@@ -72,8 +72,8 @@ function ToggleField(props: { label: string; description?: string; checked: bool
 
 function credibilityLabel(mode?: string) {
   if (mode === 'REAL') return '真实';
-  if (mode === 'ESTIMATED') return '估算';
-  if (mode === 'SAMPLE') return '样本';
+  if (mode === 'ESTIMATED') return '历史估算污染';
+  if (mode === 'SAMPLE') return '历史样本污染';
   if (mode === 'MISSING') return '缺失';
   if (mode === 'MIXED') return '混合';
   return '未知';
@@ -81,8 +81,8 @@ function credibilityLabel(mode?: string) {
 
 function credibilityTone(mode?: string) {
   if (mode === 'REAL') return 'good' as const;
-  if (mode === 'MISSING') return 'bad' as const;
-  if (mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'MIXED') return 'warn' as const;
+  if (mode === 'MISSING' || mode === 'ESTIMATED' || mode === 'SAMPLE') return 'bad' as const;
+  if (mode === 'MIXED') return 'warn' as const;
   return 'neutral' as const;
 }
 
@@ -199,13 +199,13 @@ export function SettingsPage() {
         <Card
           className="conclusion-card"
           title="数据可信度总览"
-          description="统一查看各模块使用真实、估算、样本还是缺失数据。"
+          description="统一查看各模块是真实、真实历史缓存、缺失，还是历史非真实污染。"
         >
           <div className="settings-summary">
             <Badge tone={credibilityTone(credibility.summary.overall_mode)}>整体：{credibilityLabel(credibility.summary.overall_mode)}</Badge>
             <Badge tone="good">真实 {credibility.summary.real_count}</Badge>
-            <Badge tone="warn">估算 {credibility.summary.estimated_count}</Badge>
-            <Badge tone="warn">样本 {credibility.summary.sample_count}</Badge>
+            <Badge tone={credibility.summary.estimated_count > 0 ? 'bad' : 'neutral'}>历史估算污染 {credibility.summary.estimated_count}</Badge>
+            <Badge tone={credibility.summary.sample_count > 0 ? 'bad' : 'neutral'}>历史样本污染 {credibility.summary.sample_count}</Badge>
             <Badge tone={credibility.summary.missing_count > 0 ? 'bad' : 'neutral'}>缺失 {credibility.summary.missing_count}</Badge>
             <Badge tone={freshnessTone(credibility.summary.freshness_status)}>新鲜度：{freshnessLabel(credibility.summary.freshness_status)}</Badge>
             <Badge tone="neutral">预期交易日 {credibility.summary.expected_latest_trade_date ?? '暂无'}</Badge>
@@ -280,7 +280,7 @@ export function SettingsPage() {
           />
         </Card>
 
-        <Card title="数据源策略" description="优先使用真实数据，失败时允许样本数据兜底。">
+        <Card title="数据源策略" description="真实数据 only：失败时显示缺失，不再允许样本兜底。">
           <label className="form-field">
             <span>数据源模式</span>
             <select
@@ -289,7 +289,6 @@ export function SettingsPage() {
             >
               <option value="auto">自动</option>
               <option value="akshare">AKShare 优先</option>
-              <option value="sample">仅样本数据</option>
             </select>
           </label>
           <ToggleField
@@ -298,12 +297,9 @@ export function SettingsPage() {
             checked={settings.data.prefer_akshare}
             onChange={(checked) => setSettings((prev) => ({ ...prev, data: { ...prev.data, prefer_akshare: checked } }))}
           />
-          <ToggleField
-            label="失败时使用样本兜底"
-            description="保证每日任务不中断。"
-            checked={settings.data.fallback_to_sample}
-            onChange={(checked) => setSettings((prev) => ({ ...prev, data: { ...prev.data, fallback_to_sample: checked } }))}
-          />
+          <div className="alert alert-warning">
+            失败时不会生成样本数据。没有真实数据或真实历史缓存时，系统会标记为缺失，并关闭高置信建议驱动。
+          </div>
         </Card>
 
         <Card title="AI 分析" description="默认使用本地结构化解释，外部 LLM 作为可选增强。">

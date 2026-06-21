@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import hashlib
-import math
 from datetime import date, timedelta
 from typing import Any
 
@@ -26,8 +24,17 @@ INDEX_SYMBOLS = [
 ]
 
 
-def _stable_seed(text: str) -> int:
-    return int(hashlib.sha256(text.encode("utf-8")).hexdigest()[:8], 16)
+NON_REAL_SOURCE_VALUES = {
+    "sample",
+    "estimated",
+    "built_in_sample",
+    "deterministic_estimate",
+    "instrument_estimate",
+    "mock",
+    "demo",
+}
+
+NON_RECORD_SOURCE_KEYS = {"missing", "unknown", "none", "null"}
 
 
 def _business_dates(days: int = 180) -> list[date]:
@@ -109,9 +116,15 @@ def _freshness_warning(
 
 
 def _source_mode_from_count(source_count: dict[str, int]) -> str:
-    sample_count = int(source_count.get("sample") or 0)
+    sample_count = sum(
+        int(value or 0)
+        for key, value in source_count.items()
+        if key.lower() in NON_REAL_SOURCE_VALUES
+    )
     real_count = sum(
-        int(value or 0) for key, value in source_count.items() if key.lower() != "sample"
+        int(value or 0)
+        for key, value in source_count.items()
+        if key.lower() not in NON_REAL_SOURCE_VALUES | NON_RECORD_SOURCE_KEYS
     )
     if real_count > 0 and sample_count > 0:
         return "MIXED"
@@ -126,9 +139,9 @@ def _source_warning(dataset_label: str, source_mode: str) -> str | None:
     if source_mode == "REAL":
         return None
     if source_mode == "MIXED":
-        return f"{dataset_label}包含真实数据和样本数据，分析结论需要结合数据来源谨慎使用。"
+        return f"{dataset_label}包含真实数据和历史非真实数据，非真实部分不可用于投资判断。"
     if source_mode == "SAMPLE":
-        return f"{dataset_label}全部来自样本数据，仅用于功能演示，不应作为真实投资依据。"
+        return f"{dataset_label}来自历史样本或估算数据，属于待清理污染，不可作为正常运行数据。"
     return f"{dataset_label}缺失或来源不明确，请检查数据同步任务。"
 
 
@@ -237,43 +250,6 @@ def _fetch_with_akshare(
     return df
 
 
-def _generate_sample_bars(symbol: str, name: str, days: list[date]) -> pd.DataFrame:
-    seed = _stable_seed(symbol)
-    base = 8 + seed % 90
-    if symbol in {"000001.SH", "399001.SZ", "399006.SZ", "000300.SH", "000905.SH"}:
-        base = 2800 + seed % 900
-    if symbol.startswith("510"):
-        base = 3 + (seed % 200) / 100
-    trend = ((seed % 9) - 3) / 1000
-    rows: list[dict[str, Any]] = []
-    prev_close = float(base)
-    for i, d in enumerate(days):
-        wave = math.sin(i / 7 + seed % 11) * 0.012
-        drift = trend + math.sin(i / 31) * 0.0015
-        close = max(0.5, prev_close * (1 + drift + wave))
-        open_price = prev_close * (1 + math.sin(i / 5 + seed % 7) * 0.004)
-        high = max(open_price, close) * (1 + 0.006 + (seed % 5) * 0.001)
-        low = min(open_price, close) * (1 - 0.006 - (seed % 3) * 0.001)
-        volume = 900_000 + (seed % 500_000) + i * 1200
-        amount = close * volume * (100 if close < 100 else 1)
-        rows.append(
-            {
-                "symbol": symbol,
-                "name": name,
-                "trade_date": d.isoformat(),
-                "open": round(open_price, 4),
-                "high": round(high, 4),
-                "low": round(low, 4),
-                "close": round(close, 4),
-                "volume": float(volume),
-                "amount": round(float(amount), 2),
-                "source": "sample",
-            }
-        )
-        prev_close = close
-    return pd.DataFrame(rows)
-
-
 def _historical_real_bars(
     symbol: str,
     name: str,
@@ -286,7 +262,7 @@ def _historical_real_bars(
     if frame.empty:
         return None
     if "source" in frame.columns:
-        frame = frame[frame["source"].astype(str).str.lower() != "sample"].copy()
+        frame = frame[~frame["source"].astype(str).str.lower().isin(NON_REAL_SOURCE_VALUES)].copy()
     if frame.empty:
         return None
     required = ["trade_date", "open", "high", "low", "close"]
@@ -325,9 +301,10 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
     end_date = business_dates[-1].strftime("%Y%m%d")
     historical_daily_bar = read_parquet_dataset("daily_bar")
     frames: list[pd.DataFrame] = []
-    source_count = {"akshare": 0, "akshare_cached": 0, "sample": 0}
+    source_count = {"akshare": 0, "akshare_cached": 0, "missing": 0}
     asset_source_status: dict[str, str] = {}
     fallback_symbols: list[str] = []
+    missing_symbols: list[str] = []
     for item in merged.values():
         symbol = str(item["symbol"])
         name = str(item.get("name") or symbol)
@@ -335,9 +312,10 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
         if frame is None or frame.empty:
             frame = _historical_real_bars(symbol, name, historical_daily_bar, days)
             if frame is None or frame.empty:
-                frame = _generate_sample_bars(symbol, name, business_dates)
-                source_count["sample"] += 1
-                asset_source_status[symbol] = "sample"
+                source_count["missing"] += 1
+                asset_source_status[symbol] = "missing"
+                missing_symbols.append(symbol)
+                continue
             else:
                 source_count["akshare_cached"] += 1
                 asset_source_status[symbol] = "akshare_cached"
@@ -346,11 +324,44 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
             source_count["akshare"] += 1
             asset_source_status[symbol] = "akshare"
         frames.append(frame)
+    generated_at = now_iso()
+    requested_assets = sorted(str(item["symbol"]) for item in merged.values())
+    missing_warning = (
+        f"{len(missing_symbols)} 个资产缺少 AKShare 数据且没有可复用真实历史，"
+        "已标记为 MISSING，未生成样本行情。"
+        if missing_symbols
+        else None
+    )
+    fallback_warning = (
+        f"{len(fallback_symbols)} 个资产 AKShare 同步失败，"
+        "已保留最近成功真实历史；相关资产不应驱动高置信当日价格建议。"
+        if fallback_symbols
+        else None
+    )
+    if not frames:
+        manifest = _build_manifest(
+            dataset="daily_bar",
+            generated_at=generated_at,
+            rows=0,
+            assets=requested_assets,
+            latest_data_date=None,
+            source_count=source_count,
+            asset_key="symbols",
+            latest_key="latest_trade_date",
+            dataset_label="行情日线",
+            extra_warnings=[warning for warning in (missing_warning, fallback_warning) if warning],
+            can_drive_advice_override=False,
+            asset_source_status=asset_source_status,
+        )
+        write_json_atomic(
+            RAW_DIR / "market" / f"{date.today().isoformat()}_manifest.json", manifest
+        )
+        return {**manifest, "status": "missing", "dataset": "daily_bar"}
+
     df = pd.concat(frames, ignore_index=True)
     df["data_version"] = f"daily_bar_{df['trade_date'].max()}_{now_iso()}"
     df = df.sort_values(["trade_date", "symbol"]).reset_index(drop=True)
-    generated_at = now_iso()
-    assets = sorted(df["symbol"].unique().tolist())
+    assets = requested_assets
     latest_data_date = str(df["trade_date"].max())
     manifest = _build_manifest(
         dataset="daily_bar",
@@ -362,13 +373,8 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
         asset_key="symbols",
         latest_key="latest_trade_date",
         dataset_label="行情日线",
-        extra_warnings=[
-            f"{len(fallback_symbols)} 个资产 AKShare 同步失败，"
-            "已保留最近成功真实历史；相关资产不应驱动高置信当日价格建议。"
-        ]
-        if fallback_symbols
-        else None,
-        can_drive_advice_override=False if fallback_symbols else None,
+        extra_warnings=[warning for warning in (missing_warning, fallback_warning) if warning],
+        can_drive_advice_override=False if fallback_symbols or missing_symbols else None,
         asset_source_status=asset_source_status,
     )
     write_json_atomic(RAW_DIR / "market" / f"{date.today().isoformat()}_manifest.json", manifest)
@@ -403,29 +409,6 @@ def _fetch_fund_nav_with_akshare(symbol: str, name: str) -> pd.DataFrame | None:
     return df
 
 
-def _generate_sample_nav(symbol: str, name: str, days: list[date]) -> pd.DataFrame:
-    seed = _stable_seed(symbol)
-    base = 0.8 + (seed % 120) / 100
-    trend = ((seed % 7) - 2) / 1500
-    rows: list[dict[str, Any]] = []
-    prev_nav = float(base)
-    for i, current in enumerate(days):
-        wave = math.sin(i / 11 + seed % 13) * 0.006
-        nav = max(0.2, prev_nav * (1 + trend + wave))
-        rows.append(
-            {
-                "symbol": symbol,
-                "name": name,
-                "nav_date": current.isoformat(),
-                "nav": round(nav, 4),
-                "accumulated_nav": round(nav * (1 + (seed % 9) / 100), 4),
-                "source": "sample",
-            }
-        )
-        prev_nav = nav
-    return pd.DataFrame(rows)
-
-
 def _historical_real_nav(
     symbol: str,
     name: str,
@@ -438,7 +421,7 @@ def _historical_real_nav(
     if frame.empty:
         return None
     if "source" in frame.columns:
-        frame = frame[frame["source"].astype(str).str.lower() != "sample"].copy()
+        frame = frame[~frame["source"].astype(str).str.lower().isin(NON_REAL_SOURCE_VALUES)].copy()
     if frame.empty or "nav" not in frame.columns:
         return None
     if "accumulated_nav" not in frame.columns:
@@ -468,7 +451,7 @@ def sync_fund_data(days: int = 180) -> dict[str, Any]:
             rows=0,
             assets=[],
             latest_data_date=None,
-            source_count={"akshare": 0, "akshare_cached": 0, "sample": 0},
+            source_count={"akshare": 0, "akshare_cached": 0, "missing": 0},
             asset_key="funds",
             latest_key="latest_nav_date",
             dataset_label="基金净值",
@@ -476,12 +459,12 @@ def sync_fund_data(days: int = 180) -> dict[str, Any]:
         write_json_atomic(RAW_DIR / "fund" / f"{date.today().isoformat()}_manifest.json", manifest)
         return {**manifest, "status": "skipped", "dataset": "fund_nav"}
 
-    business_dates = _business_dates(days)
     historical_fund_nav = read_parquet_dataset("fund_nav")
     frames: list[pd.DataFrame] = []
-    source_count = {"akshare": 0, "akshare_cached": 0, "sample": 0}
+    source_count = {"akshare": 0, "akshare_cached": 0, "missing": 0}
     fund_source_status: dict[str, str] = {}
     fallback_funds: list[str] = []
+    missing_funds: list[str] = []
     for item in funds:
         symbol = str(item["symbol"])
         name = str(item.get("name") or symbol)
@@ -489,9 +472,10 @@ def sync_fund_data(days: int = 180) -> dict[str, Any]:
         if frame is None or frame.empty:
             frame = _historical_real_nav(symbol, name, historical_fund_nav, days)
             if frame is None or frame.empty:
-                frame = _generate_sample_nav(symbol, name, business_dates)
-                source_count["sample"] += 1
-                fund_source_status[symbol] = "sample"
+                source_count["missing"] += 1
+                fund_source_status[symbol] = "missing"
+                missing_funds.append(symbol)
+                continue
             else:
                 source_count["akshare_cached"] += 1
                 fund_source_status[symbol] = "akshare_cached"
@@ -501,11 +485,42 @@ def sync_fund_data(days: int = 180) -> dict[str, Any]:
             fund_source_status[symbol] = "akshare"
         frames.append(frame)
 
+    generated_at = now_iso()
+    requested_assets = sorted(str(item["symbol"]) for item in funds)
+    missing_warning = (
+        f"{len(missing_funds)} 只基金缺少 AKShare 净值且没有可复用真实历史，"
+        "已标记为 MISSING，未生成样本净值。"
+        if missing_funds
+        else None
+    )
+    fallback_warning = (
+        f"{len(fallback_funds)} 只基金 AKShare 净值同步失败，"
+        "已保留最近成功真实净值；相关基金不应驱动高置信当日基金建议。"
+        if fallback_funds
+        else None
+    )
+    if not frames:
+        manifest = _build_manifest(
+            dataset="fund_nav",
+            generated_at=generated_at,
+            rows=0,
+            assets=requested_assets,
+            latest_data_date=None,
+            source_count=source_count,
+            asset_key="funds",
+            latest_key="latest_nav_date",
+            dataset_label="基金净值",
+            extra_warnings=[warning for warning in (missing_warning, fallback_warning) if warning],
+            can_drive_advice_override=False,
+            asset_source_status=fund_source_status,
+        )
+        write_json_atomic(RAW_DIR / "fund" / f"{date.today().isoformat()}_manifest.json", manifest)
+        return {**manifest, "status": "missing", "dataset": "fund_nav"}
+
     df = pd.concat(frames, ignore_index=True)
     df["data_version"] = f"fund_nav_{df['nav_date'].max()}_{now_iso()}"
     df = df.sort_values(["nav_date", "symbol"]).reset_index(drop=True)
-    generated_at = now_iso()
-    assets = sorted(df["symbol"].unique().tolist())
+    assets = requested_assets
     latest_data_date = str(df["nav_date"].max())
     manifest = _build_manifest(
         dataset="fund_nav",
@@ -517,13 +532,8 @@ def sync_fund_data(days: int = 180) -> dict[str, Any]:
         asset_key="funds",
         latest_key="latest_nav_date",
         dataset_label="基金净值",
-        extra_warnings=[
-            f"{len(fallback_funds)} 只基金 AKShare 净值同步失败，"
-            "已保留最近成功真实净值；相关基金不应驱动高置信当日基金建议。"
-        ]
-        if fallback_funds
-        else None,
-        can_drive_advice_override=False if fallback_funds else None,
+        extra_warnings=[warning for warning in (missing_warning, fallback_warning) if warning],
+        can_drive_advice_override=False if fallback_funds or missing_funds else None,
         asset_source_status=fund_source_status,
     )
     write_json_atomic(RAW_DIR / "fund" / f"{date.today().isoformat()}_manifest.json", manifest)

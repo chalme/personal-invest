@@ -181,7 +181,7 @@ class DataCredibilityService:
     def _portfolio_snapshot_module(self) -> dict[str, Any]:
         row = self._table_stats("portfolio_snapshot", "snapshot_date")
         count = int(row.get("record_count") or 0)
-        mode = "ESTIMATED" if count else "MISSING"
+        mode = "REAL" if count else "MISSING"
         return self._module(
             module="portfolio_snapshot",
             label="组合快照",
@@ -191,7 +191,9 @@ class DataCredibilityService:
             coverage_ratio=1.0 if count else 0.0,
             can_drive_advice=False,
             risk_level="LOW" if count else "MEDIUM",
-            note="组合快照由本地持仓和估值生成，用于复盘参考。" if count else "尚未生成组合快照。",
+            note="组合快照由本地持仓与价格/净值结果生成，用于复盘参考。"
+            if count
+            else "尚未生成组合快照。",
         )
 
     def _review_loop_module(self) -> dict[str, Any]:
@@ -453,9 +455,25 @@ class DataCredibilityService:
     def _mode_from_source_count(self, source_count: dict[str, Any] | None) -> str:
         if not source_count:
             return "MISSING"
-        sample_count = int(source_count.get("sample") or 0)
+        non_real_keys = {
+            "sample",
+            "estimated",
+            "built_in_sample",
+            "deterministic_estimate",
+            "instrument_estimate",
+            "mock",
+            "demo",
+        }
+        non_record_keys = {"missing", "unknown", "none", "null"}
+        sample_count = sum(
+            int(value or 0)
+            for key, value in source_count.items()
+            if key.lower() in non_real_keys
+        )
         real_count = sum(
-            int(value or 0) for key, value in source_count.items() if key.lower() != "sample"
+            int(value or 0)
+            for key, value in source_count.items()
+            if key.lower() not in non_real_keys | non_record_keys
         )
         if real_count > 0 and sample_count > 0:
             return "MIXED"
@@ -493,6 +511,9 @@ class DataCredibilityService:
         value = str(mode or "MISSING").upper()
         mapping = {
             "REAL": "REAL",
+            "AKSHARE": "REAL",
+            "AKSHARE_CACHED": "REAL",
+            "REAL_CACHED": "REAL",
             "SAMPLE": "SAMPLE",
             "MIXED": "MIXED",
             "ESTIMATED": "ESTIMATED",
@@ -516,19 +537,21 @@ class DataCredibilityService:
     def _risk_for_mode(self, mode: str) -> str:
         if mode == "REAL":
             return "LOW"
-        if mode in {"ESTIMATED", "SAMPLE", "MIXED"}:
+        if mode == "MIXED":
             return "MEDIUM"
+        if mode in {"ESTIMATED", "SAMPLE"}:
+            return "HIGH"
         return "HIGH"
 
     def _mode_note(self, mode: str, label: str) -> str:
         if mode == "REAL":
             return f"{label} 使用真实数据，可作为规则判断的重要输入。"
         if mode == "ESTIMATED":
-            return f"{label} 主要为估算数据，可用于展示和低置信解释，不应单独触发高优先级建议。"
+            return f"{label} 命中历史估算数据，属于待清理污染，不可作为正常投资判断输入。"
         if mode == "SAMPLE":
-            return f"{label} 使用样本数据，仅用于功能演示，不应作为真实投资依据。"
+            return f"{label} 命中历史样本数据，属于待清理污染，不可作为正常投资判断输入。"
         if mode == "MIXED":
-            return f"{label} 包含真实、估算、样本或缺失数据，结论需结合明细谨慎使用。"
+            return f"{label} 包含真实数据和历史非真实污染，非真实部分不可用于建议。"
         return f"{label} 数据缺失，暂不能形成确定性结论。"
 
     def _latest_date(self, left: Any, right: Any) -> str | None:

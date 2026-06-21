@@ -44,7 +44,7 @@ function signalTone(signal: Signal) {
 
 function dataSourceLabel(mode?: string) {
   if (mode === 'real') return '真实数据';
-  if (mode === 'sample') return '样本数据';
+  if (mode === 'sample') return '历史样本污染';
   if (mode === 'mixed') return '混合数据';
   return '数据未知';
 }
@@ -58,8 +58,8 @@ function dataSourceTone(mode?: string) {
 
 function credibilityLabel(mode?: string) {
   if (mode === 'REAL') return '真实数据';
-  if (mode === 'ESTIMATED') return '估算数据';
-  if (mode === 'SAMPLE') return '样本数据';
+  if (mode === 'ESTIMATED') return '历史估算污染';
+  if (mode === 'SAMPLE') return '历史样本污染';
   if (mode === 'MISSING') return '数据缺失';
   if (mode === 'MIXED') return '混合数据';
   return '数据未知';
@@ -270,7 +270,7 @@ export function Dashboard(props: { onNavigate?: (key: string) => void }) {
             </p>
             <small>
               最新数据日期：{credibilitySummary.latest_data_date ?? '暂无'} · 预期交易日：{credibilitySummary.expected_latest_trade_date ?? '暂无'} · 新鲜度：{freshnessLabel(credibilitySummary.freshness_status)}。
-              可驱动高置信建议模块 {credibilitySummary.can_drive_advice_count ?? 0} 个。估算或样本数据用于展示和低置信解释，不应单独作为高优先级建议依据。
+              可驱动高置信建议模块 {credibilitySummary.can_drive_advice_count ?? 0} 个。历史估算或样本污染不可作为正常建议依据，请先清理或补齐真实数据。
             </small>
             {credibilitySummary.warning && <small>{credibilitySummary.warning}</small>}
           </div>
