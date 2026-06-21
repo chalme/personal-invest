@@ -1,8 +1,9 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { AppLayout } from './components/layout/AppLayout';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ErrorBoundary } from './components/system/ErrorBoundary';
 import { LoadingState } from './components/ui';
+import { applyUiPreferences } from './utils/uiPreferences';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then((module) => ({ default: module.Dashboard })));
 const MarketPage = lazy(() => import('./pages/MarketPage').then((module) => ({ default: module.MarketPage })));
@@ -21,6 +22,24 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => 
 
 export function App() {
   const [active, setActive] = useState('dashboard');
+  useEffect(() => {
+    applyUiPreferences({ theme: 'dark', density: 'comfortable' });
+    const cached = window.localStorage.getItem('personal-invest-ui');
+    if (cached) {
+      applyUiPreferences(JSON.parse(cached));
+    }
+    const runtimeBase = window.__APP_CONFIG__?.apiBase ?? import.meta.env.VITE_API_BASE ?? '';
+    const apiBase = String(runtimeBase).replace(/\/$/, '');
+    void fetch(`${apiBase}/api/settings`)
+      .then((res) => res.json())
+      .then((payload) => {
+        if (payload?.data?.ui) {
+          applyUiPreferences(payload.data.ui);
+          window.localStorage.setItem('personal-invest-ui', JSON.stringify(payload.data.ui));
+        }
+      })
+      .catch(() => undefined);
+  }, []);
   const page = (() => {
     switch (active) {
       case 'market': return <MarketPage />;

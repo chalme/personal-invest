@@ -47,17 +47,17 @@
 
 ### P2-002: 桌面端主题与密度系统
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 优化桌面端使用体验，建立亮/暗主题、信息密度和视觉一致性基础，不做移动端响应式适配。
 - Details: `docs/tasks/P2-002-desktop-theme-density.md`
 - Files: `frontend/src/styles/global.css`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/api/types.ts`
 - Concrete Changes: 新增桌面端主题变量、亮/暗主题切换、标准/紧凑密度、卡片/表格/图表间距统一和设置持久化；不引入移动端导航、触摸优化或小屏重排。
 - Acceptance: 桌面端 Dashboard、观察池、持仓、基金、股票、复盘等页面视觉层级一致；主题和密度设置可保存并生效；前端构建通过；移动端适配不在本任务范围内。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 原 `P2-002` 保留编号重定义为桌面端体验任务；移动端响应式后续另拆 `P2-016`。
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/App.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/utils/uiPreferences.ts`, `frontend/src/styles/global.css`
+- Verification: `uv run python -m compileall backend/app worker scripts`. Frontend build 未执行：当前环境缺少 `node/pnpm`。
+- Notes: 原 `P2-002` 保留编号重定义为桌面端体验任务；移动端响应式后续另拆 `P2-016`。本任务只实现桌面端主题/密度，不改移动端布局。
 
 ### P2-003: 股票财报分析规划
 
@@ -229,17 +229,17 @@
 
 ### P2-002: 桌面端主题与密度系统
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 优化桌面端使用体验，建立亮/暗主题、信息密度和视觉一致性基础，不做移动端响应式适配。
 - Details: `docs/tasks/P2-002-desktop-theme-density.md`
 - Files: `frontend/src/styles/global.css`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/api/types.ts`
 - Concrete Changes: 新增桌面端主题变量、亮/暗主题切换、标准/紧凑密度、卡片/表格/图表间距统一和设置持久化；不引入移动端导航、触摸优化或小屏重排。
 - Acceptance: 桌面端 Dashboard、观察池、持仓、基金、股票、复盘等页面视觉层级一致；主题和密度设置可保存并生效；前端构建通过；移动端适配不在本任务范围内。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 原 `P2-002` 保留编号重定义为桌面端体验任务；移动端响应式后续另拆 `P2-016`。
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/App.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/utils/uiPreferences.ts`, `frontend/src/styles/global.css`
+- Verification: `uv run python -m compileall backend/app worker scripts`. Frontend build 未执行：当前环境缺少 `node/pnpm`。
+- Notes: 原 `P2-002` 保留编号重定义为桌面端体验任务；移动端响应式后续另拆 `P2-016`。本任务只实现桌面端主题/密度，不改移动端布局。
 
 ### P2-003: 股票财报分析规划
 

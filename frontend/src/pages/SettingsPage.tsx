@@ -3,6 +3,7 @@ import { RefreshCcw, RotateCcw, Save } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '../api/client';
 import type { AppSettings } from '../api/types';
 import { Badge, Card, LoadingState } from '../components/ui';
+import { applyUiPreferences } from '../utils/uiPreferences';
 
 type ApiResponse<T> = { data: T };
 
@@ -83,6 +84,8 @@ export function SettingsPage() {
     try {
       const res = await apiGet<ApiResponse<AppSettings>>('/api/settings');
       setSettings(res.data);
+      applyUiPreferences(res.data.ui);
+      window.localStorage.setItem('personal-invest-ui', JSON.stringify(res.data.ui));
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载设置失败');
     } finally {
@@ -97,6 +100,8 @@ export function SettingsPage() {
     try {
       const res = await apiPut<ApiResponse<AppSettings>>('/api/settings', settings);
       setSettings(res.data);
+      applyUiPreferences(res.data.ui);
+      window.localStorage.setItem('personal-invest-ui', JSON.stringify(res.data.ui));
       setMessage('设置已保存，下一次每日任务会使用新的阈值。');
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存设置失败');
@@ -113,6 +118,8 @@ export function SettingsPage() {
     try {
       const res = await apiPost<ApiResponse<AppSettings>>('/api/settings/reset');
       setSettings(res.data);
+      applyUiPreferences(res.data.ui);
+      window.localStorage.setItem('personal-invest-ui', JSON.stringify(res.data.ui));
       setMessage('已恢复默认设置。');
     } catch (err) {
       setError(err instanceof Error ? err.message : '重置设置失败');

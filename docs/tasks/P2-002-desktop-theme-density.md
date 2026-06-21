@@ -1,10 +1,10 @@
 # P2-002: 桌面端主题与密度系统
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -48,12 +48,26 @@
 - 设置刷新后仍保持用户选择。
 - 不引入移动端响应式改动。
 - `cd frontend && pnpm build` 通过。
-- `./scripts/check.sh` 通过。
+- `./scripts/check.sh` 当前环境缺少 `node/pnpm`，未完成前端阶段。
+
+## Changed Files
+
+- `frontend/src/App.tsx`
+- `frontend/src/pages/SettingsPage.tsx`
+- `frontend/src/utils/uiPreferences.ts`
+- `frontend/src/styles/global.css` 通过。
 
 ## Verification
 
 - `cd frontend && pnpm build`
-- `./scripts/check.sh`
+- `./scripts/check.sh` 当前环境缺少 `node/pnpm`，未完成前端阶段。
+
+## Changed Files
+
+- `frontend/src/App.tsx`
+- `frontend/src/pages/SettingsPage.tsx`
+- `frontend/src/utils/uiPreferences.ts`
+- `frontend/src/styles/global.css`
 - 手动检查 Dashboard、Watchlist、Portfolio、Stocks、Funds、Review、Settings 的桌面端展示。
 
 ## Notes
