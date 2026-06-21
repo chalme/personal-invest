@@ -33,16 +33,16 @@
 
 ### DOC-004: 收敛产品 backlog 与长期路线图状态
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 将产品 backlog、长期路线图和任务看板与当前已实现能力对齐，避免已完成能力继续以未完成待办形式出现。
 - Details: `docs/tasks/DOC-004-product-roadmap-state-alignment.md`
 - Files: `docs/product-backlog.md`, `docs/long-term-roadmap.md`, `docs/task-board.md`, `docs/README.md`
 - Concrete Changes: 更新已完成能力、当前真实短板和下一阶段方向；不改业务代码。
 - Acceptance: 已完成能力不再被描述为当前未完成主线；当前短板只保留真实短板；下一阶段任务方向清晰；`git diff --check` 通过。
-- Completed At:
-- Changed Files:
-- Verification:
+- Completed At: 2026-06-21
+- Changed Files: `docs/product-backlog.md`, `docs/long-term-roadmap.md`, `docs/task-board.md`, `docs/tasks/DOC-004-product-roadmap-state-alignment.md`
+- Verification: `git diff --check`; 确认 `long-term-roadmap` 当前短板不再列出已完成底座；确认 `product-backlog` 增加已完成能力快照和真实下一阶段主线。
 - Notes: 文档状态收敛任务，不是线上人工验收，也不是新功能实现。
 
 ### P2-017: 数据可信度总览 V1

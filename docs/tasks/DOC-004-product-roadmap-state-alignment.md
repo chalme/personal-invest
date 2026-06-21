@@ -1,10 +1,10 @@
 # DOC-004: 收敛产品 backlog 与长期路线图状态
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -46,6 +46,12 @@
 - `git diff --check`
 - 搜索确认已完成能力不再以当前未完成主线表达。
 - 搜索确认真实下一阶段仍包含数据可信度、真实数据源、产品页面打磨和运维安全。
+
+## Completion
+
+- Updated `product-backlog` with completed capability snapshot and current next-stage priorities.
+- Updated `long-term-roadmap` current capability and shortback sections to remove completed model foundations from active gaps.
+- Updated `task-board` completion metadata.
 
 ## Notes
 
