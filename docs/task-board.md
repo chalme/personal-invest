@@ -10,9 +10,9 @@
 
 1. 人工验收与生产权限事项单独跟踪，不作为 Code Agent 可独立完成任务。
 2. Real-only 治理已完成第一阶段：线上和开发运行链路不能生成、写入或展示 sample/mock/demo/estimated 作为正常数据。
-3. Code Agent 当前进入真实行情多源容错阶段：东方财富行情源失败时切换腾讯等真实备用源；所有真实源失败时只能进入真实历史缓存或 `MISSING`。
-4. 优先顺序为：行情 provider chain、字段标准化与 provider 元数据、只读数据源探针、timeout/retry/熔断、Dashboard/Settings provider 级可信度展示。
-5. 数据源可以 fallback，数据真实性不能 fallback；后续任务不得恢复 sample 兜底。
+3. 真实行情多源容错阶段已完成第一轮：东方财富行情源失败时切换腾讯等真实备用源；所有真实源失败时只能进入真实历史缓存或 `MISSING`。
+4. Code Agent 当前进入 real-only 历史状态一致性修复：清理旧事件污染、修正旧 manifest 的 sample/mixed 残留、收敛页面主视图展示。
+5. 数据源可以 fallback，数据真实性不能 fallback；后续任务不得恢复 sample 兜底，也不得通过清空全库掩盖历史污染。
 
 ## Status
 
@@ -230,6 +230,18 @@
 - Acceptance: Dashboard/Settings 能解释数据来自腾讯/东财/缓存/缺失，且不把 sample/estimated 当合法模式。
 
 - Completed At: `2026-06-21`
+
+### DATA-021: real-only 历史状态一致性修复
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 修复页面仍出现大量 `sample` / `mixed` / `混合数据` 的历史残留状态；选择性清理非真实事件污染和旧 manifest，而不是清空所有数据。
+- Details: `docs/tasks/DATA-021-real-only-state-consistency.md`
+- Files: `scripts/audit_real_only.py`, `scripts/purge_non_real_data.py`, `backend/app/services/data_credibility_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/ui.tsx`, `data/raw/*_manifest.json`
+- Scope: 扩展审计/清理脚本覆盖所有 `source` / `source_mode` 表和 raw manifest；清理 `financial_event`、`etf_deep_event` 等非真实事件污染；让 Dashboard 不再把 sample/mixed 作为主视图正常态展示。
+- Out of Scope: 不清空 SQLite、Parquet、持仓、观察池、配置或真实历史缓存；不接新数据源；不恢复 sample fallback。
+- Acceptance: audit 能发现并清理 SQLite / Parquet / manifest 污染；清理后污染为 0；Dashboard 不再大面积展示 sample/mixed 正常态；Settings 保留治理明细。
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 
