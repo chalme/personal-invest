@@ -1,4 +1,4 @@
-.PHONY: setup dev dev\:server prod prod-server doctor doctor-server backend backend-prod frontend frontend-prod init daily check backup clean
+.PHONY: setup dev dev\:server prod prod-server doctor doctor-server health health-server backend backend-prod frontend frontend-prod init daily check backup clean
 
 setup:
 	./scripts/setup.sh
@@ -20,6 +20,13 @@ doctor:
 
 doctor-server:
 	ENV_FILE=.env.server ./scripts/doctor.sh
+
+
+health:
+	./scripts/health.sh
+
+health-server:
+	ENV_FILE=.env.server ./scripts/health.sh
 
 backend:
 	./scripts/backend.sh

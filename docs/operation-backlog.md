@@ -223,3 +223,30 @@ BACKUP_ROOT=/path/to/backups ./scripts/backup.sh
 - 源站端口不会绕过访问保护裸露。
 
 模板可以复制到 `/etc/systemd/system/` 后启用，但 Code Agent 不直接在生产机执行 `systemctl enable --now`。
+
+
+## 生产健康检查脚本
+
+`OPS-004` 已提供：
+
+```bash
+make health-server
+```
+
+该命令会检查：
+
+- 前端页面 HTTP 状态。
+- `/config.js` 是否可访问。
+- 后端 `/health`。
+- 后端 `/health/cors`。
+- `/api/dashboard`。
+- `/api/data/credibility`。
+- 使用 `FRONTEND_PUBLIC_URL` 作为 Origin 时是否返回 CORS header。
+
+可通过环境变量覆盖：
+
+```bash
+FRONTEND_PUBLIC_URL=https://invest.chalme.indevs.in API_BASE=https://api.chalme.indevs.in ./scripts/health.sh
+```
+
+该脚本只做自动 smoke check，不能替代 `MANUAL-001` 的真实浏览器人工回归验收。

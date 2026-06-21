@@ -186,7 +186,7 @@
 
 ### OPS-004: 生产健康检查脚本
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Owner: `Codex`
 - Goal: 提供一条命令检查前端、后端、API、域名和 CORS 的基础状态。
@@ -194,6 +194,10 @@
 - Scope: 检查 `/health`、`/health/cors`、`/api/dashboard`、`/api/data/credibility`、前端页面 HTTP 状态、API 域名 HTTP 状态。
 - Out of Scope: 不替代人工验收；不做完整 E2E；不做性能压测；不接告警系统。
 - Acceptance: 一条命令输出健康检查结果；失败时能区分前端、后端、CORS、数据可信度 API 问题；不打印敏感信息。
+- Completed At: 2026-06-21
+- Changed Files: `scripts/health.sh`, `Makefile`, `docs/operation-backlog.md`, `docs/task-board.md`
+- Verification: `bash -n scripts/health.sh`; `git diff --check`.
+- Notes: 新增 `make health` / `make health-server`；脚本只做自动 smoke check，不替代 `MANUAL-001` 人工验收。
 
 ### DATA-002: 真实数据源增强任务拆解
 
