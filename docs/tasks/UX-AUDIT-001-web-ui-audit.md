@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 
@@ -58,17 +58,22 @@
 
 ## Completed At
 
--
+- 2026-06-21
 
 ## Changed Files
 
--
+- `docs/ui-audit.md`
+- `docs/task-board.md`
+- `docs/tasks/UX-AUDIT-001-web-ui-audit.md`
 
 ## Verification
 
--
+- 线上只读访问 `https://invest.chalme.indevs.in/`
+- 截图审计 Dashboard、个股分析、持仓、观察池、复盘、日报、设置
+- 浏览器控制台无 error / warn
 
 ## Notes
 
 - 如果没有用户截图，可以本地启动项目，用浏览器截图做审计。
 - 审计完成后再进入导航和组件层面的改造。
+- 本次由用户提供线上地址，未修改线上数据，未点击新增、删除、保存、重跑等危险操作。

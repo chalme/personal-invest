@@ -361,7 +361,7 @@
 
 ### UX-AUDIT-001: 当前 Web UI 审计
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 审计当前 Dashboard、股票页、持仓页、观察池、复盘页、日报和设置页，形成 UI 问题清单和改版原则。
@@ -370,6 +370,10 @@
 - Scope: 检查导航、信息层级、卡片密度、表格重量、数据可信度标签、空态、错误态、加载态、按钮文案、视觉一致性和桌面端可读性。
 - Out of Scope: 不改代码；不重构页面；不做移动端专项；不做营销页、hero 大图或炫酷动效。
 - Acceptance: 输出可执行审计报告；每个关键页面都有问题、影响、优先级和建议方向；明确哪些问题进入 `UX-006` 到 `UX-009`。
+- Completed At: 2026-06-21
+- Changed Files: `docs/ui-audit.md`, `docs/task-board.md`, `docs/tasks/UX-AUDIT-001-web-ui-audit.md`
+- Verification: 线上只读访问 `https://invest.chalme.indevs.in/`；截图审计 Dashboard、个股分析、持仓、观察池、复盘、日报、设置；浏览器控制台无 error / warn；`git diff --check` 通过。
+- Notes: 审计不修改前端代码、不操作线上数据；结论建议优先执行 `UX-006` 和 `UX-007`，再做 Dashboard 和逐页打磨。
 
 ### UX-006: 全局信息架构与导航重组
 
