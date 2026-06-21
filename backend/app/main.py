@@ -12,6 +12,7 @@ app = FastAPI(title=settings.app_name, version=settings.app_version)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,5 +46,6 @@ def cors_health() -> dict:
         "status": "ok",
         "frontend_public_url": settings.frontend_public_url,
         "cors_origins": settings.cors_origins,
+        "cors_origin_regex": settings.cors_origin_regex,
     }
 

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     reports_dir: Path = root_dir / "reports"
     frontend_public_url: str = ""
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    cors_origin_regex: str | None = None
 
 
 def _parse_csv(value: str) -> list[str]:
@@ -33,6 +34,9 @@ def get_settings() -> Settings:
         settings.frontend_public_url = frontend_public_url
         if frontend_public_url not in settings.cors_origins:
             settings.cors_origins.append(frontend_public_url)
+    cors_origin_regex = os.environ.get("BACKEND_CORS_ORIGIN_REGEX") or os.environ.get("CORS_ORIGIN_REGEX")
+    if cors_origin_regex:
+        settings.cors_origin_regex = cors_origin_regex.strip() or None
     settings.storage_dir.mkdir(parents=True, exist_ok=True)
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     settings.reports_dir.mkdir(parents=True, exist_ok=True)
