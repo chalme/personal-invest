@@ -26,10 +26,14 @@ export type DataCredibilityMode = 'REAL' | 'ESTIMATED' | 'SAMPLE' | 'MISSING' | 
 export type DataCredibilitySummary = {
   overall_mode: DataCredibilityMode;
   real_count: number;
+  real_cached_count?: number;
   estimated_count: number;
   sample_count: number;
   missing_count: number;
   mixed_count: number;
+  historical_pollution_count?: number;
+  manifest_polluted_file_count?: number;
+  manifest_polluted_record_count?: number;
   latest_data_date?: string | null;
   expected_latest_trade_date?: string | null;
   trade_calendar_source_mode?: 'REAL' | 'ESTIMATED' | string;
@@ -37,6 +41,7 @@ export type DataCredibilitySummary = {
   stale_count?: number;
   missing_freshness_count?: number;
   can_drive_advice_count?: number;
+  cannot_drive_advice_count?: number;
   warning?: string | null;
   has_blocking_issue: boolean;
   module_count: number;

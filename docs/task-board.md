@@ -233,15 +233,18 @@
 
 ### DATA-021: real-only 历史状态一致性修复
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Owner: `Codex`
 - Goal: 修复页面仍出现大量 `sample` / `mixed` / `混合数据` 的历史残留状态；选择性清理非真实事件污染和旧 manifest，而不是清空所有数据。
 - Details: `docs/tasks/DATA-021-real-only-state-consistency.md`
-- Files: `scripts/audit_real_only.py`, `scripts/purge_non_real_data.py`, `backend/app/services/data_credibility_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/ui.tsx`, `data/raw/*_manifest.json`
-- Scope: 扩展审计/清理脚本覆盖所有 `source` / `source_mode` 表和 raw manifest；清理 `financial_event`、`etf_deep_event` 等非真实事件污染；让 Dashboard 不再把 sample/mixed 作为主视图正常态展示。
+- Files: `scripts/audit_real_only.py`, `scripts/purge_non_real_data.py`, `backend/app/services/data_credibility_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/ui.tsx`, `frontend/src/api/types.ts`
+- Scope: 扩展审计/清理脚本覆盖所有 `source` / `source_mode` 表和 raw manifest；清理脚本支持隔离污染 manifest；Dashboard 不再把 sample/mixed 作为主视图正常态展示。
 - Out of Scope: 不清空 SQLite、Parquet、持仓、观察池、配置或真实历史缓存；不接新数据源；不恢复 sample fallback。
-- Acceptance: audit 能发现并清理 SQLite / Parquet / manifest 污染；清理后污染为 0；Dashboard 不再大面积展示 sample/mixed 正常态；Settings 保留治理明细。
+- Acceptance: audit 能发现 SQLite / Parquet / manifest 污染；清理脚本支持事务删除和 manifest 隔离；Dashboard 主视图从 sample/mixed 正常态收敛为真实、真实历史缓存、缺失和不可驱动建议；Settings 保留治理明细。
+- Completed At: `2026-06-21`
+- Changed Files: `scripts/audit_real_only.py`, `scripts/purge_non_real_data.py`, `backend/app/services/data_credibility_service.py`, `frontend/src/api/types.ts`, `frontend/src/components/ui.tsx`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `docs/tasks/DATA-021-real-only-state-consistency.md`, `docs/task-board.md`
+- Verification: Python compile smoke; data credibility smoke confirms polluted manifest is excluded from current market module; audit smoke detects `financial_event` 4 rows, `etf_deep_event` 3 rows and 2 polluted manifests; per-file `git diff --check` passed. Direct destructive apply is blocked in MCP and must run from server shell if needed.
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 

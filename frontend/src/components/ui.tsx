@@ -37,15 +37,17 @@ export function DataModeBadge(props: { mode?: string | null; compact?: boolean }
     ESTIMATED: '历史估算污染',
     SAMPLE: '历史样本污染',
     MISSING: '数据缺失',
-    MIXED: '混合数据',
+    MIXED: '历史混合污染',
+    DEGRADED: '降级可用',
+    HISTORICAL_POLLUTION: '历史污染',
   };
   const tone: Tone = mode === 'REAL'
     ? 'good'
     : mode === 'MISSING'
       ? 'bad'
-      : mode === 'ESTIMATED' || mode === 'SAMPLE'
+      : mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'HISTORICAL_POLLUTION' || mode === 'MIXED'
         ? 'bad'
-        : mode === 'MIXED'
+        : mode === 'DEGRADED'
           ? 'warn'
           : 'neutral';
   return <Badge tone={tone}>{props.compact ? (labels[mode] ?? '未知') : (labels[mode] ?? '数据未知')}</Badge>;

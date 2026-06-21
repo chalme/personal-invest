@@ -45,7 +45,7 @@ function signalTone(signal: Signal) {
 function dataSourceLabel(mode?: string) {
   if (mode === 'real') return '真实数据';
   if (mode === 'sample') return '历史样本污染';
-  if (mode === 'mixed') return '混合数据';
+  if (mode === 'mixed') return '历史混合污染';
   return '数据未知';
 }
 
@@ -61,13 +61,16 @@ function credibilityLabel(mode?: string) {
   if (mode === 'ESTIMATED') return '历史估算污染';
   if (mode === 'SAMPLE') return '历史样本污染';
   if (mode === 'MISSING') return '数据缺失';
-  if (mode === 'MIXED') return '混合数据';
+  if (mode === 'MIXED') return '历史混合污染';
+  if (mode === 'DEGRADED') return '降级可用';
+  if (mode === 'HISTORICAL_POLLUTION') return '历史污染';
   return '数据未知';
 }
 
 function credibilityTone(mode?: string) {
   if (mode === 'REAL') return 'good' as const;
-  if (mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'MIXED') return 'warn' as const;
+  if (mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'MIXED' || mode === 'HISTORICAL_POLLUTION') return 'bad' as const;
+  if (mode === 'DEGRADED') return 'warn' as const;
   if (mode === 'MISSING') return 'bad' as const;
   return 'neutral' as const;
 }
@@ -295,11 +298,11 @@ export function Dashboard(props: { onNavigate?: (key: string) => void }) {
           <div>
             <strong>数据可信度：{credibilityLabel(credibilitySummary.overall_mode)}</strong>
             <p>
-              真实 {credibilitySummary.real_count} · 估算 {credibilitySummary.estimated_count} · 样本 {credibilitySummary.sample_count} · 缺失 {credibilitySummary.missing_count}
+              真实 {credibilitySummary.real_count} · 真实历史缓存 {credibilitySummary.real_cached_count ?? 0} · 缺失 {credibilitySummary.missing_count} · 不可驱动建议 {credibilitySummary.cannot_drive_advice_count ?? 0}
             </p>
             <small>
               最新数据日期：{credibilitySummary.latest_data_date ?? '暂无'} · 预期交易日：{credibilitySummary.expected_latest_trade_date ?? '暂无'} · 新鲜度：{freshnessLabel(credibilitySummary.freshness_status)}。
-              可驱动高置信建议模块 {credibilitySummary.can_drive_advice_count ?? 0} 个。历史估算或样本污染不可作为正常建议依据，请先清理或补齐真实数据。
+              可驱动高置信建议模块 {credibilitySummary.can_drive_advice_count ?? 0} 个。历史污染 manifest {credibilitySummary.manifest_polluted_file_count ?? 0} 个已从主视图排除；完整治理明细请到设置页查看。
             </small>
             {dailyBarCredibility && (
               <small>
@@ -319,7 +322,8 @@ export function Dashboard(props: { onNavigate?: (key: string) => void }) {
             <div><span>最新 / 预期</span><strong>{credibilitySummary?.latest_data_date ?? source?.latest_trade_date ?? '暂无'} / {credibilitySummary?.expected_latest_trade_date ?? source?.expected_latest_trade_date ?? '暂无'}</strong></div>
             <div><span>真实源组成</span><strong>{providerSummary}</strong></div>
             <div><span>接口组成</span><strong>{interfaceSummary}</strong></div>
-            <div><span>缓存 / 缺失资产</span><strong>{cachedProviderAssets.length} / {missingProviderAssets.length}</strong></div>
+            <div><span>真实缓存模块</span><strong>{credibilitySummary?.real_cached_count ?? cachedProviderAssets.length}</strong></div>
+            <div><span>缺失资产</span><strong>{missingProviderAssets.length}</strong></div>
             <div><span>建议边界</span><strong>{(credibilitySummary?.can_drive_advice_count ?? 0) > 0 ? `可驱动 ${credibilitySummary?.can_drive_advice_count} 个模块` : '只能低置信观察'}</strong></div>
           </div>
         </Card>

@@ -75,14 +75,16 @@ function credibilityLabel(mode?: string) {
   if (mode === 'ESTIMATED') return '历史估算污染';
   if (mode === 'SAMPLE') return '历史样本污染';
   if (mode === 'MISSING') return '缺失';
-  if (mode === 'MIXED') return '混合';
+  if (mode === 'MIXED') return '历史混合污染';
+  if (mode === 'DEGRADED') return '降级可用';
+  if (mode === 'HISTORICAL_POLLUTION') return '历史污染';
   return '未知';
 }
 
 function credibilityTone(mode?: string) {
   if (mode === 'REAL') return 'good' as const;
-  if (mode === 'MISSING' || mode === 'ESTIMATED' || mode === 'SAMPLE') return 'bad' as const;
-  if (mode === 'MIXED') return 'warn' as const;
+  if (mode === 'MISSING' || mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'MIXED' || mode === 'HISTORICAL_POLLUTION') return 'bad' as const;
+  if (mode === 'DEGRADED') return 'warn' as const;
   return 'neutral' as const;
 }
 
@@ -233,9 +235,12 @@ export function SettingsPage() {
           <div className="settings-summary">
             <Badge tone={credibilityTone(credibility.summary.overall_mode)}>整体：{credibilityLabel(credibility.summary.overall_mode)}</Badge>
             <Badge tone="good">真实 {credibility.summary.real_count}</Badge>
+            <Badge tone={(credibility.summary.real_cached_count ?? 0) > 0 ? 'warn' : 'neutral'}>真实历史缓存 {credibility.summary.real_cached_count ?? 0}</Badge>
             <Badge tone={credibility.summary.estimated_count > 0 ? 'bad' : 'neutral'}>历史估算污染 {credibility.summary.estimated_count}</Badge>
             <Badge tone={credibility.summary.sample_count > 0 ? 'bad' : 'neutral'}>历史样本污染 {credibility.summary.sample_count}</Badge>
             <Badge tone={credibility.summary.missing_count > 0 ? 'bad' : 'neutral'}>缺失 {credibility.summary.missing_count}</Badge>
+            <Badge tone={(credibility.summary.manifest_polluted_file_count ?? 0) > 0 ? 'bad' : 'neutral'}>污染 manifest {credibility.summary.manifest_polluted_file_count ?? 0}</Badge>
+            <Badge tone={(credibility.summary.cannot_drive_advice_count ?? 0) > 0 ? 'warn' : 'good'}>不可驱动建议 {credibility.summary.cannot_drive_advice_count ?? 0}</Badge>
             <Badge tone={freshnessTone(credibility.summary.freshness_status)}>新鲜度：{freshnessLabel(credibility.summary.freshness_status)}</Badge>
             <Badge tone="neutral">预期交易日 {credibility.summary.expected_latest_trade_date ?? '暂无'}</Badge>
           </div>
@@ -246,6 +251,11 @@ export function SettingsPage() {
             </div>
           )}
           {credibility.summary.warning && <div className="alert alert-warning">{credibility.summary.warning}</div>}
+          {(credibility.summary.manifest_polluted_file_count ?? 0) > 0 && (
+            <div className="alert alert-danger">
+              已发现历史污染 manifest {credibility.summary.manifest_polluted_file_count} 个，涉及非真实记录 {credibility.summary.manifest_polluted_record_count ?? 0} 条；它们已从 Dashboard 主视图排除，可用 purge 脚本隔离。
+            </div>
+          )}
           <table className="data-table">
             <thead>
               <tr>

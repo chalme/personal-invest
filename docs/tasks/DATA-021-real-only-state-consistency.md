@@ -1,6 +1,6 @@
 # DATA-021: real-only 历史状态一致性修复
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
@@ -126,3 +126,31 @@
 
 本任务是历史状态一致性修复，不是数据源接入任务。核心边界是：只清非真实污染和过期污染状态，保留真实数据、真实历史缓存和人工数据。
 
+
+
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files:
+  - `scripts/audit_real_only.py`
+  - `scripts/purge_non_real_data.py`
+  - `backend/app/services/data_credibility_service.py`
+  - `frontend/src/api/types.ts`
+  - `frontend/src/components/ui.tsx`
+  - `frontend/src/pages/Dashboard.tsx`
+  - `frontend/src/pages/SettingsPage.tsx`
+  - `docs/task-board.md`
+- Implementation:
+  - `audit_real_only.py` now auto-discovers SQLite tables that contain `source` or `source_mode` and audits raw manifests in addition to Parquet.
+  - `purge_non_real_data.py` uses the same dynamic discovery, deletes SQLite polluted rows in a transaction, rewrites polluted Parquet datasets conservatively, and quarantines polluted raw manifests under the backup root.
+  - `DataCredibilityService` skips polluted raw manifests when choosing the latest current manifest, reports manifest pollution counts, and marks affected modules as non-driving.
+  - Dashboard main view now prioritizes real modules, real historical cache, missing modules, and non-driving modules instead of treating sample/mixed as normal states.
+  - Settings keeps the explicit governance detail and manifest pollution warning.
+- Verification:
+  - Python compile smoke passed for changed backend/scripts files.
+  - Data credibility smoke confirms `manifest_polluted_file_count=2`, current `market_data` falls back to `MISSING`, and `can_drive_advice=false` instead of accepting polluted mixed manifest.
+  - SQLite audit smoke finds `financial_event=4` and `etf_deep_event=3` polluted rows.
+  - Manifest audit smoke finds 2 polluted raw manifests.
+  - Per-file `git diff --check` passed.
+- Notes:
+  - MCP safety layer blocked direct destructive apply; run it from the server shell after reviewing dry-run output if physical data cleanup is required.

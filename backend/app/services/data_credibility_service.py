@@ -23,6 +23,17 @@ class DataCredibilityService:
     """Aggregate data source credibility across analysis modules."""
 
     DAILY_FRESHNESS_MODULES = {"market_data", "daily_bar", "fund_nav"}
+    NON_REAL_SOURCE_KEYS = {
+        "sample",
+        "estimated",
+        "built_in_sample",
+        "deterministic_estimate",
+        "instrument_estimate",
+        "mock",
+        "demo",
+    }
+    NON_REAL_MODES = {"SAMPLE", "ESTIMATED"}
+    REAL_CACHE_KEYS = {"akshare_cached", "real_cached", "historical_parquet"}
 
     def __init__(self, repo: SQLiteRepository | None = None) -> None:
         self.repo = repo or SQLiteRepository()
@@ -296,6 +307,8 @@ class DataCredibilityService:
         ]
         stale_count = 0
         missing_freshness_count = 0
+        real_cached_count = 0
+        cannot_drive_count = 0
         for item in modules:
             mode = self._normalize_mode(item.get("source_mode"))
             counts[mode] = counts.get(mode, 0) + 1
@@ -304,9 +317,21 @@ class DataCredibilityService:
                 stale_count += 1
             if item.get("freshness_status") == "MISSING":
                 missing_freshness_count += 1
-        non_zero_modes = [mode for mode, count in counts.items() if count > 0 and mode != "MIXED"]
-        if counts.get("MIXED", 0) or len(non_zero_modes) > 1:
-            overall = "MIXED"
+            if not item.get("can_drive_advice"):
+                cannot_drive_count += 1
+            real_cached_count += self._module_cached_count(item)
+        pollution = self._raw_manifest_pollution_summary()
+        non_zero_modes = [
+            mode
+            for mode, count in counts.items()
+            if count > 0 and mode not in {"MIXED", "SAMPLE", "ESTIMATED"}
+        ]
+        if counts.get("SAMPLE", 0) or counts.get("ESTIMATED", 0):
+            overall = "HISTORICAL_POLLUTION"
+        elif counts.get("MIXED", 0):
+            overall = "DEGRADED"
+        elif len(non_zero_modes) > 1:
+            overall = "DEGRADED"
         elif non_zero_modes:
             overall = non_zero_modes[0]
         else:
@@ -321,24 +346,35 @@ class DataCredibilityService:
             freshness_status = "NOT_APPLICABLE"
         expected_latest_trade_date = self._expected_latest_trade_date().isoformat()
         freshness_warning = self._freshness_summary_warning(
-            freshness_status, stale_count, missing_freshness_count
+            freshness_status,
+            stale_count,
+            missing_freshness_count,
+            pollution.get("manifest_polluted_file_count", 0),
         )
         return {
             "overall_mode": overall,
             "real_count": counts.get("REAL", 0),
+            "real_cached_count": real_cached_count,
             "estimated_count": counts.get("ESTIMATED", 0),
             "sample_count": counts.get("SAMPLE", 0),
             "missing_count": counts.get("MISSING", 0),
             "mixed_count": counts.get("MIXED", 0),
+            "historical_pollution_count": counts.get("ESTIMATED", 0)
+            + counts.get("SAMPLE", 0)
+            + pollution.get("manifest_polluted_file_count", 0),
+            "manifest_polluted_file_count": pollution.get("manifest_polluted_file_count", 0),
+            "manifest_polluted_record_count": pollution.get("manifest_polluted_record_count", 0),
             "latest_data_date": latest,
             "expected_latest_trade_date": expected_latest_trade_date,
             "trade_calendar_source_mode": "ESTIMATED",
             "freshness_status": freshness_status,
             "stale_count": stale_count,
             "missing_freshness_count": missing_freshness_count,
+            "cannot_drive_advice_count": cannot_drive_count,
             "can_drive_advice_count": sum(1 for item in modules if item.get("can_drive_advice")),
             "warning": freshness_warning,
-            "has_blocking_issue": counts.get("MISSING", 0) > 0,
+            "has_blocking_issue": counts.get("MISSING", 0) > 0
+            or pollution.get("manifest_polluted_file_count", 0) > 0,
             "module_count": len(modules),
         }
 
@@ -425,16 +461,28 @@ class DataCredibilityService:
         return source_warning
 
     def _freshness_summary_warning(
-        self, status: str, stale_count: int, missing_count: int
+        self,
+        status: str,
+        stale_count: int,
+        missing_count: int,
+        manifest_polluted_file_count: int = 0,
     ) -> str | None:
         calendar_note = "最近交易日按工作日估算，未纳入法定节假日或临时休市。"
+        pollution_note = (
+            f"已发现 {manifest_polluted_file_count} 个历史污染 manifest，"
+            "已从当前可信度主视图排除。"
+            if manifest_polluted_file_count > 0
+            else None
+        )
         if status == "STALE":
-            return f"{stale_count} 个日频数据模块已落后预期交易日；{calendar_note}"
+            base = f"{stale_count} 个日频数据模块已落后预期交易日；{calendar_note}"
+            return f"{base} {pollution_note}" if pollution_note else base
         if status == "MISSING":
-            return f"{missing_count} 个日频数据模块缺少可判断新鲜度的数据日期；{calendar_note}"
+            base = f"{missing_count} 个日频数据模块缺少可判断新鲜度的数据日期；{calendar_note}"
+            return f"{base} {pollution_note}" if pollution_note else base
         if status == "FRESH":
-            return calendar_note
-        return None
+            return f"{calendar_note} {pollution_note}" if pollution_note else calendar_note
+        return pollution_note
 
     def _merge_note_and_warning(self, note: str, warning: str | None) -> str:
         if not warning:
@@ -454,35 +502,87 @@ class DataCredibilityService:
         )
         for manifest_path in manifests:
             try:
-                return json.loads(manifest_path.read_text(encoding="utf-8")) | {
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8")) | {
                     "manifest_file": manifest_path.name
                 }
             except Exception:
                 continue
+            if self._manifest_has_non_real_pollution(manifest):
+                continue
+            return manifest
         return None
+
+    def _raw_manifest_pollution_summary(self) -> dict[str, int]:
+        raw_dir = self.settings.data_dir / "raw"
+        polluted_files = 0
+        polluted_records = 0
+        if not raw_dir.exists():
+            return {
+                "manifest_polluted_file_count": 0,
+                "manifest_polluted_record_count": 0,
+            }
+        for manifest_path in raw_dir.glob("**/*_manifest.json"):
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except Exception:
+                polluted_files += 1
+                polluted_records += 1
+                continue
+            record_count = self._manifest_non_real_record_count(manifest)
+            if self._manifest_has_non_real_pollution(manifest):
+                polluted_files += 1
+                polluted_records += max(record_count, 1)
+        return {
+            "manifest_polluted_file_count": polluted_files,
+            "manifest_polluted_record_count": polluted_records,
+        }
+
+    def _manifest_has_non_real_pollution(self, manifest: dict[str, Any]) -> bool:
+        mode = self._normalize_mode(manifest.get("source_mode"))
+        return mode in self.NON_REAL_MODES or self._manifest_non_real_record_count(manifest) > 0
+
+    def _manifest_non_real_record_count(self, manifest: dict[str, Any]) -> int:
+        total = 0
+        for key, value in dict(manifest.get("source_count") or {}).items():
+            if str(key).lower() in self.NON_REAL_SOURCE_KEYS:
+                total += int(value or 0)
+        return total
+
+    def _module_cached_count(self, module: dict[str, Any]) -> int:
+        provider_count = dict(module.get("provider_count") or {})
+        source_breakdown = dict(module.get("source_breakdown") or {})
+        asset_source_status = dict(module.get("asset_source_status") or {})
+        provider_total = sum(
+            int(value or 0)
+            for key, value in provider_count.items()
+            if str(key).lower() in self.REAL_CACHE_KEYS
+        )
+        source_total = sum(
+            int(value or 0)
+            for key, value in source_breakdown.items()
+            if str(key).lower() in self.REAL_CACHE_KEYS
+        )
+        asset_total = sum(
+            1
+            for status in asset_source_status.values()
+            if str(status).lower() in self.REAL_CACHE_KEYS
+            or "cached" in str(status).lower()
+        )
+        return max(provider_total, source_total, asset_total)
 
     def _mode_from_source_count(self, source_count: dict[str, Any] | None) -> str:
         if not source_count:
             return "MISSING"
-        non_real_keys = {
-            "sample",
-            "estimated",
-            "built_in_sample",
-            "deterministic_estimate",
-            "instrument_estimate",
-            "mock",
-            "demo",
-        }
         non_record_keys = {"missing", "unknown", "none", "null"}
         sample_count = sum(
             int(value or 0)
             for key, value in source_count.items()
-            if key.lower() in non_real_keys
+            if key.lower() in self.NON_REAL_SOURCE_KEYS
         )
         real_count = sum(
             int(value or 0)
             for key, value in source_count.items()
-            if key.lower() not in non_real_keys | non_record_keys
+            if key.lower() not in self.NON_REAL_SOURCE_KEYS | non_record_keys
         )
         if real_count > 0 and sample_count > 0:
             return "MIXED"
@@ -526,6 +626,8 @@ class DataCredibilityService:
             "SAMPLE": "SAMPLE",
             "MIXED": "MIXED",
             "ESTIMATED": "ESTIMATED",
+            "HISTORICAL_POLLUTION": "HISTORICAL_POLLUTION",
+            "DEGRADED": "DEGRADED",
             "UNKNOWN": "MISSING",
             "MISSING": "MISSING",
         }
@@ -546,9 +648,9 @@ class DataCredibilityService:
     def _risk_for_mode(self, mode: str) -> str:
         if mode == "REAL":
             return "LOW"
-        if mode == "MIXED":
+        if mode == "MIXED" or mode == "DEGRADED":
             return "MEDIUM"
-        if mode in {"ESTIMATED", "SAMPLE"}:
+        if mode in {"ESTIMATED", "SAMPLE", "HISTORICAL_POLLUTION"}:
             return "HIGH"
         return "HIGH"
 
@@ -559,8 +661,10 @@ class DataCredibilityService:
             return f"{label} 命中历史估算数据，属于待清理污染，不可作为正常投资判断输入。"
         if mode == "SAMPLE":
             return f"{label} 命中历史样本数据，属于待清理污染，不可作为正常投资判断输入。"
-        if mode == "MIXED":
-            return f"{label} 包含真实数据和历史非真实污染，非真实部分不可用于建议。"
+        if mode == "MIXED" or mode == "DEGRADED":
+            return f"{label} 处于降级状态，请查看设置页治理明细。"
+        if mode == "HISTORICAL_POLLUTION":
+            return f"{label} 命中历史非真实污染，已排除为正常建议输入。"
         return f"{label} 数据缺失，暂不能形成确定性结论。"
 
     def _latest_date(self, left: Any, right: Any) -> str | None:
