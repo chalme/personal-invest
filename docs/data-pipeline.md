@@ -154,3 +154,64 @@ Real-only 治理按以下任务推进：
 3. `DATA-013`：历史 sample / estimated 数据审计与清理脚本。
 4. `DATA-014`：股票 / 基金 / ETF 非真实因子改为 `MISSING`。
 5. `DATA-015`：设置页与前端移除 sample 合法模式。
+
+## 真实行情多源容错阶段
+
+Real-only 治理完成后，下一阶段重点从“禁止造样本”升级为“真实行情多源容错”。数据源可以 fallback，但数据真实性不能 fallback。
+
+### Provider Chain Principle
+
+行情同步必须遵守：
+
+```text
+真实主源 -> 真实备用源 -> 真实历史缓存 -> MISSING
+```
+
+禁止：
+
+```text
+真实源失败 -> sample/mock/demo/estimated
+```
+
+第一版推荐链路：
+
+| Asset Type | Primary Provider | Real Fallback | Final Fallback |
+|---|---|---|---|
+| A股 | 东方财富 `stock_zh_a_hist` | 腾讯 `stock_zh_a_hist_tx` | 真实历史缓存 / `MISSING` |
+| 指数 | 腾讯 `stock_zh_index_daily_tx` | 新浪 `stock_zh_index_daily` | 真实历史缓存 / `MISSING` |
+| ETF | 东方财富 `fund_etf_hist_em` | 腾讯通用行情接口 | 真实历史缓存 / `MISSING` |
+| 基金净值 | 天天基金 / 东方财富 `fund_open_fund_info_em` | 真实历史缓存 | `MISSING` |
+
+### Provider Metadata
+
+日线和 manifest 应逐步补充 provider 级元数据：
+
+```json
+{
+  "source_mode": "REAL | REAL_CACHED | MISSING",
+  "source_provider": "eastmoney | tencent | sina | ttfund | akshare_cached | missing",
+  "source_interface": "stock_zh_a_hist_tx",
+  "missing_fields": [],
+  "derived_fields": [],
+  "fallback_reason": "eastmoney_remote_disconnected",
+  "provider_count": {
+    "eastmoney": 0,
+    "tencent": 0,
+    "sina": 0,
+    "akshare_cached": 0,
+    "missing": 0
+  }
+}
+```
+
+`source_mode=REAL` 只表示数据来自真实外部源，不表示每个字段都完整。真实源未提供的字段必须进入 `missing_fields`，不能用估算值伪造。
+
+### Execution Tasks
+
+真实行情多源容错按以下任务推进：
+
+1. `DATA-016`：真实行情多源 Provider 抽象。
+2. `DATA-017`：行情字段标准化与 provider 元数据。
+3. `DATA-018`：行情源健康检查脚本。
+4. `DATA-019`：行情同步 timeout / retry / 熔断。
+5. `DATA-020`：Dashboard / Settings 展示 provider 级可信度。

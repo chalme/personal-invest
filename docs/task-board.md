@@ -9,10 +9,10 @@
 当前主线：
 
 1. 人工验收与生产权限事项单独跟踪，不作为 Code Agent 可独立完成任务。
-2. Code Agent 当前进入真实数据 only 治理阶段：线上和开发运行链路都不能生成、写入或展示 sample/mock/demo/estimated 作为正常数据。
-3. 优先顺序为：真实数据 source mode 合约、禁止新增 sample、清理历史污染、非真实因子改为 MISSING、设置页与前端文案收敛。
-4. 数据源增强仍基于现有 AKShare / 真实历史缓存；没有真实数据时显示 `MISSING`，不再为了页面完整性造样本。
-5. Web UI 已完成信息架构与工作台打磨，下一步只处理与真实数据 only 有关的显示和配置收敛。
+2. Real-only 治理已完成第一阶段：线上和开发运行链路不能生成、写入或展示 sample/mock/demo/estimated 作为正常数据。
+3. Code Agent 当前进入真实行情多源容错阶段：东方财富行情源失败时切换腾讯等真实备用源；所有真实源失败时只能进入真实历史缓存或 `MISSING`。
+4. 优先顺序为：行情 provider chain、字段标准化与 provider 元数据、只读数据源探针、timeout/retry/熔断、Dashboard/Settings provider 级可信度展示。
+5. 数据源可以 fallback，数据真实性不能 fallback；后续任务不得恢复 sample 兜底。
 
 ## Status
 
@@ -160,6 +160,66 @@
 - Out of Scope: 不接新数据源；不清理历史数据；不重做导航或整体 UI。
 - Acceptance: 页面不再提供 sample 作为合法配置；无真实数据显示缺失和下一步动作；历史污染明确不可用于建议。
 - Completed At: `2026-06-21`
+
+### DATA-016: 真实行情多源 Provider 抽象
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 把行情日线采集从单一 AKShare 接口调用升级为真实数据 provider chain，东方财富失败时切换腾讯等真实备用源，全部失败时进入真实缓存或 `MISSING`。
+- Details: `docs/tasks/DATA-016-market-data-provider-chain.md`
+- Files: `worker/ingest/market_data.py`, optional `worker/ingest/market_providers.py`
+- Scope: 覆盖 A股、指数、ETF 日线；实现东方财富、腾讯、Sina/指数接口 fallback；保留 real-only 约束。
+- Out of Scope: 不接付费数据源；不做前端展示；不清理历史数据；不处理财务/基金画像/ETF 深度因子。
+- Acceptance: 东财失败时 `600519.SH`、`000001.SZ`、`000001.SH`、`399001.SZ`、`510300.SH` 可走真实备用源；全部失败时不产生 sample。
+
+### DATA-017: 行情字段标准化与 provider 元数据
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 统一不同真实源返回字段，明确 provider、接口、缺失字段和真实派生字段，避免把缺失字段估算成真实字段。
+- Details: `docs/tasks/DATA-017-market-data-normalization-provider-metadata.md`
+- Files: `worker/ingest/market_data.py`, `backend/app/services/data_credibility_service.py`, `frontend/src/api/types.ts`
+- Scope: 标准化日线 schema；扩展 manifest 的 `provider_count`、`interface_count`、`missing_fields`、资产级 provider 状态。
+- Out of Scope: 不新增 provider chain；不做 UI 展示；不清理历史 parquet。
+- Acceptance: 东财/腾讯/指数源都写入统一 schema；缺失字段进入 `missing_fields`，不被伪造。
+
+### DATA-018: 行情源健康检查脚本
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 提供只读脚本快速确认当前环境哪些真实行情源可访问，避免把网络/接口问题误判为业务代码问题。
+- Details: `docs/tasks/DATA-018-market-source-probe-script.md`
+- Files: `scripts/probe_market_sources.py`
+- Scope: 探测东财 A股、腾讯 A股、Sina/腾讯指数、东财 ETF、基金净值接口；输出状态、行数、最新日期、错误类别和耗时。
+- Out of Scope: 不写 DB/Parquet/manifest；不改同步逻辑；不自动配置代理。
+- Acceptance: 脚本默认只读，能结构化展示 partial_ok / all_failed，执行前后数据文件无变更。
+
+### DATA-019: 行情同步 timeout / retry / 熔断
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 防止单个不可用 provider 卡死整个行情同步，让可用真实备用源继续完成同步。
+- Details: `docs/tasks/DATA-019-market-sync-timeout-retry-circuit-breaker.md`
+- Files: `worker/ingest/market_data.py`, optional `worker/ingest/market_providers.py`
+- Scope: provider timeout、有限重试、错误分类、同轮短期熔断、manifest provider 失败摘要。
+- Out of Scope: 不做分布式任务队列；不接监控系统；不恢复 sample fallback。
+- Acceptance: 东财超时不会拖死同步；腾讯可用时继续写真实行情；全部失败进入缓存或 `MISSING`。
+
+### DATA-020: Dashboard / Settings 展示 provider 级可信度
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 在 Dashboard 和设置页展示真实行情 provider 组成、缓存资产、缺失资产和失败原因。
+- Details: `docs/tasks/DATA-020-provider-credibility-ui.md`
+- Files: `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/ui.tsx`, `frontend/src/api/types.ts`
+- Scope: 展示 `provider_count`、`interface_count`、资产级 provider 状态、失败原因和缺失字段摘要。
+- Out of Scope: 不改行情同步；不改 manifest 生成；不恢复 sample 合法文案。
+- Acceptance: Dashboard/Settings 能解释数据来自腾讯/东财/缓存/缺失，且不把 sample/estimated 当合法模式。
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 
