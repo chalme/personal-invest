@@ -1,10 +1,10 @@
 # P2-011: 场外基金深度页与复盘闭链接入
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -31,7 +31,12 @@
 
 - 基金分析页构建通过。
 - `risk_event` / `review_task` / 日报 / AI 链路验证。
-- `rtk git diff --check`。
+- `uv run python scripts/migrate_db.py` applied `015_fund_deep_event`.
+- `uv run python -m worker.fund.events`.
+- `uv run python -m worker.review.task_generator`.
+- `uv run python -m compileall backend/app worker scripts`.
+- `cd frontend && pnpm build`.
+- `./scripts/check.sh`.
 
 ## Notes
 

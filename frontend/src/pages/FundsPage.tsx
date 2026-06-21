@@ -22,6 +22,8 @@ function numberValue(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+type FundDeep = { profile: Record<string, string | number | null> | null; manager: Record<string, string | number | null> | null; company: Record<string, string | number | null> | null; risk_return: Record<string, string | number | null> | null; benchmark: Record<string, string | number | null> | null; peer: Record<string, string | number | null> | null; exposures: Array<Record<string, string | number | null>>; };
+
 function analysisLabel(row?: FundAnalysis): string {
   return row?.analysis_type === 'ETF' + '_PRICE' ? 'ETF 价格分析' : '基金净值分析';
 }
@@ -31,6 +33,7 @@ export function FundsPage() {
   const [selectedSymbol, setSelectedSymbol] = useState('');
   const [navPoints, setNavPoints] = useState<FundNavPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [deep, setDeep] = useState<FundDeep | null>(null);
 
   useEffect(() => {
     apiGet<{ data: FundAnalysis[] }>('/api/funds/analysis')
@@ -45,6 +48,9 @@ export function FundsPage() {
     if (!selectedSymbol) return;
     apiGet<{ data: FundNavPoint[] }>(`/api/funds/${selectedSymbol}/nav?limit=180`)
       .then((res) => setNavPoints(res.data))
+      .catch((err: Error) => setError(err.message));
+    apiGet<{ data: FundDeep }>(`/api/funds/${selectedSymbol}/deep`)
+      .then((res) => setDeep(res.data))
       .catch((err: Error) => setError(err.message));
   }, [selectedSymbol]);
 
@@ -86,6 +92,23 @@ export function FundsPage() {
               </div>
             </Card>
           </div>
+
+          <Card title="基金深度画像" description="仅面向 FUND 场外基金；ETF 深度分析另行排期，不混用基金经理和主动管理口径。">
+            {deep?.profile ? (
+              <div className="analysis-summary compact">
+                <div><span>基金类型</span><strong>{deep.profile.fund_type ?? '暂无'}</strong></div>
+                <div><span>基金经理</span><strong>{deep.profile.manager_name ?? '暂无'}</strong></div>
+                <div><span>基金公司</span><strong>{deep.profile.company_name ?? '暂无'}</strong></div>
+                <div><span>持有体验</span><strong>{deep.risk_return?.holding_experience ?? '暂无'}</strong></div>
+                <div><span>风险收益评分</span><strong>{numberValue(deep.risk_return?.risk_return_score).toFixed(1)}</strong></div>
+                <div><span>基准表现</span><strong>{numberValue(deep.benchmark?.benchmark_score).toFixed(1)}</strong></div>
+                <div><span>同类评分</span><strong>{numberValue(deep.peer?.peer_score).toFixed(1)}</strong></div>
+                <div><span>数据来源</span><strong>{deep.profile.source_mode} · {deep.profile.data_date}</strong></div>
+              </div>
+            ) : (
+              <EmptyState title="暂无基金深度画像" description="当前资产可能是 ETF，或尚未添加 FUND 类型场外基金。" />
+            )}
+          </Card>
 
           <Card title="分析结论" description="结论来自 fund_analysis_snapshot，基金为净值口径，ETF 为价格口径，供人工研究和观察。">
             <div className="analysis-summary">

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query
 
 from app.services.fund_service import FundService
+from app.services.fund_deep_service import FundDeepService
 
 router = APIRouter(prefix="/funds", tags=["funds"])
 
@@ -13,3 +14,8 @@ def get_fund_analysis(symbol: str | None = Query(default=None)) -> dict:
 @router.get("/{symbol}/nav")
 def get_fund_nav(symbol: str, limit: int = Query(default=180, ge=1, le=1000)) -> dict:
     return {"data": FundService().latest_nav(symbol, limit)}
+
+
+@router.get("/{symbol}/deep")
+def get_fund_deep(symbol: str) -> dict:
+    return {"data": FundDeepService().latest(symbol)}

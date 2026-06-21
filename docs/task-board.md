@@ -173,17 +173,17 @@
 
 ### P2-011: 场外基金深度页与复盘闭链接入
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 将场外基金深度能力接入基金分析页、重要事项、日报和 AI 解释。
 - Details: `docs/tasks/P2-011-fund-deep-page-review.md`
 - Files: `backend/app/api/`, `backend/app/services/`, `frontend/src/pages/FundsPage.tsx`, `worker/report/`, `backend/app/services/ai_service.py`
 - Concrete Changes: 在基金分析页增加基金画像、经理 / 公司、风险收益、基准 / 同类比较、风格暴露和持有体验模块；基金异常进入 `risk_event`、`review_task`、日报和 AI。
 - Acceptance: 场外基金深度信息能被用户直接查看；重要异常会进入复盘闭环；AI 只解释规则和数据依据。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 本任务只针对 `FUND`，ETF 深度实现继续后置。
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/015_fund_deep_event.sql`, `worker/fund/events.py`, `worker/daily_job.py`, `backend/app/api/funds.py`, `backend/app/services/ai_service.py`, `frontend/src/pages/FundsPage.tsx`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.fund.events`; `uv run python -m worker.review.task_generator`; `uv run python -m compileall backend/app worker scripts`; `cd frontend && pnpm build`; `./scripts/check.sh`.
+- Notes: 本任务只针对 `FUND`，ETF 深度实现继续后置；基金页新增深度画像区块，基金深度异常通过 `risk_event` 进入复盘闭环。
 
 ### P1-011: Review Task 持久化
 
