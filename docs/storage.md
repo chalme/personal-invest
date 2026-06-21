@@ -5,15 +5,19 @@
 SQLite 只保存小而重要、需要事务一致性的业务状态。
 
 ```text
+schema_migration        数据库迁移记录
+instrument              资产主数据
 watchlist               观察池
 portfolio_position      个人持仓
+portfolio_snapshot      组合历史快照
 trade_record            交易记录
 strategy_config         策略配置
 strategy_signal         策略信号
-asset_advice_snapshot   分级建议快照
+investment_advice       分级建议快照
 risk_event              风险事件
 market_trend_snapshot   市场趋势快照
 sector_trend_snapshot   行业趋势快照
+instrument_sector_map   资产行业/主题/指数/地区/风格映射
 stock_analysis_snapshot 个股分析快照
 fund_analysis_snapshot  基金分析快照
 report_index            报告索引
@@ -21,6 +25,8 @@ job_execution           任务执行记录
 ai_analysis             AI 分析记录
 user_setting            用户配置
 ```
+
+重要事项池 / review 当前是只读聚合能力，数据来自 `risk_event`、`investment_advice`、`portfolio_snapshot`、`job_execution` 和 `market_trend_snapshot`；第一版不新增 `review_task` 表。
 
 ## Parquet：分析明细库
 
