@@ -8,9 +8,9 @@
 
 当前主线：
 
-1. 股票财报分析 V1：先落数据层与快照，再接 API / 页面，最后接财报事件与复盘闭环。
-2. 场外基金深度分析 V1：先落基金画像与风险收益快照，再接基准 / 同类比较与暴露，最后接页面与复盘闭环。
-3. ETF 深度分析已单独规划：继续保留现有 `ETF_PRICE` 基础能力，深度实现优先级低于股票和场外基金。
+1. ETF 深度分析 V1：在现有 `ETF_PRICE` 基础能力上，补齐 ETF 画像、暴露、流动性、风险收益、跟踪质量、页面、AI 和复盘闭环。
+2. 桌面端体验系统：重定义 `P2-002`，只做桌面端主题、密度、视觉一致性和设置持久化；移动端响应式适配后置，不进入当前任务。
+3. 已完成股票财报分析 V1 和场外基金深度分析 V1，后续只做缺陷修复或基于新任务继续增强。
 
 ## Status
 
@@ -45,19 +45,19 @@
 - Verification: `uv run python scripts/migrate_db.py`; repeated `uv run python -m worker.review.task_generator`; `uv run python -m worker.review.outcome_tracker`; ReviewService overview smoke test; independent decision creation smoke test; `cd frontend && pnpm build`; `./scripts/check.sh`.
 - Notes: 修复复盘页只能从重要事项记录决策的问题，新增“记录独立决策”入口；后续分析规划任务已在 `P2-003` / `P2-004` / `P2-005` 收口。
 
-### P2-002 reserved: Responsive layout and theme system
+### P2-002: 桌面端主题与密度系统
 
 - Status: `TODO`
 - Priority: `P2`
-- Goal: 保留给响应式和主题系统，补齐移动端、亮/暗主题和密度设置。
-- Details: 后续开始执行时再创建任务详情页。
-- Files: `frontend/`
-- Concrete Changes: 本编号已被 UX 规划占用，不用于股票财报或基金深度分析。
-- Acceptance: 后续任务启动时再补充。
+- Goal: 优化桌面端使用体验，建立亮/暗主题、信息密度和视觉一致性基础，不做移动端响应式适配。
+- Details: `docs/tasks/P2-002-desktop-theme-density.md`
+- Files: `frontend/src/styles/global.css`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/api/types.ts`
+- Concrete Changes: 新增桌面端主题变量、亮/暗主题切换、标准/紧凑密度、卡片/表格/图表间距统一和设置持久化；不引入移动端导航、触摸优化或小屏重排。
+- Acceptance: 桌面端 Dashboard、观察池、持仓、基金、股票、复盘等页面视觉层级一致；主题和密度设置可保存并生效；前端构建通过；移动端适配不在本任务范围内。
 - Completed At:
 - Changed Files:
 - Verification:
-- Notes: 显式保留该编号，避免 `P2-003` / `P2-004` 看起来跳号。
+- Notes: 原 `P2-002` 保留编号重定义为桌面端体验任务；移动端响应式后续另拆 `P2-016`。
 
 ### P2-003: 股票财报分析规划
 
@@ -184,6 +184,62 @@
 - Changed Files: `backend/migrations/015_fund_deep_event.sql`, `worker/fund/events.py`, `worker/daily_job.py`, `backend/app/api/funds.py`, `backend/app/services/ai_service.py`, `frontend/src/pages/FundsPage.tsx`
 - Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.fund.events`; `uv run python -m worker.review.task_generator`; `uv run python -m compileall backend/app worker scripts`; `cd frontend && pnpm build`; `./scripts/check.sh`.
 - Notes: 本任务只针对 `FUND`，ETF 深度实现继续后置；基金页新增深度画像区块，基金深度异常通过 `risk_event` 进入复盘闭环。
+
+### P2-012: ETF 画像与暴露数据层
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 为 ETF / LOF 建立独立画像与暴露数据层，补齐跟踪指数、主题、行业、地区、风格和资产类别暴露。
+- Details: `docs/tasks/P2-012-etf-profile-exposure.md`
+- Files: `backend/migrations/`, `worker/etf/`, `backend/app/services/etf_deep_service.py`, `worker/daily_job.py`
+- Concrete Changes: 新增 ETF 画像和暴露快照表；从 `instrument` 与观察池回填 ETF/LOF；生成指数、主题、行业、地区、风格暴露；明确 `source_mode` 和 `data_version`。
+- Acceptance: ETF 不进入股票财报模型，也不进入场外基金经理模型；ETF 能解释跟踪指数、主题和主要暴露；无真实暴露数据时明确标记估算或缺失，不伪装成真实数据。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 这是 ETF 深度分析 V1 的数据底座，不接页面和复盘闭环。
+
+### P2-013: ETF 流动性与风险收益快照
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 为 ETF / LOF 生成流动性、阶段收益、回撤、波动和交易风险快照。
+- Details: `docs/tasks/P2-013-etf-liquidity-risk-return.md`
+- Files: `backend/migrations/`, `worker/etf/`, `backend/app/services/etf_deep_service.py`, `worker/daily_job.py`
+- Concrete Changes: 新增 ETF 流动性和风险收益快照；计算成交额、成交量、规模、阶段收益、最大回撤、波动和流动性风险等级；复杂盘口和实时价差后置。
+- Acceptance: ETF 能解释交易是否足够活跃、回撤是否扩大、波动是否升高；缺失成交额或规模数据时不生成高置信度结论；不影响 `FUND` 深度分析。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 第一版优先使用已有 `daily_bar` 和可得元数据，避免依赖难拿的实时盘口数据。
+
+### P2-014: ETF 跟踪质量与折溢价
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 建立 ETF / LOF 跟踪误差、跟踪偏离、折溢价和指数拟合质量快照。
+- Details: `docs/tasks/P2-014-etf-tracking-premium.md`
+- Files: `backend/migrations/`, `worker/etf/`, `backend/app/services/etf_deep_service.py`, `worker/daily_job.py`
+- Concrete Changes: 新增 ETF 跟踪质量快照；在可得指数/净值数据时计算跟踪误差、跟踪偏离、折溢价和拟合质量；数据不足时输出 `MISSING` / `ESTIMATED`。
+- Acceptance: ETF 跟踪质量不会用假数据冒充真实指标；页面和 AI 能区分真实、估算和缺失；跟踪异常可供后续复盘闭链接入。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 跟踪质量对数据源依赖较强，本任务必须优先保证数据可信度和边界说明。
+
+### P2-015: ETF 页面、AI 与复盘闭链接入
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 将 ETF 深度分析接入页面、AI、风险事件、重要事项和日报，形成 ETF 专项复盘闭环。
+- Details: `docs/tasks/P2-015-etf-page-ai-review.md`
+- Files: `backend/app/api/`, `backend/app/services/`, `frontend/src/pages/FundsPage.tsx`, `backend/app/services/ai_service.py`, `worker/report/`, `worker/review/`
+- Concrete Changes: 提供 ETF 深度 API；在基金/ETF 页面展示 ETF 画像、暴露、流动性、风险收益、跟踪质量和折溢价；ETF 异常写入 `risk_event` 并进入 `review_task`、日报和 AI 解释。
+- Acceptance: 用户能直接查看 ETF 专项深度信息；AI 明确按 ETF 模型解释，不套股票财报或场外基金经理模型；异常能进入复盘闭环但不制造每日待办压力。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: ETF 深度接入完成后，股票、场外基金、ETF 三条深度分析线闭合。
 
 ### P1-011: Review Task 持久化
 
@@ -563,6 +619,11 @@
 - `docs/tasks/P2-006-stock-financial-data-layer.md`
 - `docs/tasks/P2-007-stock-financial-api-page.md`
 - `docs/tasks/P2-008-stock-financial-review-integration.md`
+- `docs/tasks/P2-002-desktop-theme-density.md`
 - `docs/tasks/P2-009-fund-profile-risk-return.md`
 - `docs/tasks/P2-010-fund-benchmark-peer-exposure.md`
 - `docs/tasks/P2-011-fund-deep-page-review.md`
+- `docs/tasks/P2-012-etf-profile-exposure.md`
+- `docs/tasks/P2-013-etf-liquidity-risk-return.md`
+- `docs/tasks/P2-014-etf-tracking-premium.md`
+- `docs/tasks/P2-015-etf-page-ai-review.md`
