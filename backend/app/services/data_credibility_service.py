@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from typing import Any
 
@@ -114,17 +115,28 @@ class DataCredibilityService:
     def _fund_nav_module(self) -> dict[str, Any]:
         base = self.settings.data_dir / "parquet" / "fund_nav"
         file_count, latest_date = self._partition_stats(base, "nav_date=")
-        mode = "REAL" if file_count else "MISSING"
+        manifest = self._latest_raw_manifest("fund")
+        source_count = dict((manifest or {}).get("source_count") or {})
+        manifest_rows = int((manifest or {}).get("rows") or 0)
+        record_count = manifest_rows if manifest else file_count
+        mode = self._mode_from_source_count(source_count)
+        if record_count <= 0 and file_count <= 0:
+            mode = "MISSING"
+        if mode == "MISSING" and file_count > 0 and not manifest:
+            mode = "MISSING"
+        latest = (manifest or {}).get("latest_nav_date") or (manifest or {}).get("latest_data_date") or latest_date
+        note = (manifest or {}).get("warning") or self._mode_note(mode, "基金净值")
         return self._module(
             module="fund_nav",
             label="基金净值",
             source_mode=mode,
-            latest_data_date=latest_date,
-            record_count=file_count,
-            coverage_ratio=1.0 if file_count else 0.0,
+            latest_data_date=latest,
+            record_count=record_count,
+            coverage_ratio=1.0 if record_count else 0.0,
             can_drive_advice=mode == "REAL",
             risk_level=self._risk_for_mode(mode),
-            note=self._mode_note(mode, "基金净值"),
+            note=note,
+            source_breakdown={self._normalize_mode(key): int(value or 0) for key, value in source_count.items()} if source_count else {mode: record_count},
         )
 
     def _portfolio_snapshot_module(self) -> dict[str, Any]:
@@ -235,6 +247,32 @@ class DataCredibilityService:
             "has_blocking_issue": counts.get("MISSING", 0) > 0,
             "module_count": len(modules),
         }
+
+
+    def _latest_raw_manifest(self, dataset: str) -> dict[str, Any] | None:
+        raw_dir = self.settings.data_dir / "raw" / dataset
+        if not raw_dir.exists():
+            return None
+        manifests = sorted(raw_dir.glob("*_manifest.json"), key=lambda item: item.name, reverse=True)
+        for manifest_path in manifests:
+            try:
+                return json.loads(manifest_path.read_text(encoding="utf-8")) | {"manifest_file": manifest_path.name}
+            except Exception:
+                continue
+        return None
+
+    def _mode_from_source_count(self, source_count: dict[str, Any] | None) -> str:
+        if not source_count:
+            return "MISSING"
+        sample_count = int(source_count.get("sample") or 0)
+        real_count = sum(int(value or 0) for key, value in source_count.items() if key.lower() != "sample")
+        if real_count > 0 and sample_count > 0:
+            return "MIXED"
+        if real_count > 0:
+            return "REAL"
+        if sample_count > 0:
+            return "SAMPLE"
+        return "MISSING"
 
     def _table_exists(self, table: str) -> bool:
         row = self.repo.fetch_one("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))

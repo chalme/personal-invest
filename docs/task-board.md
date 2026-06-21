@@ -111,7 +111,7 @@
 
 ### BUG-001: 修正 fund_nav 可信度来源判断
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 避免基金净值 `fund_nav` 只要存在 parquet 文件就被标记为 `REAL`，确保样本基金净值不会误导数据可信度总览。
@@ -119,6 +119,10 @@
 - Scope: 读取最新 fund manifest；根据 `source_count.akshare` 和 `source_count.sample` 推导 `REAL` / `SAMPLE` / `MIXED` / `MISSING`；保持 Dashboard / Settings 展示结构不变。
 - Out of Scope: 不接入新基金数据源；不改 parquet 格式；不重写基金分析；不改建议规则。
 - Acceptance: 全样本基金净值显示 `SAMPLE`；混合来源显示 `MIXED`；无基金净值显示 `MISSING`；说明文案符合可信度边界。
+- Completed At: 2026-06-21
+- Changed Files: `backend/app/services/data_credibility_service.py`, `docs/task-board.md`
+- Verification: `PYTHONPATH=backend uv run python` smoke test confirmed current fund_nav is `MISSING`; `uv run python -m compileall backend/app`; `git diff --check`.
+- Notes: 第一版读取最新 `data/raw/fund/*_manifest.json` 的 `source_count` 推导可信度，不改变 parquet 格式或基金分析逻辑。
 
 ### OPS-DOC-001: 生产部署边界文档
 
