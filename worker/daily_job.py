@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 from worker.factor.fund_analysis import calculate_fund_analysis
 from worker.factor.market_trend import calculate_market_trend, calculate_sector_trend
 from worker.factor.stock_analysis import calculate_stock_analysis
+from worker.factor.stock_financial import calculate_stock_financials
 from worker.ingest.market_data import sync_fund_data, sync_market_data
 from worker.portfolio.snapshot import build_portfolio_snapshot
 from worker.report.report_builder import build_daily_report
@@ -72,7 +73,10 @@ def run(job_id: int | None = None) -> None:
             update_job(conn, job_id, "RUNNING", 60, "计算个股公司分析")
             stocks = calculate_stock_analysis()
 
-            update_job(conn, job_id, "RUNNING", 70, "计算基金分析")
+            update_job(conn, job_id, "RUNNING", 68, "计算股票财报与估值快照")
+            financials = calculate_stock_financials()
+
+            update_job(conn, job_id, "RUNNING", 72, "计算基金分析")
             funds = calculate_fund_analysis()
 
             update_job(conn, job_id, "RUNNING", 78, "生成策略信号")
@@ -104,7 +108,8 @@ def run(job_id: int | None = None) -> None:
                 (
                     f"完成：行情 {market_sync['rows']} 行，基金净值 {fund_sync['rows']} 行，市场 {market['trend_state']}，"
                     f"行业 {sectors.get('count', 0)} 个，个股 {stocks.get('count', 0)} 个，"
-                    f"基金 {funds.get('count', 0)} 个，信号 {signals.get('count', 0)} 条，"
+                    f"财报 {financials.get('count', 0)} 个，基金 {funds.get('count', 0)} 个，"
+                    f"信号 {signals.get('count', 0)} 条，"
                     f"建议 {advice.get('count', 0)} 条，"
                     f"风险 {risks.get('count', 0)} 条，"
                     f"快照 {snapshot.get('snapshot_date')}，"

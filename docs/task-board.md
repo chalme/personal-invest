@@ -103,17 +103,17 @@
 
 ### P2-006: 股票财报数据层与快照
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 落地股票财报、财务指标、估值和公司质量快照的数据层与 worker 计算链路。
 - Details: `docs/tasks/P2-006-stock-financial-data-layer.md`
 - Files: `backend/migrations/`, `worker/`, `backend/app/services/`
 - Concrete Changes: 新增 `financial_statement_snapshot`、`financial_metric_snapshot`、`valuation_snapshot`、`stock_quality_snapshot` 所需表结构和 worker；补齐 `source_mode`、`data_date`、`data_version` 等追溯字段。
 - Acceptance: 股票财报快照能生成并区分真实、估算、样本和缺失数据；公司质量和估值输入可被后续 API 和建议链路读取。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 只做数据层与计算，不在本任务完成页面和复盘接入。
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/011_stock_financial_snapshots.sql`, `worker/factor/stock_financial.py`, `worker/daily_job.py`, `backend/app/services/stock_financial_service.py`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.factor.stock_financial`; queried four financial snapshot tables; `uv run python -m compileall backend/app worker scripts`; `./scripts/check.sh`.
+- Notes: 只做数据层与计算，不在本任务完成页面和复盘接入；当前 SAMPLE / ESTIMATED 数据有明确 `source_mode`。
 
 ### P2-007: 股票财报 API 与页面接入
 

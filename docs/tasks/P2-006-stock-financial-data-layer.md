@@ -1,10 +1,10 @@
 # P2-006: 股票财报数据层与快照
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -31,9 +31,11 @@
 
 ## Verification
 
-- 迁移可重复执行。
-- worker 执行后能查询到快照数据。
-- `rtk git diff --check`。
+- `uv run python scripts/migrate_db.py` applied `011_stock_financial_snapshots`.
+- `uv run python -m worker.factor.stock_financial` generated statement / metric / valuation / quality snapshots.
+- Queried all four snapshot tables and confirmed rows exist.
+- `uv run python -m compileall backend/app worker scripts`.
+- `./scripts/check.sh`.
 
 ## Notes
 
