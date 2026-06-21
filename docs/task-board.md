@@ -187,17 +187,17 @@
 
 ### P2-012: ETF 画像与暴露数据层
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 为 ETF / LOF 建立独立画像与暴露数据层，补齐跟踪指数、主题、行业、地区、风格和资产类别暴露。
 - Details: `docs/tasks/P2-012-etf-profile-exposure.md`
 - Files: `backend/migrations/`, `worker/etf/`, `backend/app/services/etf_deep_service.py`, `worker/daily_job.py`
 - Concrete Changes: 新增 ETF 画像和暴露快照表；从 `instrument` 与观察池回填 ETF/LOF；生成指数、主题、行业、地区、风格暴露；明确 `source_mode` 和 `data_version`。
 - Acceptance: ETF 不进入股票财报模型，也不进入场外基金经理模型；ETF 能解释跟踪指数、主题和主要暴露；无真实暴露数据时明确标记估算或缺失，不伪装成真实数据。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 这是 ETF 深度分析 V1 的数据底座，不接页面和复盘闭环。
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/016_etf_profile_exposure.sql`, `worker/etf/profile_exposure.py`, `worker/etf/__init__.py`, `worker/daily_job.py`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.etf.profile_exposure`; 查询 `etf_profile` 和 `etf_exposure_snapshot`; `uv run python -m compileall backend/app worker scripts`. `./scripts/check.sh` 因当前执行环境缺少 `pnpm` 未能完成前端阶段。
+- Notes: 这是 ETF 深度分析 V1 的数据底座，不接页面和复盘闭环；当前 ETF 暴露为 `ESTIMATED`，不会伪装为真实数据。
 
 ### P2-013: ETF 流动性与风险收益快照
 
