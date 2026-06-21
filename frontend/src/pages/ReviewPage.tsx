@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPatch, apiPost } from '../api/client';
-import type { DecisionRecord, ReviewOverview, ReviewTask } from '../api/types';
+import type { DecisionOutcome, DecisionRecord, ReviewOverview, ReviewTask } from '../api/types';
 import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '../components/ui';
 
 function tone(priority?: string) {
@@ -39,6 +39,7 @@ export function ReviewPage() {
   const [data, setData] = useState<ReviewOverview | null>(null);
   const [tasks, setTasks] = useState<ReviewTask[]>([]);
   const [decisions, setDecisions] = useState<DecisionRecord[]>([]);
+  const [outcomes, setOutcomes] = useState<DecisionOutcome[]>([]);
   const [filter, setFilter] = useState<TaskFilter>('OPEN');
   const [decisionTask, setDecisionTask] = useState<ReviewTask | null>(null);
   const [decisionType, setDecisionType] = useState('NO_ACTION');
@@ -52,14 +53,16 @@ export function ReviewPage() {
   async function load(nextFilter = filter) {
     try {
       setLoading(true);
-      const [overview, taskResp, decisionResp] = await Promise.all([
+      const [overview, taskResp, decisionResp, outcomeResp] = await Promise.all([
         apiGet<ReviewOverview>('/api/review/overview'),
         apiGet<{ data: ReviewTask[] }>(`/api/review/tasks?status=${nextFilter}`),
         apiGet<{ data: DecisionRecord[] }>('/api/review/decisions'),
+        apiGet<{ data: DecisionOutcome[] }>('/api/review/outcomes'),
       ]);
       setData(overview);
       setTasks(taskResp.data);
       setDecisions(decisionResp.data);
+      setOutcomes(outcomeResp.data);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '复盘数据加载失败');
@@ -241,6 +244,18 @@ export function ReviewPage() {
               </div>
             ))}
             {decisions.length === 0 && <EmptyState title="暂无决策记录" description="当有真实处理或暂不处理时，可以从重要事项里记录。" />}
+          </div>
+        </Card>
+        <Card title="后续结果" description="只作为复盘参考，不代表决策绝对对错。">
+          <div className="list-stack refined-list">
+            {outcomes.slice(0, 6).map((item) => (
+              <div className="list-item" key={item.id}>
+                <Badge tone={(item.return_ratio ?? 0) >= 0 ? 'good' : 'bad'}>{item.horizon}</Badge>
+                <strong>{item.return_ratio === null || item.return_ratio === undefined ? '缺少价格/净值' : `${(item.return_ratio * 100).toFixed(2)}%`}</strong>
+                <span>{item.summary || '已记录轻量结果'} · {item.measured_at}</span>
+              </div>
+            ))}
+            {outcomes.length === 0 && <EmptyState title="暂无后续结果" description="决策达到 1D / 1W / 1M 跟踪窗口后会自动沉淀。" />}
           </div>
         </Card>
         <Card title="建议变化" description="只展示需要复核或建议等级发生变化的资产。">

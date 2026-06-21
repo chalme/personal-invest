@@ -36,8 +36,12 @@ class ReviewService:
             advice_changes=advice_changes,
             portfolio_change=portfolio_change,
         )
+        persistent_open_tasks = self.list_tasks(status="OPEN", limit=8)
+        recent_decisions = self.list_decisions(limit=6)
+        recent_outcomes = self.list_decision_outcomes(limit=6)
         high_count = sum(1 for item in important_items if item.get("priority") == "HIGH")
         medium_count = sum(1 for item in important_items if item.get("priority") == "MEDIUM")
+        persistent_high_count = sum(1 for item in persistent_open_tasks if item.get("priority") == "HIGH")
         intervention_required = high_count > 0 or medium_count > 0
         summary_message = (
             "今天有需要优先复核的重要事项。"
@@ -56,8 +60,14 @@ class ReviewService:
                 "data_mode": data_status.get("mode"),
                 "latest_data_date": data_status.get("latest_trade_date"),
                 "latest_job_status": latest_job.get("status") if latest_job else None,
+                "open_task_count": len(persistent_open_tasks),
+                "open_high_task_count": persistent_high_count,
+                "recent_decision_count": len(recent_decisions),
             },
             "important_items": important_items,
+            "review_tasks": persistent_open_tasks,
+            "recent_decisions": recent_decisions,
+            "recent_outcomes": recent_outcomes,
             "advice_changes": advice_changes,
             "portfolio_snapshot": {
                 "latest": latest_snapshot,

@@ -151,6 +151,7 @@ export function PortfolioPage() {
           <div><span>最新快照</span><strong>{String(latestSnapshot?.snapshot_date ?? summary?.snapshot_date ?? '暂无')}</strong><small>执行今日更新后自动沉淀</small></div>
           <div><span>快照盈亏</span><strong>{money(Number(latestSnapshot?.total_pnl ?? summary?.total_pnl ?? 0))}</strong><small>收益率 {pct(Number(latestSnapshot?.total_pnl_ratio ?? summary?.total_pnl_ratio ?? 0))}</small></div>
           <div><span>建议变化</span><strong>{watchingAdvice.length} 条观察建议</strong><small>更多变化请打开左侧“复盘”</small></div>
+          <div><span>决策记录</span><strong>复盘页记录</strong><small>为真实处理或暂不处理留下原因</small></div>
         </div>
       </Card>
 

@@ -89,16 +89,16 @@
 
 ### P1-015: 复盘摘要接入 Dashboard / Portfolio
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 将持久化重要事项、最近决策和 outcome 摘要接入首页与持仓页，但不把 Dashboard 做成任务处理页。
 - Details: `docs/tasks/P1-015-review-summary-surfaces.md`
 - Files: `backend/app/services/dashboard_service.py`, `backend/app/services/portfolio_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/PortfolioPage.tsx`
 - Concrete Changes: Dashboard 展示 OPEN 重要事项数量、高优先级摘要和最近决策；Portfolio 页提供按资产记录决策和查看相关事项的入口；ReviewPage 仍是完整复盘主入口。
 - Acceptance: 用户 30 秒内能知道是否需要介入；持仓页能进入记录决策；Dashboard 只显示摘要，不制造每日待办压力。
-- Completed At:
-- Changed Files:
-- Verification:
+- Completed At: 2026-06-21
+- Changed Files: `backend/app/services/review_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/api/types.ts`, `frontend/src/styles/global.css`
+- Verification: ReviewService overview smoke test; `cd frontend && pnpm build`; `./scripts/check.sh`.
 - Notes: 本任务是复盘闭环 V1 的收口任务。
 
 ### P1-010: 低摩擦投资工作台 V1

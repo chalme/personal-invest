@@ -356,3 +356,15 @@ button { font: inherit; }
   min-height: 78px;
   resize: vertical;
 }
+
+.review-recent-decisions {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.review-recent-decisions strong {
+  color: var(--text);
+}

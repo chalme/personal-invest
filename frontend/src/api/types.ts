@@ -216,6 +216,22 @@ export type DecisionRecord = {
   updated_at: string;
 };
 
+export type DecisionOutcome = {
+  id: number;
+  decision_id: number;
+  horizon: '1D' | '1W' | '1M' | string;
+  measured_at: string;
+  price_at_decision?: number | null;
+  price_at_measure?: number | null;
+  return_ratio?: number | null;
+  advice_level_at_decision?: string | null;
+  advice_level_at_measure?: string | null;
+  risk_count_at_decision?: number | null;
+  risk_count_at_measure?: number | null;
+  summary?: string | null;
+  created_at: string;
+};
+
 export type ReviewWindowSummary = {
   start_date?: string | null;
   end_date?: string | null;
@@ -237,8 +253,14 @@ export type ReviewOverview = {
     data_mode?: string | null;
     latest_data_date?: string | null;
     latest_job_status?: string | null;
+    open_task_count?: number;
+    open_high_task_count?: number;
+    recent_decision_count?: number;
   };
   important_items: ReviewImportantItem[];
+  review_tasks?: ReviewTask[];
+  recent_decisions?: DecisionRecord[];
+  recent_outcomes?: DecisionOutcome[];
   advice_changes: InvestmentAdvice[];
   portfolio_snapshot: {
     latest?: Record<string, unknown> | null;

@@ -152,6 +152,25 @@ export function Dashboard() {
   const sectorPanorama = data.sector_panorama;
   const review = data.review;
   const importantItems = review?.important_items ?? [];
+  const openReviewTasks = review?.review_tasks ?? [];
+  const recentDecisions = review?.recent_decisions ?? [];
+  const reviewDisplayItems = openReviewTasks.length > 0
+    ? openReviewTasks.map((item) => ({
+        key: `task-${item.id}`,
+        priority: item.priority,
+        title: item.title,
+        message: item.summary || item.review_reason || '该事项需要复核。',
+        date: item.source_date,
+        source: item.source_type,
+      }))
+    : importantItems.map((item, index) => ({
+        key: `live-${item.type}-${item.symbol ?? index}-${item.date ?? index}`,
+        priority: item.priority,
+        title: item.title,
+        message: item.message,
+        date: item.date,
+        source: item.source ?? item.type,
+      }));
   const portfolioChange = review?.portfolio_snapshot?.change;
 
   return (
@@ -199,22 +218,30 @@ export function Dashboard() {
           <div className={`review-verdict ${review?.summary.intervention_required ? 'needs-review' : 'clear'}`}>
             <strong>{review?.summary.message ?? '暂无需要立即处理事项。'}</strong>
             <span>
-              高优先级 {review?.summary.high_count ?? 0} · 中优先级 {review?.summary.medium_count ?? 0} · 全部 {review?.summary.important_count ?? 0}
+              持久事项 {review?.summary.open_task_count ?? 0} · 高优先级 {review?.summary.open_high_task_count ?? review?.summary.high_count ?? 0} · 最近决策 {review?.summary.recent_decision_count ?? 0}
             </span>
           </div>
           <div className="review-item-list">
-            {importantItems.slice(0, 5).map((item, index) => (
-              <div className="review-item" key={`${item.type}-${item.symbol ?? index}-${item.date ?? index}`}>
+            {reviewDisplayItems.slice(0, 5).map((item) => (
+              <div className="review-item" key={item.key}>
                 <Badge tone={reviewPriorityTone(item.priority)}>{item.priority}</Badge>
                 <div>
                   <strong>{item.title}</strong>
                   <p>{item.message}</p>
-                  <small>{item.date ?? '暂无日期'} · {item.source ?? item.type}</small>
+                  <small>{item.date ?? '暂无日期'} · {item.source}</small>
                 </div>
               </div>
             ))}
-            {importantItems.length === 0 && <EmptyState title="暂无需要立即处理事项" description="系统仍会自动跟踪后续价格、净值、风险和建议变化。" />}
+            {openReviewTasks.length === 0 && importantItems.length === 0 && <EmptyState title="暂无需要立即处理事项" description="系统仍会自动跟踪后续价格、净值、风险和建议变化。" />}
           </div>
+          {recentDecisions.length > 0 && (
+            <div className="review-recent-decisions">
+              <strong>最近决策</strong>
+              {recentDecisions.slice(0, 3).map((decision) => (
+                <span key={decision.id}>{decision.name ?? decision.symbol} · {decision.decision_type} · {decision.decision_date}</span>
+              ))}
+            </div>
+          )}
         </div>
       </Card>
 

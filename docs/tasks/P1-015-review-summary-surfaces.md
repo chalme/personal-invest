@@ -1,10 +1,10 @@
 # P1-015: 复盘摘要接入 Dashboard / Portfolio
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -37,3 +37,17 @@ Dashboard 只展示摘要，不做完整处理流程。Portfolio 只提供按资
 ## Notes
 
 - 本任务是低摩擦决策复盘闭环 V1 的收口任务。
+
+
+## Completed Changes
+
+- Dashboard now uses persisted OPEN review tasks where available and shows recent decision count.
+- ReviewService overview returns persisted task summary, recent decisions and recent outcomes.
+- ReviewPage shows outcome summaries next to task workflow and decision history.
+- Portfolio page keeps the复盘入口 lightweight and points decision recording back to ReviewPage.
+
+## Completed Verification
+
+- ReviewService overview returned open task, decision and outcome summary fields.
+- Frontend build passed.
+- `./scripts/check.sh` passed.
