@@ -1,10 +1,10 @@
 # P2-014: ETF 跟踪质量与折溢价
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -36,7 +36,14 @@
 - `uv run python -m worker.etf.tracking_quality`
 - 查询 ETF 跟踪质量表。
 - `uv run python -m compileall backend/app worker scripts`
-- `./scripts/check.sh`
+- `./scripts/check.sh` 当前环境缺少 `pnpm`，未能完成前端阶段。
+
+## Changed Files
+
+- `backend/migrations/018_etf_tracking_quality.sql`
+- `worker/etf/tracking_quality.py`
+- `backend/app/services/etf_deep_service.py`
+- `worker/daily_job.py`
 
 ## Notes
 

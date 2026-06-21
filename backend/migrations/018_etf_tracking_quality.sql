@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS etf_tracking_snapshot (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_date TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    name TEXT NOT NULL,
+    tracking_index TEXT,
+    index_symbol TEXT,
+    tracking_error REAL,
+    tracking_deviation REAL,
+    premium_discount REAL,
+    fit_score REAL,
+    tracking_quality_level TEXT,
+    tracking_note TEXT,
+    source TEXT,
+    source_mode TEXT NOT NULL DEFAULT 'MISSING',
+    data_date TEXT NOT NULL,
+    data_version TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE(snapshot_date, symbol)
+);

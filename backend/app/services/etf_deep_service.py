@@ -38,12 +38,22 @@ class EtfDeepService:
             """,
             (symbol,),
         )
+        tracking = self.repo.fetch_one(
+            """
+            SELECT * FROM etf_tracking_snapshot
+            WHERE symbol = ?
+            ORDER BY snapshot_date DESC, id DESC
+            LIMIT 1
+            """,
+            (symbol,),
+        )
         return {
             "symbol": symbol,
             "profile": profile,
             "exposures": exposures,
             "liquidity": liquidity,
             "risk_return": risk_return,
+            "tracking": tracking,
         }
 
     def latest_all(self, limit: int = 50) -> list[dict[str, Any]]:

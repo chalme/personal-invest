@@ -215,16 +215,16 @@
 
 ### P2-014: ETF 跟踪质量与折溢价
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 建立 ETF / LOF 跟踪误差、跟踪偏离、折溢价和指数拟合质量快照。
 - Details: `docs/tasks/P2-014-etf-tracking-premium.md`
 - Files: `backend/migrations/`, `worker/etf/`, `backend/app/services/etf_deep_service.py`, `worker/daily_job.py`
 - Concrete Changes: 新增 ETF 跟踪质量快照；在可得指数/净值数据时计算跟踪误差、跟踪偏离、折溢价和拟合质量；数据不足时输出 `MISSING` / `ESTIMATED`。
 - Acceptance: ETF 跟踪质量不会用假数据冒充真实指标；页面和 AI 能区分真实、估算和缺失；跟踪异常可供后续复盘闭链接入。
-- Completed At:
-- Changed Files:
-- Verification:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/018_etf_tracking_quality.sql`, `worker/etf/tracking_quality.py`, `backend/app/services/etf_deep_service.py`, `worker/daily_job.py`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.etf.tracking_quality`; 查询 `etf_tracking_snapshot`; `uv run python -m compileall backend/app worker scripts`. `./scripts/check.sh` 因当前执行环境缺少 `pnpm` 未能完成前端阶段。
 - Notes: 跟踪质量对数据源依赖较强，本任务必须优先保证数据可信度和边界说明。
 
 ### P2-015: ETF 页面、AI 与复盘闭链接入

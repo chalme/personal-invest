@@ -16,6 +16,7 @@ from worker.factor.stock_financial import calculate_stock_financials
 from worker.financial.events import generate_financial_events
 from worker.etf.profile_exposure import build_etf_profile_exposure
 from worker.etf.liquidity_risk_return import build_etf_liquidity_risk_return
+from worker.etf.tracking_quality import build_etf_tracking_quality
 from worker.fund.deep_profile import build_fund_profile_and_risk_return
 from worker.fund.benchmark_peer import build_fund_benchmark_peer_exposure
 from worker.fund.events import generate_fund_deep_events
@@ -91,6 +92,9 @@ def run(job_id: int | None = None) -> None:
             update_job(conn, job_id, "RUNNING", 74, "计算 ETF 流动性与风险收益")
             etf_risk = build_etf_liquidity_risk_return()
 
+            update_job(conn, job_id, "RUNNING", 74, "计算 ETF 跟踪质量")
+            etf_tracking = build_etf_tracking_quality()
+
             update_job(conn, job_id, "RUNNING", 75, "计算场外基金画像与风险收益")
             fund_deep = build_fund_profile_and_risk_return()
 
@@ -133,7 +137,8 @@ def run(job_id: int | None = None) -> None:
                     f"完成：行情 {market_sync['rows']} 行，基金净值 {fund_sync['rows']} 行，市场 {market['trend_state']}，"
                     f"行业 {sectors.get('count', 0)} 个，个股 {stocks.get('count', 0)} 个，"
                     f"财报 {financials.get('count', 0)} 个，基金 {funds.get('count', 0)} 个，"
-                    f"ETF画像 {etf_profile.get('count', 0)} 个，ETF风险收益 {etf_risk.get('count', 0)} 个，基金深度 {fund_deep.get('count', 0)} 个，"
+                    f"ETF画像 {etf_profile.get('count', 0)} 个，ETF风险收益 {etf_risk.get('count', 0)} 个，"
+                    f"ETF跟踪 {etf_tracking.get('count', 0)} 个，基金深度 {fund_deep.get('count', 0)} 个，"
                     f"同类暴露 {fund_peer.get('count', 0)} 个，信号 {signals.get('count', 0)} 条，"
                     f"建议 {advice.get('count', 0)} 条，"
                     f"风险 {risks.get('count', 0)} 条，基金事件 {fund_events.get('count', 0)} 条，财报事件 {financial_events.get('count', 0)} 条，"
