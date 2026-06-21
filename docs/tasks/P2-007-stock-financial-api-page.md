@@ -1,10 +1,10 @@
 # P2-007: 股票财报 API 与页面接入
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -32,7 +32,9 @@
 
 - API smoke test。
 - 股票分析页构建通过。
-- `rtk git diff --check`。
+- `PYTHONPATH=backend uv run python` smoke tested `StockFinancialService`.
+- `cd frontend && pnpm build`.
+- `./scripts/check.sh`.
 
 ## Notes
 

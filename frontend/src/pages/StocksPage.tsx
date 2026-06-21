@@ -5,6 +5,7 @@ import { PriceLine, type PriceBar } from '../components/charts/PriceLine';
 import { ScoreRadar } from '../components/charts/ScoreRadar';
 
 type StockAnalysis = Record<string, string | number | null>;
+type StockFinancial = { statement: Record<string, string | number | null> | null; metrics: Record<string, string | number | null> | null; valuation: Record<string, string | number | null> | null; quality: Record<string, string | number | null> | null; };
 
 function badgeTone(state: unknown): 'good' | 'warn' | 'bad' | 'neutral' {
   const text = String(state ?? '');
@@ -23,6 +24,7 @@ export function StocksPage() {
   const [rows, setRows] = useState<StockAnalysis[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
   const [prices, setPrices] = useState<PriceBar[]>([]);
+  const [financial, setFinancial] = useState<StockFinancial | null>(null);
 
   useEffect(() => {
     apiGet<{ data: StockAnalysis[] }>('/api/stocks/analysis').then((res) => {
@@ -34,6 +36,7 @@ export function StocksPage() {
   useEffect(() => {
     if (!selectedSymbol) return;
     apiGet<{ data: PriceBar[] }>(`/api/stocks/${selectedSymbol}/prices?limit=120`).then((res) => setPrices(res.data));
+    apiGet<{ data: StockFinancial }>(`/api/stocks/${selectedSymbol}/financial`).then((res) => setFinancial(res.data));
   }, [selectedSymbol]);
 
   const selected = useMemo(() => rows.find((row) => row.symbol === selectedSymbol) ?? rows[0], [rows, selectedSymbol]);
@@ -73,6 +76,23 @@ export function StocksPage() {
               <ScoreRadar scores={scoreRadar} />
             </Card>
           </div>
+
+          <Card title="财报与估值快照" description="股票财报分析只适用于 STOCK；样本或估算数据会明确标注来源，不单独构成交易依据。">
+            {financial?.quality ? (
+              <div className="analysis-summary">
+                <div><span>公司质量</span><strong>{financial.quality.quality_state} · {numberValue(financial.quality.total_score).toFixed(1)}</strong></div>
+                <div><span>估值状态</span><strong>{financial.valuation?.valuation_state ?? '暂无'} · {numberValue(financial.valuation?.valuation_score).toFixed(1)}</strong></div>
+                <div><span>ROE</span><strong>{(numberValue(financial.metrics?.roe) * 100).toFixed(1)}%</strong></div>
+                <div><span>经营现金流 / 净利润</span><strong>{numberValue(financial.metrics?.operating_cash_flow_ratio).toFixed(2)}</strong></div>
+                <div><span>资产负债率</span><strong>{(numberValue(financial.metrics?.debt_ratio) * 100).toFixed(1)}%</strong></div>
+                <div><span>数据来源</span><strong>{financial.quality.source_mode} · {financial.quality.data_date}</strong></div>
+                <div><span>财报结论</span><strong>{financial.quality.conclusion}</strong></div>
+                <div><span>边界说明</span><strong>{financial.quality.risk_note}</strong></div>
+              </div>
+            ) : (
+              <EmptyState title="暂无财报快照" description="执行每日更新后会生成股票财报、估值和公司质量快照。" />
+            )}
+          </Card>
 
           <Card title="结构化结论" description="当前系统根据预计算快照输出。">
             <div className="analysis-summary">

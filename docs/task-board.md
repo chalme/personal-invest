@@ -117,17 +117,17 @@
 
 ### P2-007: 股票财报 API 与页面接入
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 将股票财报、估值和公司质量快照接入后端 API 与股票分析页。
 - Details: `docs/tasks/P2-007-stock-financial-api-page.md`
 - Files: `backend/app/api/`, `backend/app/services/`, `frontend/src/pages/`
 - Concrete Changes: 提供财报摘要、财务指标趋势、估值分位、公司质量摘要接口；在股票分析页展示公司质量、估值位置、核心指标趋势、数据来源和 AI 财报解释入口。
 - Acceptance: 用户能在股票分析页看到财报和估值层信息；接口返回结构稳定；页面明确展示数据日期和来源。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 不在本任务内落地财报异常到复盘闭环。
+- Completed At: 2026-06-21
+- Changed Files: `backend/app/api/stocks.py`, `backend/app/services/stock_financial_service.py`, `frontend/src/pages/StocksPage.tsx`
+- Verification: `PYTHONPATH=backend uv run python` smoke tested `StockFinancialService`; `cd frontend && pnpm build`; `./scripts/check.sh`.
+- Notes: 股票页展示公司质量、估值、ROE、现金流、负债率和数据来源；不在本任务内落地财报异常到复盘闭环。
 
 ### P2-008: 股票财报事件与复盘闭链接入
 
