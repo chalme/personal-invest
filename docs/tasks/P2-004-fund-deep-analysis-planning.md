@@ -1,10 +1,10 @@
 # P2-004: 场外基金深度分析规划
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -42,3 +42,14 @@ ETF / LOF 已有 `ETF_PRICE` 基础分析，但深度分析不放在本任务中
 
 - 基金看产品、经理、策略和风险收益。
 - 本任务完成后，再拆基金深度分析 V1 的具体实现任务。
+
+## Completed Changes
+
+- 新增 `docs/fund-deep-analysis-design.md`。
+- 明确场外基金深度分析只聚焦 `FUND`。
+- 规划基金画像、经理/公司、风险收益、基准/同类比较、风格暴露、worker、API、页面、复盘闭环和 AI 边界。
+
+## Completed Verification
+
+- `rtk git diff --check` 通过。
+- 文档索引已加入场外基金深度分析设计入口。

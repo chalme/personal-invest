@@ -8,9 +8,9 @@
 
 当前主线：
 
-1. 复盘闭环验收：确认 `review_task`、`decision_record`、`decision_outcome` 形成低打扰、可解释、可持续使用的复盘链路。
-2. 股票财报分析规划：先设计 `STOCK` 财报、财务指标、估值、财报事件和股票质量口径，不直接进入实现。
-3. 场外基金深度分析规划：先设计 `FUND` 的基金画像、基准/同类比较、风险收益和持有体验口径；ETF 深度分析单独排期。
+1. 分析规划已完成：股票财报、场外基金深度、ETF 深度三条设计文档已经收口。
+2. 下一步进入实现拆分：优先从股票财报分析 V1 和场外基金深度分析 V1 拆具体数据库、worker、API、页面和复盘闭链接入任务。
+3. ETF 深度分析已单独规划：继续保留现有 `ETF_PRICE` 基础能力，深度实现优先级低于股票和场外基金。
 
 ## Status
 
@@ -43,7 +43,7 @@
 - Completed At: 2026-06-21
 - Changed Files: `frontend/src/pages/ReviewPage.tsx`, `docs/task-board.md`, `docs/tasks/P1-016-review-loop-acceptance.md`
 - Verification: `uv run python scripts/migrate_db.py`; repeated `uv run python -m worker.review.task_generator`; `uv run python -m worker.review.outcome_tracker`; ReviewService overview smoke test; independent decision creation smoke test; `cd frontend && pnpm build`; `./scripts/check.sh`.
-- Notes: 修复复盘页只能从重要事项记录决策的问题，新增“记录独立决策”入口；规划任务 `P2-003` / `P2-004` 未执行。
+- Notes: 修复复盘页只能从重要事项记录决策的问题，新增“记录独立决策”入口；后续分析规划任务已在 `P2-003` / `P2-004` / `P2-005` 收口。
 
 ### P2-002 reserved: Responsive layout and theme system
 
@@ -61,45 +61,45 @@
 
 ### P2-003: 股票财报分析规划
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 为 `STOCK` 设计财报数据、财务指标、估值、财报事件和股票质量分析口径。
 - Details: `docs/tasks/P2-003-stock-financial-analysis-planning.md`
 - Files: `docs/tasks/P2-003-stock-financial-analysis-planning.md`, `docs/stock-financial-analysis-design.md`
 - Concrete Changes: 输出设计文档，覆盖数据模型、数据来源、指标口径、估值口径、worker 流程、API 范围、页面范围、`review_task` 接入点、`risk_event` 接入点和 AI 解释边界。
 - Acceptance: 规划明确该能力只适用于 `STOCK`；ETF、LOF、FUND 不使用股票财报、公司估值或公司质量评分；财报异常能进入风险、重要事项、日报和 AI 解释链路。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 本任务只产出设计规划，不实现代码。
+- Completed At: 2026-06-21
+- Changed Files: `docs/stock-financial-analysis-design.md`, `docs/tasks/P2-003-stock-financial-analysis-planning.md`, `docs/task-board.md`, `docs/README.md`, `docs/long-term-roadmap.md`
+- Verification: `rtk git diff --check`; 搜索确认股票财报设计文档存在并被文档索引引用；确认设计明确只适用于 `STOCK`。
+- Notes: 本任务只完成设计规划，不实现代码；后续再拆股票财报分析 V1 实现任务。
 
 ### P2-004: 场外基金深度分析规划
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 为 `FUND` 设计基金画像、基金经理/公司、基准/同类比较、风险收益、风格稳定性和持有体验口径。
 - Details: `docs/tasks/P2-004-fund-deep-analysis-planning.md`
 - Files: `docs/tasks/P2-004-fund-deep-analysis-planning.md`, `docs/fund-deep-analysis-design.md`
 - Concrete Changes: 输出设计文档，覆盖基金画像、基金经理/基金公司、基准比较、同类比较、风险收益、风格和持仓暴露、worker 流程、API 范围、页面范围、`review_task` 接入点和 AI 解释边界。
 - Acceptance: 规划明确场外基金深度分析不套股票模型，也不混入 ETF 深度口径；FUND 看产品、经理、策略、风险收益、基准/同类比较和持有体验；基金异常能进入风险、重要事项、日报和 AI 解释链路。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 本任务只产出设计规划，不实现代码。
+- Completed At: 2026-06-21
+- Changed Files: `docs/fund-deep-analysis-design.md`, `docs/tasks/P2-004-fund-deep-analysis-planning.md`, `docs/task-board.md`, `docs/README.md`, `docs/long-term-roadmap.md`
+- Verification: `rtk git diff --check`; 搜索确认场外基金设计文档存在并被文档索引引用；确认 `P2-004` 聚焦 `FUND`，不混入 ETF 深度范围。
+- Notes: 本任务只完成设计规划，不实现代码；后续再拆场外基金深度分析 V1 实现任务。
 
 ### P2-005: ETF 深度分析规划
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 为 `ETF` / `LOF` 单独设计指数、主题、流动性、跟踪质量、折溢价、规模、成交额和交易风险分析口径。
 - Details: `docs/tasks/P2-005-etf-deep-analysis-planning.md`
 - Files: `docs/tasks/P2-005-etf-deep-analysis-planning.md`, `docs/etf-deep-analysis-design.md`
 - Concrete Changes: 输出设计文档，覆盖跟踪指数、主题/行业/地区/风格暴露、成交额、流动性、跟踪误差、折溢价、规模、交易风险、worker 流程、API 范围、页面范围、`review_task` 接入点和 AI 解释边界。
 - Acceptance: 规划明确 ETF 不使用股票财报模型，也不混入场外基金经理/净值持有体验模型；ETF 继续保留现有 `ETF_PRICE` 基础分析，深度分析独立排期。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 优先级低于 `P2-003` 和 `P2-004`，暂缓实现。
+- Completed At: 2026-06-21
+- Changed Files: `docs/etf-deep-analysis-design.md`, `docs/tasks/P2-005-etf-deep-analysis-planning.md`, `docs/task-board.md`, `docs/README.md`, `docs/long-term-roadmap.md`
+- Verification: `rtk git diff --check`; 搜索确认 ETF 设计文档存在并被文档索引引用；确认 ETF 深度分析独立于股票财报和场外基金深度模型。
+- Notes: 本任务只完成设计规划，不实现代码；实现优先级仍低于 `P2-003` 和 `P2-004` 对应的 V1 开发。
 
 ### P1-011: Review Task 持久化
 

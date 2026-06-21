@@ -1,10 +1,10 @@
 # P2-003: 股票财报分析规划
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -40,3 +40,14 @@
 
 - 股票看公司。
 - 本任务完成后，再拆股票财报分析 V1 的具体实现任务。
+
+## Completed Changes
+
+- 新增 `docs/stock-financial-analysis-design.md`。
+- 明确股票财报分析只适用于 `STOCK`。
+- 规划财报数据、财务指标、估值、财报事件、股票质量快照、worker、API、页面、复盘闭环和 AI 边界。
+
+## Completed Verification
+
+- `rtk git diff --check` 通过。
+- 文档索引已加入股票财报分析设计入口。
