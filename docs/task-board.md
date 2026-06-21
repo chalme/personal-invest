@@ -8,8 +8,8 @@
 
 当前主线：
 
-1. 分析规划已完成：股票财报、场外基金深度、ETF 深度三条设计文档已经收口。
-2. 下一步进入实现拆分：优先从股票财报分析 V1 和场外基金深度分析 V1 拆具体数据库、worker、API、页面和复盘闭链接入任务。
+1. 股票财报分析 V1：先落数据层与快照，再接 API / 页面，最后接财报事件与复盘闭环。
+2. 场外基金深度分析 V1：先落基金画像与风险收益快照，再接基准 / 同类比较与暴露，最后接页面与复盘闭环。
 3. ETF 深度分析已单独规划：继续保留现有 `ETF_PRICE` 基础能力，深度实现优先级低于股票和场外基金。
 
 ## Status
@@ -100,6 +100,90 @@
 - Changed Files: `docs/etf-deep-analysis-design.md`, `docs/tasks/P2-005-etf-deep-analysis-planning.md`, `docs/task-board.md`, `docs/README.md`, `docs/long-term-roadmap.md`
 - Verification: `rtk git diff --check`; 搜索确认 ETF 设计文档存在并被文档索引引用；确认 ETF 深度分析独立于股票财报和场外基金深度模型。
 - Notes: 本任务只完成设计规划，不实现代码；实现优先级仍低于 `P2-003` 和 `P2-004` 对应的 V1 开发。
+
+### P2-006: 股票财报数据层与快照
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 落地股票财报、财务指标、估值和公司质量快照的数据层与 worker 计算链路。
+- Details: `docs/tasks/P2-006-stock-financial-data-layer.md`
+- Files: `backend/migrations/`, `worker/`, `backend/app/services/`
+- Concrete Changes: 新增 `financial_statement_snapshot`、`financial_metric_snapshot`、`valuation_snapshot`、`stock_quality_snapshot` 所需表结构和 worker；补齐 `source_mode`、`data_date`、`data_version` 等追溯字段。
+- Acceptance: 股票财报快照能生成并区分真实、估算、样本和缺失数据；公司质量和估值输入可被后续 API 和建议链路读取。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 只做数据层与计算，不在本任务完成页面和复盘接入。
+
+### P2-007: 股票财报 API 与页面接入
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 将股票财报、估值和公司质量快照接入后端 API 与股票分析页。
+- Details: `docs/tasks/P2-007-stock-financial-api-page.md`
+- Files: `backend/app/api/`, `backend/app/services/`, `frontend/src/pages/`
+- Concrete Changes: 提供财报摘要、财务指标趋势、估值分位、公司质量摘要接口；在股票分析页展示公司质量、估值位置、核心指标趋势、数据来源和 AI 财报解释入口。
+- Acceptance: 用户能在股票分析页看到财报和估值层信息；接口返回结构稳定；页面明确展示数据日期和来源。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 不在本任务内落地财报异常到复盘闭环。
+
+### P2-008: 股票财报事件与复盘闭链接入
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 让股票财报异常成为风险事件、重要事项、日报和 AI 解释输入。
+- Details: `docs/tasks/P2-008-stock-financial-review-integration.md`
+- Files: `worker/`, `backend/app/services/review_service.py`, `worker/report/`, `backend/app/services/ai_service.py`
+- Concrete Changes: 新增 `financial_event` 识别逻辑；重要财报异常写入 `risk_event`、生成 `review_task`、进入日报和 AI 解释；按规则影响建议等级。
+- Acceptance: 财报异常不会只停留在股票页面；重要变化会进入复盘闭环；AI 只解释规则和数据依据。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 不新增自动交易或 AI 自由建议。
+
+### P2-009: 场外基金画像与风险收益快照
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 落地场外基金画像、经理 / 公司信息和风险收益快照。
+- Details: `docs/tasks/P2-009-fund-profile-risk-return.md`
+- Files: `backend/migrations/`, `worker/`, `backend/app/services/`
+- Concrete Changes: 新增 `fund_profile`、`fund_manager_profile`、`fund_company_profile`、`fund_risk_return_snapshot`；计算阶段收益、最大回撤、波动、夏普、卡玛和回撤修复时间。
+- Acceptance: 场外基金基础画像和风险收益快照可生成并供后续页面、建议和复盘读取。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: ETF / LOF 不混入本任务。
+
+### P2-010: 场外基金基准 / 同类比较与暴露
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 落地场外基金的基准比较、同类比较和持仓暴露分析。
+- Details: `docs/tasks/P2-010-fund-benchmark-peer-exposure.md`
+- Files: `backend/migrations/`, `worker/`, `backend/app/services/`
+- Concrete Changes: 新增 `fund_benchmark_snapshot`、`fund_peer_rank_snapshot`、`fund_holding_exposure_snapshot`；计算相对基准收益、同类排名 / 分位、风格和持仓暴露。
+- Acceptance: 场外基金能解释是否跑赢基准、同类位置如何、是否与现有组合形成重复暴露。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 先做场外基金，不推进 ETF 指数暴露和跟踪质量。
+
+### P2-011: 场外基金深度页与复盘闭链接入
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 将场外基金深度能力接入基金分析页、重要事项、日报和 AI 解释。
+- Details: `docs/tasks/P2-011-fund-deep-page-review.md`
+- Files: `backend/app/api/`, `backend/app/services/`, `frontend/src/pages/FundsPage.tsx`, `worker/report/`, `backend/app/services/ai_service.py`
+- Concrete Changes: 在基金分析页增加基金画像、经理 / 公司、风险收益、基准 / 同类比较、风格暴露和持有体验模块；基金异常进入 `risk_event`、`review_task`、日报和 AI。
+- Acceptance: 场外基金深度信息能被用户直接查看；重要异常会进入复盘闭环；AI 只解释规则和数据依据。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 本任务只针对 `FUND`，ETF 深度实现继续后置。
 
 ### P1-011: Review Task 持久化
 
@@ -476,3 +560,9 @@
 - `docs/tasks/P2-003-stock-financial-analysis-planning.md`
 - `docs/tasks/P2-004-fund-deep-analysis-planning.md`
 - `docs/tasks/P2-005-etf-deep-analysis-planning.md`
+- `docs/tasks/P2-006-stock-financial-data-layer.md`
+- `docs/tasks/P2-007-stock-financial-api-page.md`
+- `docs/tasks/P2-008-stock-financial-review-integration.md`
+- `docs/tasks/P2-009-fund-profile-risk-return.md`
+- `docs/tasks/P2-010-fund-benchmark-peer-exposure.md`
+- `docs/tasks/P2-011-fund-deep-page-review.md`
