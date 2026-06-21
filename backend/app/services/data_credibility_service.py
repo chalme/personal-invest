@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,8 @@ class ModuleSpec:
 
 class DataCredibilityService:
     """Aggregate data source credibility across analysis modules."""
+
+    DAILY_FRESHNESS_MODULES = {"market_data", "daily_bar", "fund_nav"}
 
     def __init__(self, repo: SQLiteRepository | None = None) -> None:
         self.repo = repo or SQLiteRepository()
@@ -98,12 +101,20 @@ class DataCredibilityService:
             default_missing_note="尚未发现行情日线数据，请先执行每日更新。",
         )
         if file_count <= 0:
-            module.update({"source_mode": "MISSING", "latest_data_date": None, "record_count": 0, "coverage_ratio": 0.0, "can_drive_advice": False, "risk_level": "HIGH"})
+            module.update(
+                {
+                    "source_mode": "MISSING",
+                    "latest_data_date": None,
+                    "record_count": 0,
+                    "coverage_ratio": 0.0,
+                    "can_drive_advice": False,
+                    "risk_level": "HIGH",
+                }
+            )
         else:
             module["latest_data_date"] = module.get("latest_data_date") or latest_date
             module["record_count"] = max(int(module.get("record_count") or 0), file_count)
-        return module
-
+        return self._with_freshness(module)
 
     def _manifest_module(
         self,
@@ -134,7 +145,7 @@ class DataCredibilityService:
         record_count = int(manifest.get("rows") or 0)
         latest = manifest.get("latest_data_date") or manifest.get(latest_fallback_key)
         note = manifest.get("warning") or self._mode_note(mode, label)
-        return self._module(
+        module_result = self._module(
             module=module,
             label=label,
             source_mode=mode,
@@ -144,8 +155,14 @@ class DataCredibilityService:
             can_drive_advice=mode == "REAL",
             risk_level=self._risk_for_mode(mode),
             note=note,
-            source_breakdown={self._normalize_mode(key): int(value or 0) for key, value in source_count.items()} if source_count else {mode: record_count},
+            warning=manifest.get("warning"),
+            source_breakdown={
+                self._normalize_mode(key): int(value or 0) for key, value in source_count.items()
+            }
+            if source_count
+            else {mode: record_count},
         )
+        return self._with_freshness(module_result)
 
     def _fund_nav_module(self) -> dict[str, Any]:
         base = self.settings.data_dir / "parquet" / "fund_nav"
@@ -159,7 +176,7 @@ class DataCredibilityService:
         )
         if file_count > 0 and not module.get("latest_data_date"):
             module["latest_data_date"] = latest_date
-        return module
+        return self._with_freshness(module)
 
     def _portfolio_snapshot_module(self) -> dict[str, Any]:
         row = self._table_stats("portfolio_snapshot", "snapshot_date")
@@ -180,7 +197,11 @@ class DataCredibilityService:
     def _review_loop_module(self) -> dict[str, Any]:
         counts = 0
         latest: str | None = None
-        for table, date_col in (("review_task", "source_date"), ("decision_record", "decision_date"), ("decision_outcome", "measured_at")):
+        for table, date_col in (
+            ("review_task", "source_date"),
+            ("decision_record", "decision_date"),
+            ("decision_outcome", "measured_at"),
+        ):
             row = self._table_stats(table, date_col)
             counts += int(row.get("record_count") or 0)
             latest = self._latest_date(latest, row.get("latest_data_date"))
@@ -194,7 +215,9 @@ class DataCredibilityService:
             coverage_ratio=1.0 if counts else 0.0,
             can_drive_advice=False,
             risk_level="LOW" if counts else "MEDIUM",
-            note="复盘闭环来自系统事项和用户决策记录，用于复盘，不代表外部行情数据。" if counts else "尚未沉淀重要事项、决策或 outcome。",
+            note="复盘闭环来自系统事项和用户决策记录，用于复盘，不代表外部行情数据。"
+            if counts
+            else "尚未沉淀重要事项、决策或 outcome。",
         )
 
     def _table_module(self, spec: ModuleSpec) -> dict[str, Any]:
@@ -204,13 +227,16 @@ class DataCredibilityService:
         for table, date_col, mode_col in spec.tables:
             if not self._table_exists(table):
                 continue
-            row = self.repo.fetch_one(
-                f"""
+            row = (
+                self.repo.fetch_one(
+                    f"""
                 SELECT COUNT(*) AS record_count,
                        MAX({date_col}) AS latest_data_date
                 FROM {table}
                 """
-            ) or {}
+                )
+                or {}
+            )
             total += int(row.get("record_count") or 0)
             latest = self._latest_date(latest, row.get("latest_data_date"))
             for mode_row in self.repo.fetch_all(
@@ -242,15 +268,31 @@ class DataCredibilityService:
         kwargs.setdefault("latest_data_date", None)
         kwargs.setdefault("coverage_ratio", None)
         kwargs.setdefault("source_breakdown", {kwargs["source_mode"]: kwargs["record_count"]})
+        kwargs.setdefault(
+            "expected_latest_trade_date", self._expected_latest_trade_date().isoformat()
+        )
+        kwargs.setdefault("trade_calendar_source_mode", "ESTIMATED")
+        kwargs.setdefault("freshness_status", "NOT_APPLICABLE")
+        kwargs.setdefault("stale_days", None)
+        kwargs.setdefault("warning", None)
         return kwargs
 
     def _summary(self, modules: list[dict[str, Any]]) -> dict[str, Any]:
         counts = {"REAL": 0, "ESTIMATED": 0, "SAMPLE": 0, "MISSING": 0, "MIXED": 0}
         latest: str | None = None
+        freshness_modules = [
+            item for item in modules if item.get("freshness_status") != "NOT_APPLICABLE"
+        ]
+        stale_count = 0
+        missing_freshness_count = 0
         for item in modules:
             mode = self._normalize_mode(item.get("source_mode"))
             counts[mode] = counts.get(mode, 0) + 1
             latest = self._latest_date(latest, item.get("latest_data_date"))
+            if item.get("freshness_status") == "STALE":
+                stale_count += 1
+            if item.get("freshness_status") == "MISSING":
+                missing_freshness_count += 1
         non_zero_modes = [mode for mode, count in counts.items() if count > 0 and mode != "MIXED"]
         if counts.get("MIXED", 0) or len(non_zero_modes) > 1:
             overall = "MIXED"
@@ -258,6 +300,18 @@ class DataCredibilityService:
             overall = non_zero_modes[0]
         else:
             overall = "MISSING"
+        if stale_count > 0:
+            freshness_status = "STALE"
+        elif missing_freshness_count > 0:
+            freshness_status = "MISSING"
+        elif freshness_modules:
+            freshness_status = "FRESH"
+        else:
+            freshness_status = "NOT_APPLICABLE"
+        expected_latest_trade_date = self._expected_latest_trade_date().isoformat()
+        freshness_warning = self._freshness_summary_warning(
+            freshness_status, stale_count, missing_freshness_count
+        )
         return {
             "overall_mode": overall,
             "real_count": counts.get("REAL", 0),
@@ -266,19 +320,132 @@ class DataCredibilityService:
             "missing_count": counts.get("MISSING", 0),
             "mixed_count": counts.get("MIXED", 0),
             "latest_data_date": latest,
+            "expected_latest_trade_date": expected_latest_trade_date,
+            "trade_calendar_source_mode": "ESTIMATED",
+            "freshness_status": freshness_status,
+            "stale_count": stale_count,
+            "missing_freshness_count": missing_freshness_count,
+            "can_drive_advice_count": sum(1 for item in modules if item.get("can_drive_advice")),
+            "warning": freshness_warning,
             "has_blocking_issue": counts.get("MISSING", 0) > 0,
             "module_count": len(modules),
         }
 
+    def _with_freshness(self, module: dict[str, Any]) -> dict[str, Any]:
+        if module.get("module") not in self.DAILY_FRESHNESS_MODULES:
+            return module
+        latest = self._parse_iso_date(module.get("latest_data_date"))
+        expected = self._expected_latest_trade_date()
+        source_mode = self._normalize_mode(module.get("source_mode"))
+        if source_mode == "MISSING" or latest is None:
+            status = "MISSING"
+            stale_days: int | None = None
+        elif latest >= expected:
+            status = "FRESH"
+            stale_days = 0
+        else:
+            status = "STALE"
+            stale_days = self._business_day_gap(latest, expected)
+        module["expected_latest_trade_date"] = expected.isoformat()
+        module["trade_calendar_source_mode"] = "ESTIMATED"
+        module["freshness_status"] = status
+        module["stale_days"] = stale_days
+        module["can_drive_advice"] = (
+            bool(module.get("can_drive_advice")) and status == "FRESH" and source_mode == "REAL"
+        )
+        if status == "STALE":
+            module["risk_level"] = (
+                "MEDIUM"
+                if module.get("risk_level") == "LOW"
+                else module.get("risk_level", "MEDIUM")
+            )
+        if status == "MISSING":
+            module["risk_level"] = "HIGH"
+        module["warning"] = self._freshness_warning(module)
+        if module["warning"]:
+            module["note"] = self._merge_note_and_warning(
+                str(module.get("note") or ""), module["warning"]
+            )
+        return module
+
+    def _expected_latest_trade_date(self, today: date | None = None) -> date:
+        current = today or date.today()
+        while current.weekday() >= 5:
+            current -= timedelta(days=1)
+        return current
+
+    def _business_day_gap(self, latest: date, expected: date) -> int:
+        if latest >= expected:
+            return 0
+        days = 0
+        current = latest + timedelta(days=1)
+        while current <= expected:
+            if current.weekday() < 5:
+                days += 1
+            current += timedelta(days=1)
+        return days
+
+    def _parse_iso_date(self, value: Any) -> date | None:
+        if not value:
+            return None
+        text = str(value)[:10]
+        try:
+            return datetime.strptime(text, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+
+    def _freshness_warning(self, module: dict[str, Any]) -> str | None:
+        status = module.get("freshness_status")
+        label = module.get("label") or module.get("module") or "数据"
+        expected = module.get("expected_latest_trade_date")
+        latest = module.get("latest_data_date") or "暂无"
+        stale_days = module.get("stale_days")
+        calendar_note = "最近交易日按工作日估算，未纳入法定节假日或临时休市。"
+        source_warning = module.get("warning")
+        if status == "FRESH":
+            return source_warning or calendar_note
+        if status == "STALE":
+            return (
+                f"{label}最新日期 {latest}，落后预期最近交易日 {expected} "
+                f"约 {stale_days} 个交易日；{calendar_note}"
+            )
+        if status == "MISSING":
+            return f"{label}缺少可判断新鲜度的数据日期，不能驱动高置信建议；{calendar_note}"
+        return source_warning
+
+    def _freshness_summary_warning(
+        self, status: str, stale_count: int, missing_count: int
+    ) -> str | None:
+        calendar_note = "最近交易日按工作日估算，未纳入法定节假日或临时休市。"
+        if status == "STALE":
+            return f"{stale_count} 个日频数据模块已落后预期交易日；{calendar_note}"
+        if status == "MISSING":
+            return f"{missing_count} 个日频数据模块缺少可判断新鲜度的数据日期；{calendar_note}"
+        if status == "FRESH":
+            return calendar_note
+        return None
+
+    def _merge_note_and_warning(self, note: str, warning: str | None) -> str:
+        if not warning:
+            return note
+        if not note:
+            return warning
+        if warning in note:
+            return note
+        return f"{note} {warning}"
 
     def _latest_raw_manifest(self, dataset: str) -> dict[str, Any] | None:
         raw_dir = self.settings.data_dir / "raw" / dataset
         if not raw_dir.exists():
             return None
-        manifests = sorted(raw_dir.glob("*_manifest.json"), key=lambda item: item.name, reverse=True)
+        manifests = sorted(
+            raw_dir.glob("*_manifest.json"), key=lambda item: item.name, reverse=True
+        )
         for manifest_path in manifests:
             try:
-                return json.loads(manifest_path.read_text(encoding="utf-8")) | {"manifest_file": manifest_path.name}
+                return json.loads(manifest_path.read_text(encoding="utf-8")) | {
+                    "manifest_file": manifest_path.name
+                }
             except Exception:
                 continue
         return None
@@ -287,7 +454,9 @@ class DataCredibilityService:
         if not source_count:
             return "MISSING"
         sample_count = int(source_count.get("sample") or 0)
-        real_count = sum(int(value or 0) for key, value in source_count.items() if key.lower() != "sample")
+        real_count = sum(
+            int(value or 0) for key, value in source_count.items() if key.lower() != "sample"
+        )
         if real_count > 0 and sample_count > 0:
             return "MIXED"
         if real_count > 0:
@@ -297,7 +466,9 @@ class DataCredibilityService:
         return "MISSING"
 
     def _table_exists(self, table: str) -> bool:
-        row = self.repo.fetch_one("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
+        row = self.repo.fetch_one(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
+        )
         return bool(row)
 
     def _table_stats(self, table: str, date_col: str) -> dict[str, Any]:
@@ -336,7 +507,9 @@ class DataCredibilityService:
             return "MISSING"
         if len(active) == 1:
             return next(iter(active))
-        if active.get("REAL", 0) and not (active.get("SAMPLE", 0) or active.get("ESTIMATED", 0) or active.get("MISSING", 0)):
+        if active.get("REAL", 0) and not (
+            active.get("SAMPLE", 0) or active.get("ESTIMATED", 0) or active.get("MISSING", 0)
+        ):
             return "REAL"
         return "MIXED"
 

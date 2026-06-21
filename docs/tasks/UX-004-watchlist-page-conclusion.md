@@ -1,10 +1,10 @@
 # UX-004: 观察池研究状态化
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -44,6 +44,20 @@
 - 检查空观察池、有 STOCK/ETF/FUND、低可信数据、风险升高四类状态。
 - `git diff --check`
 
+## Completed Changes
+
+- 观察池首屏新增“观察池研究状态”卡。
+- 按优先级、状态、关注理由和分组字段将资产分为重点研究、数据待补齐、低优先级和关注失效。
+- 展示资产类型分布、值得继续观察资产、待补齐 / 待清理资产和下一步观察。
+- 资产列表增加研究状态和下一步观察列。
+- 不新增标签系统、不改数据库结构、不做自动清理。
+
+## Verification Result
+
+- Passed: `git diff --check`
+- Passed: `uv run python -m compileall backend/app worker scripts`
+- Not run: `pnpm -C frontend build`，当前执行环境缺少 `node` / `pnpm`。
+
 ## Notes
 
-本任务应在股票页和持仓页结论化后执行。
+本任务复用股票页和持仓页的结论化表达，只做前端研究状态分层，不制造每日待办压力。

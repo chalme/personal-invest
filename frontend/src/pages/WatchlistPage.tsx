@@ -32,6 +32,30 @@ const initialForm: WatchlistForm = {
   priority: 5,
 };
 
+function watchState(row: WatchlistItem) {
+  if ((row.status ?? 'ACTIVE') !== 'ACTIVE') return '关注失效';
+  if (!row.reason || !row.group_name) return '数据待补齐';
+  if ((row.priority ?? 0) >= 8) return '重点研究';
+  if ((row.priority ?? 0) <= 2) return '低优先级';
+  return '常规观察';
+}
+
+function watchTone(state: string): 'good' | 'warn' | 'bad' | 'neutral' {
+  if (state === '重点研究') return 'good';
+  if (state === '数据待补齐' || state === '低优先级') return 'warn';
+  if (state === '关注失效') return 'bad';
+  return 'neutral';
+}
+
+function nextStep(row: WatchlistItem) {
+  const state = watchState(row);
+  if (state === '重点研究') return '继续跟踪价格、估值和风险事件，不因样本数据提升排序。';
+  if (state === '数据待补齐') return '补充关注理由、分组或执行每日更新后再判断优先级。';
+  if (state === '低优先级') return '保留低频观察，若长期没有新证据可考虑移除。';
+  if (state === '关注失效') return '复核是否仍有研究价值，必要时从观察池移除。';
+  return '按既定理由继续观察，等待评分、行业或风险出现变化。';
+}
+
 export function WatchlistPage() {
   const [rows, setRows] = useState<WatchlistItem[]>([]);
   const [form, setForm] = useState<WatchlistForm>(initialForm);
@@ -67,6 +91,14 @@ export function WatchlistPage() {
       return matchesAsset && matchesKeyword;
     });
   }, [assetFilter, keyword, rows]);
+  const highPriorityRows = rows.filter((row) => watchState(row) === '重点研究');
+  const dataMissingRows = rows.filter((row) => watchState(row) === '数据待补齐');
+  const staleRows = rows.filter((row) => watchState(row) === '关注失效' || watchState(row) === '低优先级');
+  const assetCounts = rows.reduce<Record<string, number>>((acc, row) => {
+    const key = row.asset_type ?? 'STOCK';
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -116,6 +148,27 @@ export function WatchlistPage() {
         </div>
         <Badge tone="neutral">{rows.length} 个关注</Badge>
       </div>
+
+      <Card title="观察池研究状态" description="先看研究状态分层，再决定是否继续跟踪、补数据或清理。">
+        <div className="analysis-summary">
+          <div><span>正在研究</span><strong>{highPriorityRows.length} 个重点标的</strong></div>
+          <div><span>数据待补齐</span><strong>{dataMissingRows.length} 个标的</strong></div>
+          <div><span>可能失效</span><strong>{staleRows.length} 个低优先级或非 ACTIVE 标的</strong></div>
+          <div><span>资产分布</span><strong>{Object.entries(assetCounts).map(([key, value]) => `${key}:${value}`).join(' / ') || '暂无'}</strong></div>
+        </div>
+        <div className="grid-two">
+          <div className="review-item-list">
+            <strong>值得继续观察</strong>
+            {highPriorityRows.slice(0, 5).map((row) => <p key={row.symbol}>{row.name}：{row.reason ?? '暂无理由'} · {nextStep(row)}</p>)}
+            {highPriorityRows.length === 0 && <p>暂无高优先级研究标的；可以先补充理由和分组，再提升优先级。</p>}
+          </div>
+          <div className="review-item-list">
+            <strong>待补齐 / 待清理</strong>
+            {[...dataMissingRows, ...staleRows].slice(0, 5).map((row) => <p key={row.symbol}>{row.name}：{watchState(row)} · {nextStep(row)}</p>)}
+            {dataMissingRows.length === 0 && staleRows.length === 0 && <p>观察池字段完整，暂无明显待清理标的。</p>}
+          </div>
+        </div>
+      </Card>
 
       <Card title="新增 / 更新观察标的" description="相同代码会覆盖已有资产类型、备注和优先级。">
         <form className="form-grid" onSubmit={submit}>
@@ -171,7 +224,7 @@ export function WatchlistPage() {
           <EmptyState title="暂无观察标的" description="添加股票、ETF 或基金后，这里会展示资产类型、分组、优先级和关注理由。" />
         ) : (
           <table className="data-table">
-            <thead><tr><th>标的</th><th>类型</th><th>分组</th><th>优先级</th><th>关注理由</th><th>状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>标的</th><th>类型</th><th>分组</th><th>优先级</th><th>关注理由</th><th>研究状态</th><th>下一步观察</th><th>操作</th></tr></thead>
             <tbody>
               {filteredRows.map((row) => (
                 <tr key={row.symbol}>
@@ -180,7 +233,8 @@ export function WatchlistPage() {
                   <td>{row.group_name ?? '-'}</td>
                   <td>{row.priority ?? 0}</td>
                   <td>{row.reason ?? '-'}</td>
-                  <td><Badge>{row.status ?? 'ACTIVE'}</Badge></td>
+                  <td><Badge tone={watchTone(watchState(row))}>{watchState(row)}</Badge></td>
+                  <td><small>{nextStep(row)}</small></td>
                   <td><button className="danger-button" onClick={() => remove(row.symbol)} type="button">移除</button></td>
                 </tr>
               ))}

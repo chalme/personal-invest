@@ -1,10 +1,10 @@
 # UX-003: 持仓页组合决策化
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -46,6 +46,20 @@
 - 检查有持仓、无持仓、低可信价格/净值、存在高风险事项四类状态。
 - `git diff --check`
 
+## Completed Changes
+
+- 持仓页首屏新增“组合决策结论”卡。
+- 展示当前最大风险、优先复核持仓数、最大持仓、集中度状态。
+- 将严重风险、减仓/卖出关注、仓位过重、大幅浮亏持仓归入优先复核资产。
+- 增加资产类型暴露摘要，保留持仓明细表作为下层内容。
+- 明确价格/净值低可信时只做估算展示，不包装成确定性盈亏结论。
+
+## Verification Result
+
+- Passed: `git diff --check`
+- Passed: `uv run python -m compileall backend/app worker scripts`
+- Not run: `pnpm -C frontend build`，当前执行环境缺少 `node` / `pnpm`。
+
 ## Notes
 
-本任务应在 `UX-002` 后执行，复用股票页结论化的信息表达方式。
+本任务复用股票页结论化的信息表达方式，只调整持仓页信息结构，不改变持仓数据模型，不替代 ReviewPage。

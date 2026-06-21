@@ -1,10 +1,10 @@
 # DATA-004: 交易日历与数据新鲜度 V1
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -44,6 +44,21 @@
 - 构造工作日、周末、缺失数据、旧数据日期场景。
 - 如前端可用，执行 `pnpm -C frontend build`。
 
+## Completed Changes
+
+- `DataCredibilityService` 为 `market_data`、`daily_bar`、`fund_nav` 统一补充 `expected_latest_trade_date`、`trade_calendar_source_mode`、`freshness_status`、`stale_days`、`can_drive_advice` 和 `warning`。
+- raw manifest 写入同一组新鲜度字段，后续行情与基金任务可以复用。
+- Dashboard 展示来源新鲜度、预期交易日和可驱动高置信建议模块数。
+- Settings 数据可信度表增加预期交易日、新鲜度和 stale 天数。
+- 非交易日按最近工作日估算，不会因为周末自然滞后误判为过期。
+
+## Verification Result
+
+- Passed: `uv run python -m compileall backend/app worker scripts`
+- Passed: `PYTHONPATH=backend uv run python` smoke test，覆盖周末、工作日、旧数据、缺失数据与当前 overview 结构。
+- Passed: `git diff --check`
+- Not run: `pnpm -C frontend build`，当前执行环境缺少 `node` / `pnpm`。
+
 ## Notes
 
-这是后续行情稳定、基金净值稳定和页面结论化的基础任务。
+这是后续行情稳定、基金净值稳定和页面结论化的基础任务。第一版交易日历是 `ESTIMATED`，不处理法定节假日与临时休市；真实交易日历仍可作为后续增强任务接入。

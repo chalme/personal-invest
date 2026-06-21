@@ -1,10 +1,10 @@
 # UX-002: 股票页研究结论化
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -46,6 +46,20 @@
 - 检查股票页在无数据时有明确空态。
 - `git diff --check`
 
+## Completed Changes
+
+- 股票页首屏新增“研究结论”卡。
+- 结论卡展示当前判断、建议状态、置信度、数据日期、数据来源和下一步观察。
+- 将趋势、估值、公司质量、行业和资金组织为关键证据。
+- 将结构化风险、财报边界和高风险分组织为风险边界。
+- `SAMPLE` / `MISSING` / `ESTIMATED` / `MIXED` 数据源会降低置信度或提示降级使用，不包装成真实高置信结论。
+
+## Verification Result
+
+- Passed: `git diff --check`
+- Passed: `uv run python -m compileall backend/app worker scripts`
+- Not run: `pnpm -C frontend build`，当前执行环境缺少 `node` / `pnpm`。
+
 ## Notes
 
-页面优化从股票页开始，但不做全站 redesign。
+页面优化从股票页开始，但不做全站 redesign。本任务只改前端信息结构，不改变股票分析规则和后端数据模型。

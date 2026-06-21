@@ -1,10 +1,10 @@
 # UX-005: 日报投资简报化
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -44,6 +44,21 @@
 - 检查有日报、无日报、MIXED 数据、MISSING 模块四类状态。
 - `git diff --check`
 
+## Completed Changes
+
+- 报告页首屏新增“今日投资简报”卡。
+- 简报卡展示最重要变化、是否需要复核、明日先看和数据边界。
+- 从日报 Markdown 中提取市场、行业、股票、基金和 ETF 分区摘要，原 Markdown 归档继续保留。
+- 报告页读取数据可信度总览，整体 `MIXED`、`SAMPLE`、`MISSING` 时在顶部提示数据边界。
+- `report_builder` 在 Markdown 顶部新增“投资简报”段，报告内容可追溯，不依赖前端临时判断。
+
+## Verification Result
+
+- Passed: `git diff --check`
+- Passed: `uv run python -m compileall backend/app worker scripts`
+- Passed: `PYTHONPATH=backend uv run python` import smoke test for `build_daily_report`
+- Not run: `pnpm -C frontend build`，当前执行环境缺少 `node` / `pnpm`。
+
 ## Notes
 
-日报是聚合层，应在股票页、持仓页和观察池的信息结构稳定后执行。
+日报是聚合层，本任务只强化简报入口和 Markdown 归档关系，不接新闻宏观源、不引入外部 LLM 长文生成。

@@ -1,10 +1,10 @@
 # DATA-003: 行情日线稳定性增强
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -47,6 +47,21 @@
 - 构造 AKShare 不可用、部分资产失败、无历史数据三类场景。
 - 检查 `/api/data/credibility` 中 `daily_bar` 和 `market_data` 可信度。
 
+## Completed Changes
+
+- `sync_market_data()` 在 AKShare 失败时先读取现有 `daily_bar` parquet 中的非 sample 历史数据。
+- 有历史真实数据时写入 `akshare_cached`，保留最近成功历史，不再用 sample 静默覆盖。
+- 无历史真实数据时才生成 sample。
+- manifest 新增 `asset_source_status`，可追踪每个资产来自 `akshare`、`akshare_cached` 还是 `sample`。
+- 出现 `akshare_cached` 时 manifest 保持真实来源可追溯，但 `can_drive_advice=false`，并输出 fallback warning。
+
+## Verification Result
+
+- Passed: `uv run python -m compileall backend/app worker scripts`
+- Passed: helper smoke test，确认 sample 历史不会被当作真实历史复用。
+- Passed: monkeypatch `sync_market_data()` smoke test，覆盖部分 AKShare 成功、部分复用历史、部分 sample 兜底，manifest 输出 `MIXED`、`asset_source_status` 和 warning。
+- Passed: `git diff --check`
+
 ## Notes
 
-本任务依赖 `DATA-004` 的新鲜度口径。若先单独执行，也必须保留未来接入 freshness 的接口位置。
+本任务依赖 `DATA-004` 的新鲜度口径。当前 `akshare_cached` 视为真实历史保留，不等于当日新鲜真实数据；只要出现 cached fallback，就不能驱动高置信当日价格建议。

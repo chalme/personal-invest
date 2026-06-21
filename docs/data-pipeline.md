@@ -47,9 +47,15 @@ uv sync --extra data
   "asset_count": 0,
   "source_count": {
     "akshare": 0,
+    "akshare_cached": 0,
     "sample": 0
   },
   "source_mode": "REAL | SAMPLE | MIXED | MISSING",
+  "expected_latest_trade_date": "YYYY-MM-DD",
+  "trade_calendar_source_mode": "REAL | ESTIMATED",
+  "freshness_status": "FRESH | STALE | MISSING | NOT_APPLICABLE",
+  "stale_days": 0,
+  "can_drive_advice": true,
   "warning": "可选中文说明"
 }
 ```
@@ -68,7 +74,22 @@ uv sync --extra data
 - 只有 `sample`：`SAMPLE`
 - 没有数据或没有来源：`MISSING`
 
+`akshare_cached` 表示本次真实源同步失败，但保留了最近一次成功写入的真实历史数据。它仍属于非样本真实来源，因此不把 `source_mode` 降为 `SAMPLE`；但只要出现 `akshare_cached`，`can_drive_advice` 必须降为 false，并在 `warning` 中提示相关资产不能驱动高置信当日价格建议。
+
 `DataCredibilityService` 应优先读取 manifest 中的 `source_mode`；缺失时再根据 `source_count` 推导。这样 market、fund 和后续真实数据源可以复用同一套可信度判断逻辑。
+
+## 交易日历与新鲜度口径
+
+第一版不接付费交易日历，`expected_latest_trade_date` 按工作日估算：如果今天是周末，则回退到最近一个工作日；如果今天是工作日，则使用今天。因此 `trade_calendar_source_mode` 固定为 `ESTIMATED`，页面必须提示未纳入法定节假日或临时休市。
+
+日频数据模块使用统一状态：
+
+- `FRESH`：`latest_data_date >= expected_latest_trade_date`。
+- `STALE`：`latest_data_date < expected_latest_trade_date`，`stale_days` 按工作日差计算。
+- `MISSING`：缺少数据或缺少可判断日期。
+- `NOT_APPLICABLE`：非日频数据，不参与交易日新鲜度判断。
+
+`can_drive_advice` 只有在 `source_mode=REAL` 且 `freshness_status=FRESH` 时才能为 true。`SAMPLE`、`MIXED`、`MISSING` 或 `STALE` 数据只能用于展示、低置信解释或缺失提示，不能驱动高置信建议。
 
 ## 真实数据源增强拆解
 

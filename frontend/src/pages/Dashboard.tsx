@@ -72,6 +72,20 @@ function credibilityTone(mode?: string) {
   return 'neutral' as const;
 }
 
+function freshnessLabel(status?: string) {
+  if (status === 'FRESH') return '数据新鲜';
+  if (status === 'STALE') return '数据过期';
+  if (status === 'MISSING') return '无法判断新鲜度';
+  return '非日频数据';
+}
+
+function freshnessTone(status?: string) {
+  if (status === 'FRESH') return 'good' as const;
+  if (status === 'STALE') return 'warn' as const;
+  if (status === 'MISSING') return 'bad' as const;
+  return 'neutral' as const;
+}
+
 function reviewPriorityTone(priority?: string) {
   if (priority === 'HIGH') return 'bad' as const;
   if (priority === 'MEDIUM') return 'warn' as const;
@@ -203,8 +217,10 @@ export function Dashboard() {
           <div className="hero-meta-row">
             <Badge tone={currentMarketTone}>{data.market?.trend_state ?? '未知状态'}</Badge>
             <Badge tone={dataSourceTone(source?.mode)}>{dataSourceLabel(source?.mode)}</Badge>
+            {source?.freshness_status && <Badge tone={freshnessTone(source.freshness_status)}>{freshnessLabel(source.freshness_status)}</Badge>}
             <span>数据日期：{data.market?.trade_date ?? '暂无'}</span>
             <span>来源日期：{source?.latest_trade_date ?? '暂无'}</span>
+            <span>预期交易日：{source?.expected_latest_trade_date ?? '暂无'}</span>
             <span>最近任务：{latestJobStatus}</span>
           </div>
         </div>
@@ -239,8 +255,10 @@ export function Dashboard() {
               真实 {credibilitySummary.real_count} · 估算 {credibilitySummary.estimated_count} · 样本 {credibilitySummary.sample_count} · 缺失 {credibilitySummary.missing_count}
             </p>
             <small>
-              最新数据日期：{credibilitySummary.latest_data_date ?? '暂无'}。估算或样本数据用于展示和低置信解释，不应单独作为高优先级建议依据。
+              最新数据日期：{credibilitySummary.latest_data_date ?? '暂无'} · 预期交易日：{credibilitySummary.expected_latest_trade_date ?? '暂无'} · 新鲜度：{freshnessLabel(credibilitySummary.freshness_status)}。
+              可驱动高置信建议模块 {credibilitySummary.can_drive_advice_count ?? 0} 个。估算或样本数据用于展示和低置信解释，不应单独作为高优先级建议依据。
             </small>
+            {credibilitySummary.warning && <small>{credibilitySummary.warning}</small>}
           </div>
         </section>
       )}

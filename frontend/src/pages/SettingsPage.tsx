@@ -86,6 +86,20 @@ function credibilityTone(mode?: string) {
   return 'neutral' as const;
 }
 
+function freshnessLabel(status?: string) {
+  if (status === 'FRESH') return '新鲜';
+  if (status === 'STALE') return '过期';
+  if (status === 'MISSING') return '缺失';
+  return '不适用';
+}
+
+function freshnessTone(status?: string) {
+  if (status === 'FRESH') return 'good' as const;
+  if (status === 'STALE') return 'warn' as const;
+  if (status === 'MISSING') return 'bad' as const;
+  return 'neutral' as const;
+}
+
 export function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [credibility, setCredibility] = useState<DataCredibilityOverview | null>(null);
@@ -192,13 +206,18 @@ export function SettingsPage() {
             <Badge tone="warn">估算 {credibility.summary.estimated_count}</Badge>
             <Badge tone="warn">样本 {credibility.summary.sample_count}</Badge>
             <Badge tone={credibility.summary.missing_count > 0 ? 'bad' : 'neutral'}>缺失 {credibility.summary.missing_count}</Badge>
+            <Badge tone={freshnessTone(credibility.summary.freshness_status)}>新鲜度：{freshnessLabel(credibility.summary.freshness_status)}</Badge>
+            <Badge tone="neutral">预期交易日 {credibility.summary.expected_latest_trade_date ?? '暂无'}</Badge>
           </div>
+          {credibility.summary.warning && <div className="alert alert-warning">{credibility.summary.warning}</div>}
           <table className="data-table">
             <thead>
               <tr>
                 <th>模块</th>
                 <th>数据模式</th>
                 <th>最新日期</th>
+                <th>预期交易日</th>
+                <th>新鲜度</th>
                 <th>记录数</th>
                 <th>参与建议</th>
                 <th>说明</th>
@@ -210,6 +229,11 @@ export function SettingsPage() {
                   <td><strong>{item.label}</strong><br /><small>{item.module}</small></td>
                   <td><Badge tone={credibilityTone(item.source_mode)}>{credibilityLabel(item.source_mode)}</Badge></td>
                   <td>{item.latest_data_date ?? '暂无'}</td>
+                  <td>{item.expected_latest_trade_date ?? '暂无'}</td>
+                  <td>
+                    <Badge tone={freshnessTone(item.freshness_status)}>{freshnessLabel(item.freshness_status)}</Badge>
+                    {item.stale_days ? <small>落后 {item.stale_days} 天</small> : null}
+                  </td>
                   <td>{item.record_count}</td>
                   <td>{item.can_drive_advice ? '是' : '否 / 低置信'}</td>
                   <td><small>{item.note}</small></td>

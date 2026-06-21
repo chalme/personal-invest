@@ -2,6 +2,11 @@ export type DataSourceSummary = {
   status: string;
   mode: 'real' | 'sample' | 'mixed' | 'unknown' | string;
   latest_trade_date?: string | null;
+  expected_latest_trade_date?: string | null;
+  trade_calendar_source_mode?: 'REAL' | 'ESTIMATED' | string;
+  freshness_status?: 'FRESH' | 'STALE' | 'MISSING' | 'NOT_APPLICABLE' | string;
+  stale_days?: number | null;
+  can_drive_advice?: boolean;
   generated_at?: string | null;
   rows: number;
   symbol_count: number;
@@ -23,6 +28,13 @@ export type DataCredibilitySummary = {
   missing_count: number;
   mixed_count: number;
   latest_data_date?: string | null;
+  expected_latest_trade_date?: string | null;
+  trade_calendar_source_mode?: 'REAL' | 'ESTIMATED' | string;
+  freshness_status?: 'FRESH' | 'STALE' | 'MISSING' | 'NOT_APPLICABLE' | string;
+  stale_count?: number;
+  missing_freshness_count?: number;
+  can_drive_advice_count?: number;
+  warning?: string | null;
   has_blocking_issue: boolean;
   module_count: number;
 };
@@ -32,11 +44,16 @@ export type DataCredibilityModule = {
   label: string;
   source_mode: DataCredibilityMode;
   latest_data_date?: string | null;
+  expected_latest_trade_date?: string | null;
+  trade_calendar_source_mode?: 'REAL' | 'ESTIMATED' | string;
+  freshness_status?: 'FRESH' | 'STALE' | 'MISSING' | 'NOT_APPLICABLE' | string;
+  stale_days?: number | null;
   record_count: number;
   coverage_ratio?: number | null;
   can_drive_advice: boolean;
   risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | string;
   note: string;
+  warning?: string | null;
   source_breakdown?: Record<string, number>;
 };
 

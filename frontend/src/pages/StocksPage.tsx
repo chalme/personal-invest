@@ -20,6 +20,50 @@ function numberValue(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function textValue(value: unknown, fallback = '暂无'): string {
+  const text = String(value ?? '').trim();
+  return text || fallback;
+}
+
+function sourceModeLabel(mode?: unknown) {
+  const text = String(mode ?? '').toUpperCase();
+  if (text === 'REAL') return '真实数据';
+  if (text === 'ESTIMATED') return '估算数据';
+  if (text === 'SAMPLE') return '样本数据';
+  if (text === 'MISSING') return '数据缺失';
+  if (text === 'MIXED') return '混合数据';
+  return '来源未知';
+}
+
+function sourceModeTone(mode?: unknown): 'good' | 'warn' | 'bad' | 'neutral' {
+  const text = String(mode ?? '').toUpperCase();
+  if (text === 'REAL') return 'good';
+  if (text === 'ESTIMATED' || text === 'SAMPLE' || text === 'MIXED') return 'warn';
+  if (text === 'MISSING') return 'bad';
+  return 'neutral';
+}
+
+function confidenceText(selected: StockAnalysis | undefined, financial: StockFinancial | null) {
+  if (!selected) return '低置信';
+  const mode = String(financial?.quality?.source_mode ?? '').toUpperCase();
+  const score = numberValue(selected.total_score);
+  if (mode === 'SAMPLE' || mode === 'MISSING') return '低置信';
+  if (mode === 'ESTIMATED' || mode === 'MIXED') return score >= 70 ? '中置信' : '低置信';
+  if (score >= 70 && mode === 'REAL') return '高置信';
+  if (score >= 45) return '中置信';
+  return '低置信';
+}
+
+function nextObservation(selected: StockAnalysis | undefined, financial: StockFinancial | null) {
+  if (!selected) return '先执行每日更新，生成个股评分和价格数据。';
+  const risk = numberValue(selected.risk_score);
+  const mode = String(financial?.quality?.source_mode ?? '').toUpperCase();
+  if (mode === 'SAMPLE' || mode === 'MISSING') return '先补齐真实财报或估值数据，再做基本面判断。';
+  if (risk >= 60) return '优先复核风险来源，暂缓把它提升为高优先级机会。';
+  if (numberValue(selected.total_score) >= 70) return '继续观察价格趋势、估值位置和下一次财报事件是否共振。';
+  return '保留观察，等待趋势、行业或估值出现更明确变化。';
+}
+
 export function StocksPage() {
   const [rows, setRows] = useState<StockAnalysis[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
@@ -48,6 +92,19 @@ export function StocksPage() {
     行业: selected ? numberValue(selected.sector_score) : 0,
     风险: selected ? Math.max(0, 100 - numberValue(selected.risk_score)) : 0,
   };
+  const financialMode = financial?.quality?.source_mode ?? financial?.valuation?.source_mode ?? 'MISSING';
+  const financialDate = financial?.quality?.data_date ?? financial?.valuation?.data_date ?? selected?.trade_date ?? null;
+  const evidenceItems = selected ? [
+    `趋势评分 ${numberValue(selected.trend_score).toFixed(1)}：${numberValue(selected.trend_score) >= 65 ? '趋势较强' : numberValue(selected.trend_score) >= 45 ? '趋势中性' : '趋势偏弱'}`,
+    `估值评分 ${numberValue(selected.valuation_score).toFixed(1)}：${financial?.valuation?.valuation_state ?? '估值状态暂无'}`,
+    `公司质量 ${financial?.quality?.quality_state ?? '暂无'}：${financial?.quality ? numberValue(financial.quality.total_score).toFixed(1) : '缺失'}`,
+    `行业评分 ${numberValue(selected.sector_score).toFixed(1)}，资金评分 ${numberValue(selected.fund_flow_score).toFixed(1)}`,
+  ] : [];
+  const riskItems = selected ? [
+    textValue(selected.risk_note, '暂无结构化风险提示。'),
+    financial?.quality?.risk_note ? String(financial.quality.risk_note) : `${sourceModeLabel(financialMode)}下，基本面结论需要降级使用。`,
+    numberValue(selected.risk_score) >= 60 ? '风险分偏高，暂不应只看总分做正向判断。' : '当前风险分未触发高风险提示，但仍需结合仓位和价格波动。',
+  ] : [];
 
   return (
     <div className="page-stack">
@@ -61,6 +118,27 @@ export function StocksPage() {
 
       {selected ? (
         <>
+          <Card title="研究结论" description="先给判断，再给证据、风险和下一步观察；不改变现有股票分析规则。">
+            <div className="analysis-summary">
+              <div><span>当前判断</span><strong>{textValue(selected.conclusion)}</strong></div>
+              <div><span>建议状态</span><strong>{textValue(selected.state)}</strong></div>
+              <div><span>置信度</span><strong>{confidenceText(selected, financial)} · 综合分 {numberValue(selected.total_score).toFixed(1)}</strong></div>
+              <div><span>数据日期</span><strong>{financialDate ?? '暂无'}</strong></div>
+              <div><span>数据来源</span><strong><Badge tone={sourceModeTone(financialMode)}>{sourceModeLabel(financialMode)}</Badge></strong></div>
+              <div><span>下一步</span><strong>{nextObservation(selected, financial)}</strong></div>
+            </div>
+            <div className="grid-two">
+              <div className="review-item-list">
+                <strong>关键证据</strong>
+                {evidenceItems.map((item) => <p key={item}>{item}</p>)}
+              </div>
+              <div className="review-item-list">
+                <strong>风险边界</strong>
+                {riskItems.map((item) => <p key={item}>{item}</p>)}
+              </div>
+            </div>
+          </Card>
+
           <div className="metric-grid">
             <MetricCard label="当前股票" value={String(selected.name ?? selected.symbol)} hint={String(selected.symbol)} tone="neutral" />
             <MetricCard label="综合评分" value={numberValue(selected.total_score).toFixed(1)} hint={String(selected.state ?? '')} tone={badgeTone(selected.state)} />
