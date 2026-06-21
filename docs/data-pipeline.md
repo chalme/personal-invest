@@ -16,7 +16,7 @@ sync_market_data
 
 ## 数据源策略
 
-默认优先尝试 AKShare。环境未安装 AKShare、网络失败或接口异常时，系统自动降级为本地样本行情，确保开发和页面演示不中断。
+系统执行 real-only 策略：开发和线上都只使用真实数据、真实历史缓存或缺失态。真实源失败时可以切换其他真实 provider；全部真实源失败且没有真实历史缓存时，必须标记 `MISSING`，不能生成 sample、mock、demo 或 estimated 数据。
 
 安装真实数据源能力：
 
@@ -47,10 +47,22 @@ uv sync --extra data
   "asset_count": 0,
   "source_count": {
     "akshare": 0,
+    "baostock": 0,
+    "tencent": 0,
+    "sina": 0,
     "akshare_cached": 0,
-    "sample": 0
+    "missing": 0
   },
-  "source_mode": "REAL | SAMPLE | MIXED | MISSING",
+  "provider_count": {
+    "baostock": 0,
+    "eastmoney": 0,
+    "tencent": 0,
+    "sina": 0,
+    "ttfund": 0,
+    "akshare_cached": 0,
+    "missing": 0
+  },
+  "source_mode": "REAL | REAL_CACHED | MISSING",
   "expected_latest_trade_date": "YYYY-MM-DD",
   "trade_calendar_source_mode": "REAL | ESTIMATED",
   "freshness_status": "FRESH | STALE | MISSING | NOT_APPLICABLE",
@@ -69,12 +81,12 @@ uv sync --extra data
 
 `source_mode` 推导规则：
 
-- 只有非 `sample` 来源：`REAL`
-- 同时存在真实来源和 `sample`：`MIXED`
-- 只有 `sample`：`SAMPLE`
-- 没有数据或没有来源：`MISSING`
+- 当前真实 provider 同步成功：`REAL`。
+- 本次真实源失败但存在真实历史缓存：`REAL_CACHED`。
+- 没有可用真实数据：`MISSING`。
+- 历史 `SAMPLE` / `ESTIMATED` / sample-mixed manifest 只能作为污染态进入审计和清理流程，不能作为正常运行时状态。
 
-`akshare_cached` 表示本次真实源同步失败，但保留了最近一次成功写入的真实历史数据。它仍属于非样本真实来源，因此不把 `source_mode` 降为 `SAMPLE`；但只要出现 `akshare_cached`，`can_drive_advice` 必须降为 false，并在 `warning` 中提示相关资产不能驱动高置信当日价格建议。
+`akshare_cached` 表示本次真实源同步失败，但保留了最近一次成功写入的真实历史数据。它可以展示为真实历史缓存，但 `can_drive_advice` 必须降为 false，并在 `warning` 中提示相关资产不能驱动高置信当日价格建议。
 
 `DataCredibilityService` 应优先读取 manifest 中的 `source_mode`；缺失时再根据 `source_count` 推导。这样 market、fund 和后续真实数据源可以复用同一套可信度判断逻辑。
 
@@ -89,7 +101,7 @@ uv sync --extra data
 - `MISSING`：缺少数据或缺少可判断日期。
 - `NOT_APPLICABLE`：非日频数据，不参与交易日新鲜度判断。
 
-`can_drive_advice` 只有在 `source_mode=REAL` 且 `freshness_status=FRESH` 时才能为 true。`SAMPLE`、`MIXED`、`MISSING` 或 `STALE` 数据只能用于展示、低置信解释或缺失提示，不能驱动高置信建议。
+`can_drive_advice` 只有在 `source_mode=REAL` 且 `freshness_status=FRESH` 时才能为 true。`REAL_CACHED`、`MISSING` 或 `STALE` 数据只能用于展示、低置信解释或缺失提示，不能驱动高置信建议。
 
 ## 真实数据源增强拆解
 
