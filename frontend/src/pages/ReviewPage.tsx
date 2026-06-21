@@ -42,6 +42,10 @@ export function ReviewPage() {
   const [outcomes, setOutcomes] = useState<DecisionOutcome[]>([]);
   const [filter, setFilter] = useState<TaskFilter>('OPEN');
   const [decisionTask, setDecisionTask] = useState<ReviewTask | null>(null);
+  const [decisionFormOpen, setDecisionFormOpen] = useState(false);
+  const [manualSymbol, setManualSymbol] = useState('');
+  const [manualName, setManualName] = useState('');
+  const [manualAssetType, setManualAssetType] = useState('STOCK');
   const [decisionType, setDecisionType] = useState('NO_ACTION');
   const [decisionReason, setDecisionReason] = useState('');
   const [expectedOutcome, setExpectedOutcome] = useState('');
@@ -89,23 +93,28 @@ export function ReviewPage() {
   }
 
   async function createDecision() {
-    if (!decisionTask || !decisionTask.symbol) {
-      setError('请先选择一个带资产代码的重要事项');
+    const symbol = (decisionTask?.symbol || manualSymbol).trim().toUpperCase();
+    if (!symbol) {
+      setError('请填写资产代码，或从重要事项中选择一项记录决策');
       return;
     }
     try {
       await apiPost('/api/review/decisions', {
-        symbol: decisionTask.symbol,
-        name: decisionTask.name,
-        asset_type: decisionTask.asset_type,
-        review_task_id: decisionTask.id,
+        symbol,
+        name: decisionTask?.name || manualName || symbol,
+        asset_type: decisionTask?.asset_type || manualAssetType,
+        review_task_id: decisionTask?.id,
         decision_type: decisionType,
         decision_reason: decisionReason,
         expected_outcome: expectedOutcome,
         conviction,
-        data_date: decisionTask.source_date,
+        data_date: decisionTask?.source_date,
       });
       setDecisionTask(null);
+      setDecisionFormOpen(false);
+      setManualSymbol('');
+      setManualName('');
+      setManualAssetType('STOCK');
       setDecisionReason('');
       setExpectedOutcome('');
       setDecisionType('NO_ACTION');
@@ -144,6 +153,7 @@ export function ReviewPage() {
         </div>
         <div className="dashboard-hero-action">
           <button className="ghost-button" onClick={() => load(filter)}>刷新复盘</button>
+          <button className="primary-button" onClick={() => { setDecisionTask(null); setDecisionFormOpen(true); }}>记录独立决策</button>
         </div>
       </section>
 
@@ -196,9 +206,29 @@ export function ReviewPage() {
         </div>
       </Card>
 
-      {decisionTask && (
-        <Card title={`记录决策：${decisionTask.name || decisionTask.symbol}`} description="只记录人工判断，不会自动交易。">
+      {(decisionTask || decisionFormOpen) && (
+        <Card title={decisionTask ? `记录决策：${decisionTask.name || decisionTask.symbol}` : '记录独立决策'} description="只记录人工判断，不会自动交易。">
           <div className="review-decision-form">
+            {!decisionTask && (
+              <>
+                <label>
+                  资产代码
+                  <input value={manualSymbol} onChange={(event) => setManualSymbol(event.target.value)} placeholder="例如 600519.SH / 510300.SH" />
+                </label>
+                <label>
+                  资产名称
+                  <input value={manualName} onChange={(event) => setManualName(event.target.value)} placeholder="可选，未填则使用代码" />
+                </label>
+                <label>
+                  资产类型
+                  <select value={manualAssetType} onChange={(event) => setManualAssetType(event.target.value)}>
+                    <option value="STOCK">股票</option>
+                    <option value="ETF">ETF / LOF</option>
+                    <option value="FUND">场外基金</option>
+                  </select>
+                </label>
+              </>
+            )}
             <label>
               决策动作
               <select value={decisionType} onChange={(event) => setDecisionType(event.target.value)}>
@@ -227,7 +257,7 @@ export function ReviewPage() {
             </label>
             <div className="review-actions">
               <button className="primary-button" onClick={createDecision}>保存决策</button>
-              <button className="ghost-button" onClick={() => setDecisionTask(null)}>取消</button>
+              <button className="ghost-button" onClick={() => { setDecisionTask(null); setDecisionFormOpen(false); }}>取消</button>
             </div>
           </div>
         </Card>

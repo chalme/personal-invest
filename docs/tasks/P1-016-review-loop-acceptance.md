@@ -1,10 +1,10 @@
 # P1-016: 低摩擦决策复盘闭环验收
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -43,3 +43,26 @@
 
 - 本任务优先于股票财报和基金深度实现。
 - 不把系统做成每日待办或打卡工具。
+## Completion
+
+- 验证迁移无待执行，重要事项生成器重复执行不会重复插入。
+- 验证 `NO_MAJOR_RISK` 不会进入重要事项池或持久化事项。
+- 验证 `decision_record` 可独立创建，不强制绑定 `review_task`。
+- 修复复盘页只允许从重要事项记录决策的问题，新增“记录独立决策”入口。
+- 验证 `decision_outcome` 文案保持为后续表现和复盘参考，不表达决策正确或错误。
+
+## Changed Files
+
+- `frontend/src/pages/ReviewPage.tsx`
+- `docs/task-board.md`
+- `docs/tasks/P1-016-review-loop-acceptance.md`
+
+## Verification Result
+
+- `uv run python scripts/migrate_db.py`
+- `uv run python -m worker.review.task_generator`
+- `uv run python -m worker.review.outcome_tracker`
+- `PYTHONPATH=backend uv run python` smoke test for ReviewService overview and independent decision creation
+- `cd frontend && pnpm build`
+- `./scripts/check.sh`
+

@@ -33,17 +33,17 @@
 
 ### P1-016: 低摩擦决策复盘闭环验收
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 验证 P1-011 到 P1-015 的复盘闭环是否真的低打扰、可解释、可持续使用。
 - Details: `docs/tasks/P1-016-review-loop-acceptance.md`
 - Files: `backend/app/services/review_service.py`, `backend/app/api/review.py`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `worker/review/outcome_tracker.py`
 - Concrete Changes: 执行验收并允许修复小型一致性、文案、状态流、空态问题；不新增表、不新增大页面、不改核心模型。
 - Acceptance: `review_task` 去重、延后、解决、自动失效正确；`decision_record` 轻量可用且允许独立存在；`decision_outcome` 只做复盘参考；Dashboard 只展示摘要；ReviewPage 承担完整流程；Portfolio 只做入口。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 本任务是验收 + 低风险修复，不是新增产品大功能。
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/pages/ReviewPage.tsx`, `docs/task-board.md`, `docs/tasks/P1-016-review-loop-acceptance.md`
+- Verification: `uv run python scripts/migrate_db.py`; repeated `uv run python -m worker.review.task_generator`; `uv run python -m worker.review.outcome_tracker`; ReviewService overview smoke test; independent decision creation smoke test; `cd frontend && pnpm build`; `./scripts/check.sh`.
+- Notes: 修复复盘页只能从重要事项记录决策的问题，新增“记录独立决策”入口；规划任务 `P2-003` / `P2-004` 未执行。
 
 ### P2-002 reserved: Responsive layout and theme system
 
