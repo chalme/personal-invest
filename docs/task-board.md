@@ -141,7 +141,7 @@
 
 ### OPS-002: 本地备份脚本任务
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 提供一条命令备份 SQLite、Parquet、报告和配置，降低单机数据丢失风险。
@@ -149,6 +149,10 @@
 - Scope: 备份 `storage/invest.db`、`data/parquet/`、`reports/`、`config.yaml`；默认输出到 `backups/YYYYMMDD-HHMMSS/`；避免备份文件进入 Git。
 - Out of Scope: 不接云存储；不做自动定时；不做加密第一版；不做恢复 UI。
 - Acceptance: 一条命令生成完整备份目录；重复执行不覆盖旧备份；备份目录默认不入库。
+- Completed At: 2026-06-21
+- Changed Files: `scripts/backup.sh`, `Makefile`, `.gitignore`, `docs/operation-backlog.md`, `docs/task-board.md`
+- Verification: `bash -n scripts/backup.sh`; `BACKUP_ROOT=/tmp/personal-invest-backup-test ./scripts/backup.sh`; `git diff --check`.
+- Notes: `.env.server` 默认不备份，避免密钥误复制；备份目标、加密和异地策略仍由 `H-005` 人工确认。
 
 ### DATA-001: 统一数据源 manifest 可信度口径
 

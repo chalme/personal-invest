@@ -20,6 +20,7 @@ storage/*.duckdb
 storage/*.duckdb.wal
 logs/
 .run/
+backups/
 
 # OS / editor
 .DS_Store

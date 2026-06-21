@@ -186,3 +186,24 @@ make prod-server
 ```text
 https://invest.chalme.indevs.in
 ```
+
+
+### 本地备份脚本
+
+第一版已提供：
+
+```bash
+make backup
+# or
+BACKUP_ROOT=/path/to/backups ./scripts/backup.sh
+```
+
+默认备份内容：
+
+- `storage/invest.db`
+- `data/parquet/`
+- `reports/`
+- `config.yaml`
+- `.env.server.example`
+
+`.env.server` 默认不备份，因为可能包含密钥。真实备份目标、加密、异地保存和保留周期仍由人工在 `H-005` 中确认。

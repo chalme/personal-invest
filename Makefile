@@ -1,4 +1,4 @@
-.PHONY: setup dev dev\:server prod prod-server doctor doctor-server backend backend-prod frontend frontend-prod init daily check clean
+.PHONY: setup dev dev\:server prod prod-server doctor doctor-server backend backend-prod frontend frontend-prod init daily check backup clean
 
 setup:
 	./scripts/setup.sh
@@ -41,6 +41,9 @@ daily:
 
 check:
 	./scripts/check.sh
+
+backup:
+	./scripts/backup.sh
 
 clean:
 	rm -rf .venv frontend/node_modules frontend/dist .run logs
