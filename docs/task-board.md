@@ -216,7 +216,7 @@
 
 ### UX-001: 关键页面结论化打磨规划
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Owner: `Codex`
 - Goal: 规划股票页、持仓页、观察池、日报如何从“数据展示”升级为“结论优先”。
@@ -224,6 +224,10 @@
 - Scope: 规划股票页研究结论化、持仓页组合决策化、观察池研究状态化、日报投资简报化；明确数据可信度在页面中的展示位置。
 - Out of Scope: 不直接重构页面；不新增复杂图表；不改设计系统；不用 AI 生成高置信建议。
 - Acceptance: 每个页面明确首屏要回答的问题；每个页面区分事实、判断、风险、动作；明确低可信数据如何降级展示。
+- Completed At: 2026-06-21
+- Changed Files: `docs/tasks/UX-001-key-page-conclusion-planning.md`, `docs/ux.md`, `docs/product-backlog.md`, `docs/business-information-architecture.md`, `docs/task-board.md`
+- Verification: `git diff --check`; 确认 UX-002 到 UX-005 均明确首屏问题、信息分类和低可信数据降级规则。
+- Notes: 本任务只做规划，不直接重构页面。
 
 ## Completed / Historical Tasks
 
@@ -1037,3 +1041,4 @@
 - `docs/tasks/P2-017-data-credibility-overview.md`
 - `docs/tasks/MANUAL-001-production-regression-checklist.md`
 - `docs/tasks/DATA-002-real-data-source-enhancement-planning.md`
+- `docs/tasks/UX-001-key-page-conclusion-planning.md`
