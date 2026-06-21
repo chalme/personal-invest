@@ -172,6 +172,31 @@ export type ReviewImportantItem = {
   source?: string | null;
 };
 
+export type ReviewTask = {
+  id: number;
+  dedupe_key: string;
+  task_type: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO' | string;
+  status: 'OPEN' | 'ACKNOWLEDGED' | 'SNOOZED' | 'RESOLVED' | 'AUTO_EXPIRED' | string;
+  symbol?: string | null;
+  name?: string | null;
+  asset_type?: string | null;
+  title: string;
+  summary?: string | null;
+  source_type: string;
+  source_id?: string | null;
+  source_date?: string | null;
+  data_version?: string | null;
+  review_reason?: string | null;
+  suggested_action?: string | null;
+  created_at: string;
+  updated_at: string;
+  acknowledged_at?: string | null;
+  snoozed_until?: string | null;
+  resolved_at?: string | null;
+  expires_at?: string | null;
+};
+
 export type ReviewWindowSummary = {
   start_date?: string | null;
   end_date?: string | null;

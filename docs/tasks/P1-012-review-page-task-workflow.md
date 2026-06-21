@@ -1,10 +1,10 @@
 # P1-012: ReviewPage 接入持久化事项
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -38,3 +38,17 @@
 ## Notes
 
 - 本任务完成后，复盘页成为重要事项的主入口。
+
+
+## Completed Changes
+
+- ReviewPage now prioritizes persisted `review_task` items instead of only transient overview items.
+- Added status filters for open, acknowledged, snoozed, resolved and expired items.
+- Added low-friction actions: acknowledge, snooze for 3 days, resolve, and reopen.
+- Added `ReviewTask` frontend type and PATCH API client helper.
+
+## Completed Verification
+
+- Frontend build passed.
+- Status update smoke test confirmed ACKNOWLEDGED and OPEN transitions.
+- `./scripts/check.sh` passed.

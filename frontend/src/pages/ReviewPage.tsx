@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { apiGet } from '../api/client';
-import type { ReviewOverview } from '../api/types';
+import { apiGet, apiPatch } from '../api/client';
+import type { ReviewOverview, ReviewTask } from '../api/types';
 import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '../components/ui';
 
 function tone(priority?: string) {
@@ -16,15 +16,42 @@ function money(value: number | undefined | null) {
   return `${prefix}${value.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}`;
 }
 
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    OPEN: '待复核',
+    ACKNOWLEDGED: '已确认',
+    SNOOZED: '已延后',
+    RESOLVED: '已解决',
+    AUTO_EXPIRED: '已失效',
+  };
+  return labels[status] ?? status;
+}
+
+function snoozeUntil(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 19);
+}
+
+type TaskFilter = 'OPEN' | 'ACKNOWLEDGED' | 'SNOOZED' | 'RESOLVED' | 'AUTO_EXPIRED';
+
 export function ReviewPage() {
   const [data, setData] = useState<ReviewOverview | null>(null);
+  const [tasks, setTasks] = useState<ReviewTask[]>([]);
+  const [filter, setFilter] = useState<TaskFilter>('OPEN');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
-  async function load() {
+  async function load(nextFilter = filter) {
     try {
       setLoading(true);
-      setData(await apiGet<ReviewOverview>('/api/review/overview'));
+      const [overview, taskResp] = await Promise.all([
+        apiGet<ReviewOverview>('/api/review/overview'),
+        apiGet<{ data: ReviewTask[] }>(`/api/review/tasks?status=${nextFilter}`),
+      ]);
+      setData(overview);
+      setTasks(taskResp.data);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '复盘数据加载失败');
@@ -33,55 +60,99 @@ export function ReviewPage() {
     }
   }
 
+  async function changeFilter(nextFilter: TaskFilter) {
+    setFilter(nextFilter);
+    await load(nextFilter);
+  }
+
+  async function updateTask(task: ReviewTask, status: string, snoozed_until?: string) {
+    try {
+      setUpdatingId(task.id);
+      await apiPatch(`/api/review/tasks/${task.id}`, { status, snoozed_until });
+      await load(filter);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '事项状态更新失败');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   useEffect(() => { load(); }, []);
 
-  if (loading) return <LoadingState title="正在加载复盘概览" description="聚合建议变化、组合快照、风险和数据状态。" />;
-  if (error) return <ErrorState title="复盘概览不可用" description={error} onRetry={load} />;
+  if (loading) return <LoadingState title="正在加载复盘概览" description="聚合重要事项、建议变化、组合快照和数据状态。" />;
+  if (error) return <ErrorState title="复盘概览不可用" description={error} onRetry={() => load(filter)} />;
   if (!data) return <EmptyState title="暂无复盘数据" description="执行今日更新后会生成重要事项和组合快照。" />;
 
   const change = data.portfolio_snapshot.change;
   const last7 = data.review_windows.last_7_days;
   const last30 = data.review_windows.last_30_days;
+  const openHighCount = tasks.filter((item) => item.priority === 'HIGH').length;
+  const filterOptions: TaskFilter[] = ['OPEN', 'ACKNOWLEDGED', 'SNOOZED', 'RESOLVED', 'AUTO_EXPIRED'];
 
   return (
     <div className="page-stack">
-      <section className={`dashboard-hero hero-${data.summary.intervention_required ? 'warn' : 'good'}`}>
+      <section className={`dashboard-hero hero-${tasks.length > 0 && filter === 'OPEN' ? 'warn' : 'good'}`}>
         <div className="dashboard-hero-copy">
           <div className="hero-kicker">低摩擦复盘</div>
-          <h2>{data.summary.message}</h2>
-          <p>系统只聚合需要复核的变化；没有变化时保持安静，避免把投资管理变成每日打卡。</p>
+          <h2>{filter === 'OPEN' && tasks.length > 0 ? '有重要事项需要复核。' : '暂无需要立即处理事项。'}</h2>
+          <p>这里只沉淀真实重要变化。确认、延后或解决即可，不要求每天打卡。</p>
           <div className="hero-meta-row">
-            <Badge tone={data.summary.intervention_required ? 'warn' : 'good'}>{data.summary.intervention_required ? '需要复核' : '无需立即处理'}</Badge>
+            <Badge tone={filter === 'OPEN' && tasks.length > 0 ? 'warn' : 'good'}>{filter === 'OPEN' && tasks.length > 0 ? '需要复核' : '低打扰'}</Badge>
             <span>数据日期：{data.summary.latest_data_date ?? '-'}</span>
             <span>市场状态：{data.summary.market_state ?? '-'}</span>
             <span>最近任务：{data.summary.latest_job_status ?? '-'}</span>
           </div>
         </div>
         <div className="dashboard-hero-action">
-          <button className="ghost-button" onClick={load}>刷新复盘</button>
+          <button className="ghost-button" onClick={() => load(filter)}>刷新复盘</button>
         </div>
       </section>
 
       <div className="metric-grid">
-        <MetricCard label="重要事项" value={data.summary.important_count} hint={`高 ${data.summary.high_count} / 中 ${data.summary.medium_count}`} tone={data.summary.important_count > 0 ? 'warn' : 'good'} />
+        <MetricCard label="当前事项" value={tasks.length} hint={`高优先级 ${openHighCount}`} tone={tasks.length > 0 && filter === 'OPEN' ? 'warn' : 'good'} />
         <MetricCard label="市场评分" value={data.summary.market_score ?? '-'} hint={data.summary.market_state ?? '暂无'} />
         <MetricCard label="组合变化" value={money(Number(change?.value_delta ?? 0))} hint={change?.snapshot_date ? `快照 ${change.snapshot_date}` : '暂无快照'} />
         <MetricCard label="数据状态" value={data.summary.data_mode ?? 'unknown'} hint={data.summary.latest_data_date ?? '暂无日期'} />
       </div>
 
-      <Card title="重要事项池" description="风险、建议变化、组合变化和数据异常会汇总到这里。">
+      <Card title="重要事项" description="确认、延后或解决即可；延后的事项到期后会重新出现。">
+        <div className="review-toolbar">
+          {filterOptions.map((item) => (
+            <button key={item} className={filter === item ? 'toolbar-button active' : 'toolbar-button'} onClick={() => changeFilter(item)}>
+              {statusLabel(item)}
+            </button>
+          ))}
+        </div>
         <div className="review-item-list">
-          {data.important_items.map((item, index) => (
-            <div className="review-item" key={`${item.type}-${item.symbol ?? index}-${item.date ?? index}`}>
-              <Badge tone={tone(item.priority)}>{item.priority}</Badge>
+          {tasks.map((task) => (
+            <div className="review-item review-task-item" key={task.id}>
+              <Badge tone={tone(task.priority)}>{task.priority}</Badge>
               <div>
-                <strong>{item.title}</strong>
-                <p>{item.message}</p>
-                <small>{item.date ?? '暂无日期'} · {item.source ?? item.type}</small>
+                <div className="review-item-heading">
+                  <strong>{task.title}</strong>
+                  <Badge tone="neutral">{statusLabel(task.status)}</Badge>
+                </div>
+                <p>{task.summary || task.review_reason || '该事项需要复核。'}</p>
+                {task.suggested_action && <small>建议动作：{task.suggested_action}</small>}
+                <small>{task.source_date ?? '暂无日期'} · {task.source_type}{task.symbol ? ` · ${task.symbol}` : ''}</small>
+                {task.expires_at && <small>自动失效：{task.expires_at.slice(0, 10)}</small>}
+                {task.status === 'SNOOZED' && task.snoozed_until && <small>延后至：{task.snoozed_until}</small>}
+                <div className="review-actions">
+                  {task.status === 'OPEN' && (
+                    <>
+                      <button className="ghost-button" disabled={updatingId === task.id} onClick={() => updateTask(task, 'ACKNOWLEDGED')}>确认</button>
+                      <button className="ghost-button" disabled={updatingId === task.id} onClick={() => updateTask(task, 'SNOOZED', snoozeUntil(3))}>延后 3 天</button>
+                      <button className="primary-button" disabled={updatingId === task.id} onClick={() => updateTask(task, 'RESOLVED')}>解决</button>
+                    </>
+                  )}
+                  {task.status !== 'OPEN' && task.status !== 'RESOLVED' && task.status !== 'AUTO_EXPIRED' && (
+                    <button className="ghost-button" disabled={updatingId === task.id} onClick={() => updateTask(task, 'OPEN')}>重新打开</button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
-          {data.important_items.length === 0 && <EmptyState title="暂无需要立即处理事项" description="系统仍会自动跟踪后续价格、净值、风险和建议变化。" />}
+          {tasks.length === 0 && <EmptyState title="暂无需要立即处理事项" description="没有真实重要变化时，系统会保持安静。" />}
         </div>
       </Card>
 

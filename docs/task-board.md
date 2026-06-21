@@ -47,16 +47,16 @@
 
 ### P1-012: ReviewPage 接入持久化事项
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 让复盘页从实时聚合展示升级为持久化重要事项工作流。
 - Details: `docs/tasks/P1-012-review-page-task-workflow.md`
 - Files: `frontend/src/pages/ReviewPage.tsx`, `frontend/src/api/types.ts`, `frontend/src/styles/global.css`, `backend/app/api/review.py`
 - Concrete Changes: 复盘页展示 `review_task`；支持确认、延后、解决；保留无重要事项空态；任务失败和数据异常仍明确提示。
 - Acceptance: 用户可在复盘页处理重要事项；无重要事项时显示“暂无需要立即处理事项”；Dashboard 不承载完整处理流程。
-- Completed At:
-- Changed Files:
-- Verification:
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/pages/ReviewPage.tsx`, `frontend/src/api/types.ts`, `frontend/src/api/client.ts`, `frontend/src/styles/global.css`
+- Verification: `cd frontend && pnpm build`; ReviewService update task status smoke test; `./scripts/check.sh`.
 - Notes: 先让持久化事项体验跑通，再增加真实决策记录。
 
 ### P1-013: Decision Record
