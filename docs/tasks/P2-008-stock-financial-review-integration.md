@@ -1,10 +1,10 @@
 # P2-008: 股票财报事件与复盘闭链接入
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -32,7 +32,12 @@
 
 - 事件识别 smoke test。
 - `risk_event` / `review_task` / 日报 / AI 链路验证。
-- `rtk git diff --check`。
+- `uv run python scripts/migrate_db.py`.
+- `uv run python -m worker.financial.events`.
+- `uv run python -m worker.review.task_generator`.
+- Queried `financial_event`, `risk_event`, and `review_task`.
+- `uv run python -m compileall backend/app worker scripts`.
+- `./scripts/check.sh`.
 
 ## Notes
 

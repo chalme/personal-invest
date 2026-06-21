@@ -90,13 +90,40 @@ class AIService:
         if not stock:
             return self._empty_result("stock", symbol, "暂无该股票分析数据，请先加入自选股并执行每日更新。")
 
+        quality = self.repo.fetch_one(
+            """
+            SELECT * FROM stock_quality_snapshot
+            WHERE symbol = ?
+            ORDER BY quality_date DESC, id DESC
+            LIMIT 1
+            """,
+            (symbol,),
+        )
+        events = self.repo.fetch_all(
+            """
+            SELECT * FROM financial_event
+            WHERE symbol = ?
+            ORDER BY event_date DESC, severity DESC, id DESC
+            LIMIT 3
+            """,
+            (symbol,),
+        )
+        financial_text = (
+            f"公司质量为“{quality['quality_state']}”，质量评分 {float(quality['total_score']):.1f}，"
+            f"数据来源 {quality['source_mode']}，日期 {quality['data_date']}。"
+            if quality
+            else "暂无财报质量快照。"
+        )
+        event_text = "；".join(item["message"] for item in events) if events else "暂无财报异常事件。"
         sections = [
             {"title": "综合结论", "content": f"{stock['name']} 当前状态为“{stock['state']}”，综合评分 {float(stock['total_score']):.1f}/100。"},
             {"title": "趋势面", "content": f"趋势评分 {stock.get('trend_score')}，用于衡量价格动量和均线结构。"},
+            {"title": "财报质量", "content": financial_text},
             {"title": "基本面与估值", "content": f"基本面评分 {stock.get('fundamental_score')}，估值评分 {stock.get('valuation_score')}。"},
             {"title": "资金与行业", "content": f"资金评分 {stock.get('fund_flow_score')}，行业评分 {stock.get('sector_score')}。"},
+            {"title": "财报异常", "content": event_text},
             {"title": "风险点", "content": str(stock.get('risk_note') or "暂无风险说明。")},
-            {"title": "操作边界", "content": "该结论用于观察和复盘，不构成自动交易指令。"},
+            {"title": "操作边界", "content": "该结论用于观察和复盘，不构成自动交易指令；AI 只解释规则和数据依据。"},
         ]
         return self._record("stock", symbol, stock["trade_date"], sections)
 

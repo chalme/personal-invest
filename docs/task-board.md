@@ -131,17 +131,17 @@
 
 ### P2-008: 股票财报事件与复盘闭链接入
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 让股票财报异常成为风险事件、重要事项、日报和 AI 解释输入。
 - Details: `docs/tasks/P2-008-stock-financial-review-integration.md`
 - Files: `worker/`, `backend/app/services/review_service.py`, `worker/report/`, `backend/app/services/ai_service.py`
 - Concrete Changes: 新增 `financial_event` 识别逻辑；重要财报异常写入 `risk_event`、生成 `review_task`、进入日报和 AI 解释；按规则影响建议等级。
 - Acceptance: 财报异常不会只停留在股票页面；重要变化会进入复盘闭环；AI 只解释规则和数据依据。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 不新增自动交易或 AI 自由建议。
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/012_financial_event.sql`, `worker/financial/events.py`, `worker/financial/__init__.py`, `worker/daily_job.py`, `backend/app/services/ai_service.py`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.financial.events`; `uv run python -m worker.review.task_generator`; queried `financial_event`, `risk_event`, and `review_task`; `uv run python -m compileall backend/app worker scripts`; `./scripts/check.sh`.
+- Notes: 财报异常写入 `financial_event` 和 `risk_event`，并通过现有 review task 生成器进入复盘闭环；不新增自动交易或 AI 自由建议。
 
 ### P2-009: 场外基金画像与风险收益快照
 
