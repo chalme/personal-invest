@@ -411,16 +411,16 @@
 
 ### P2-015: ETF 页面、AI 与复盘闭链接入
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 将 ETF 深度分析接入页面、AI、风险事件、重要事项和日报，形成 ETF 专项复盘闭环。
 - Details: `docs/tasks/P2-015-etf-page-ai-review.md`
 - Files: `backend/app/api/`, `backend/app/services/`, `frontend/src/pages/FundsPage.tsx`, `backend/app/services/ai_service.py`, `worker/report/`, `worker/review/`
 - Concrete Changes: 提供 ETF 深度 API；在基金/ETF 页面展示 ETF 画像、暴露、流动性、风险收益、跟踪质量和折溢价；ETF 异常写入 `risk_event` 并进入 `review_task`、日报和 AI 解释。
 - Acceptance: 用户能直接查看 ETF 专项深度信息；AI 明确按 ETF 模型解释，不套股票财报或场外基金经理模型；异常能进入复盘闭环但不制造每日待办压力。
-- Completed At:
-- Changed Files:
-- Verification:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/019_etf_deep_event.sql`, `worker/etf/events.py`, `worker/daily_job.py`, `backend/app/api/funds.py`, `backend/app/api/ai.py`, `backend/app/services/ai_service.py`, `backend/app/services/etf_deep_service.py`, `worker/report/report_builder.py`, `frontend/src/pages/FundsPage.tsx`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.etf.events`; `uv run python -m worker.review.task_generator`; ETF deep service smoke; `AIService().explain_etf`; `uv run python -m compileall backend/app worker scripts`. Frontend build 未执行：当前环境缺少 `node/pnpm`。
 - Notes: ETF 深度接入完成后，股票、场外基金、ETF 三条深度分析线闭合。
 
 ### P1-011: Review Task 持久化
