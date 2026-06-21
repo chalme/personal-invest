@@ -28,6 +28,39 @@ Code Agent 可独立推进任务：
 
 边界：人工任务需要生产账号、服务器或安全配置权限；Code Agent 任务只提供文档、脚本、模板和检查逻辑，不直接执行生产配置。
 
+
+## 生产部署边界
+
+推荐第一阶段生产边界：
+
+```text
+浏览器 -> Cloudflare Access -> 前端域名 invest.chalme.indevs.in
+浏览器 -> Cloudflare Access -> API 域名 api.chalme.indevs.in
+API -> 本机 SQLite / Parquet / reports
+```
+
+人工必须确认：
+
+- 前端和 API 都被 Access 保护。
+- 后端端口不能通过服务器 IP 或公网端口绕过 Access。
+- `/health` 不输出敏感配置。
+- `/health/cors` 仅用于 CORS 诊断。
+- `.env.server`、API key、备份文件和生产日志不进入 Git。
+
+Code Agent 可交付：
+
+- systemd 模板。
+- 本地备份脚本。
+- 生产健康检查脚本。
+- 部署边界文档和人工 checklist。
+
+Code Agent 不执行：
+
+- Cloudflare 账号配置。
+- 服务器安全组或防火墙变更。
+- Secret 内容审计。
+- 真实浏览器人工验收。
+
 ## 待办事项
 
 ### 1. systemd 守护启动

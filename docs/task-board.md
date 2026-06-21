@@ -126,7 +126,7 @@
 
 ### OPS-DOC-001: 生产部署边界文档
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 把当前生产部署边界文档化，为 Cloudflare Access、源站保护和健康检查提供执行依据。
@@ -134,6 +134,10 @@
 - Scope: 描述前端、后端、域名、端口关系；描述 Cloudflare Access 推荐边界；描述源站不能裸露的原因；描述 `/health` 和 `/health/cors` 的使用方式；增加人工配置清单。
 - Out of Scope: 不配置 Cloudflare；不改服务器安全组；不实现应用内登录。
 - Acceptance: 人工可以按文档完成 Access 配置和源站边界检查；哪些步骤需要人工、哪些可以脚本化边界清晰。
+- Completed At: 2026-06-21
+- Changed Files: `docs/development.md`, `docs/operation-backlog.md`, `README.md`, `docs/task-board.md`
+- Verification: `git diff --check`; 文档明确前端/API 都需 Access 保护、源站不能裸露、健康检查与人工验收边界。
+- Notes: 只写文档，不配置 Cloudflare、不改服务器安全组。
 
 ### OPS-002: 本地备份脚本任务
 

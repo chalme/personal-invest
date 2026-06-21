@@ -138,6 +138,10 @@ personal-invest/
 └── reports/           # daily / weekly 报告
 ```
 
+## 生产部署与访问保护
+
+生产环境建议使用 Cloudflare Access 同时保护前端和 API，并确保后端源站端口不能被公网绕过访问。详细边界、健康检查和人工配置清单见 `docs/development.md` 的“生产部署边界”和 `docs/operation-backlog.md`。
+
 ## 生产模式启动
 
 开发模式 `make dev` 使用 Vite dev server，适合改代码时热更新。长期在服务器上运行时，建议使用生产模式：

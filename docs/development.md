@@ -214,3 +214,42 @@ BACKEND_CORS_ORIGINS=https://invest.chalme.indevs.in,http://localhost:5173,http:
 ```
 
 `FRONTEND_ALLOWED_HOSTS` 解决 Vite dev server 的 Host 白名单问题；`BACKEND_CORS_ORIGINS` 解决浏览器跨域访问后端 API 的问题。
+
+## 生产部署边界
+
+生产环境建议把 Personal Invest 分成三个边界看待：
+
+```text
+浏览器
+  ↓
+Cloudflare Access / HTTPS / 域名
+  ↓
+invest.chalme.indevs.in 前端静态服务
+  ↓
+api.chalme.indevs.in 后端 API
+  ↓
+SQLite / Parquet / reports 本地数据
+```
+
+第一阶段不做应用内多用户登录，推荐把访问保护放在 Cloudflare Access：
+
+- `invest.chalme.indevs.in` 必须受 Access 保护。
+- `api.chalme.indevs.in` 也必须受 Access 保护，不能只保护前端。
+- 后端源站端口不应直接公网裸露，避免绕过 Access 访问 API。
+- 服务器 IP 直连、`8000` 后端端口和静态前端端口应由防火墙、反向代理或 Tunnel 限制。
+
+健康检查边界：
+
+- `/health` 只返回最小状态，不暴露路径、密钥或数据库位置。
+- `/health/cors` 只用于 CORS 诊断，允许展示前端公网域名和 CORS regex，不应暴露敏感配置。
+- `scripts/health.sh` 只能作为自动 smoke check，不能替代真实浏览器人工验收。
+
+人工配置清单：
+
+1. 在 Cloudflare Access 中为前端和 API 各创建或绑定应用。
+2. 限制授权用户、邮箱或身份提供方。
+3. 确认服务器源站端口不能被公网直接访问。
+4. 确认 `.env.server` 和密钥文件不进入 Git。
+5. 在真实浏览器中完成 `MANUAL-001` 回归验收。
+
+Code Agent 可提供文档、systemd 模板、备份脚本和健康检查脚本；Cloudflare、服务器防火墙和 Secret 配置必须由人工完成。
