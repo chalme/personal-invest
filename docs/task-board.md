@@ -249,15 +249,15 @@
 
 ### DATA-022: 接入 BaoStock 作为 A股真实历史行情补充源
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
+- Completed At: `2026-06-21`
 - Goal: 在 real-only 约束下，把 BaoStock 加入 A股日线 provider chain，补强 AKShare 东财/腾讯接口不稳定或字段不足的问题。
 - Details: `docs/tasks/DATA-022-baostock-astock-provider.md`
-- Files: `pyproject.toml`, `uv.lock`, `worker/ingest/market_providers.py`, `worker/ingest/market_data.py`, `scripts/probe_market_sources.py`, `backend/app/services/data_credibility_service.py`
-- Scope: 接入 BaoStock 登录/退出、A股代码转换、历史日线字段标准化、provider 元数据、健康探针和失败降级。
-- Out of Scope: 不替换 AKShare；不接 Tushare Pro token；不接 QUANTAXIS；不恢复 sample/mock/demo/estimated；不把 BaoStock 缺失字段伪造成真实字段。
-- Acceptance: `600519.SH`、`000001.SZ` 可通过 BaoStock 返回真实日线；manifest/provider metadata 能显示 `source_provider=baostock`；失败时进入其他真实 provider、真实历史缓存或 `MISSING`；全链路不产生 sample。
+- Changed Files: `pyproject.toml`, `uv.lock`, `worker/ingest/market_providers.py`, `worker/ingest/market_data.py`, `scripts/probe_market_sources.py`, `docs/tasks/DATA-022-baostock-astock-provider.md`, `docs/task-board.md`
+- Verification: `uv lock`; targeted `ruff`; Python compile; monkeypatch smoke 覆盖 BaoStock 成功、BaoStock 失败后腾讯 fallback、全真实源失败进入 missing；前端 build；`git diff --check`。
+- Notes: BaoStock 只作为 A股真实历史行情补充源；不恢复 sample/mock/demo/estimated fallback。
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 

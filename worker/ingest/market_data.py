@@ -292,12 +292,22 @@ def _historical_real_bars(
     if any(col not in frame.columns for col in required):
         return None
     missing_fields: list[str] = []
-    if "volume" not in frame.columns:
-        frame["volume"] = pd.NA
-        missing_fields.append("volume")
-    if "amount" not in frame.columns:
-        frame["amount"] = pd.NA
-        missing_fields.append("amount")
+    optional_columns = [
+        "volume",
+        "amount",
+        "turnover_rate",
+        "pct_chg",
+        "pe_ttm",
+        "pb_mrq",
+        "ps_ttm",
+        "pcf_ncf_ttm",
+        "trade_status",
+        "is_st",
+    ]
+    for column in optional_columns:
+        if column not in frame.columns:
+            frame[column] = pd.NA
+            missing_fields.append(column)
     frame["symbol"] = symbol
     frame["name"] = name
     frame["trade_date"] = pd.to_datetime(frame["trade_date"]).dt.date.astype(str)
@@ -316,6 +326,14 @@ def _historical_real_bars(
         "close",
         "volume",
         "amount",
+        "turnover_rate",
+        "pct_chg",
+        "pe_ttm",
+        "pb_mrq",
+        "ps_ttm",
+        "pcf_ncf_ttm",
+        "trade_status",
+        "is_st",
         "symbol",
         "name",
         "source",
@@ -351,7 +369,7 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
     historical_daily_bar = read_parquet_dataset("daily_bar")
     frames: list[pd.DataFrame] = []
     runtime = ProviderRuntime()
-    source_count = {"akshare": 0, "akshare_cached": 0, "missing": 0}
+    source_count = {"real": 0, "akshare_cached": 0, "missing": 0}
     provider_count: dict[str, int] = {}
     interface_count: dict[str, int] = {}
     missing_field_count: dict[str, int] = {}
@@ -380,7 +398,7 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
             asset_provider_attempts[symbol] = provider_attempts_to_json(result.attempts)
         if result is not None and not result.frame.empty:
             frame = result.frame
-            source_count["akshare"] += 1
+            source_count["real"] += 1
             _increment(provider_count, result.provider)
             _increment(interface_count, result.interface)
             asset_source_status[symbol] = f"{result.provider}:{result.interface}"

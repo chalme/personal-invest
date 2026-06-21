@@ -59,6 +59,7 @@ def run_probe(symbols: list[tuple[str, str]], timeout: float, days: int) -> list
 
 def _exit_code(results: list[dict[str, Any]]) -> int:
     core_interfaces = {
+        "query_history_k_data_plus",
         "stock_zh_a_hist_tx",
         "stock_zh_index_daily_tx",
         "fund_etf_hist_em",
@@ -92,7 +93,7 @@ def _print_table(results: list[dict[str, Any]]) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="只读探测 AKShare 真实行情源健康状态。")
+    parser = argparse.ArgumentParser(description="只读探测 BaoStock / AKShare 真实行情源健康状态。")
     parser.add_argument("--json", action="store_true", help="输出 JSON，便于运维脚本消费。")
     parser.add_argument("--timeout", type=float, default=8.0, help="单接口超时时间，单位秒。")
     parser.add_argument("--days", type=int, default=30, help="探针起止日期窗口。")

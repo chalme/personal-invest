@@ -1,9 +1,10 @@
 # DATA-022: 接入 BaoStock 作为 A股真实历史行情补充源
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -150,3 +151,24 @@ git diff --check
 ## Notes
 
 BaoStock 是 A股历史日线和估值字段补充源，不是 AKShare 的替代品。AKShare 继续保留广覆盖能力，BaoStock 只进入 provider chain 的真实源层。后续如需 Tushare Pro，应单独建任务并明确 token、授权、成本和合规边界。
+
+## Completion
+
+- Added `baostock>=0.8.8` to the `data` extra and updated `uv.lock`.
+- Added BaoStock A股 provider before AKShare Tencent/Eastmoney in the A股 provider chain.
+- Added `600519.SH -> sh.600519` and `000001.SZ -> sz.000001` symbol mapping with explicit unsupported-symbol failure.
+- Normalized BaoStock daily fields into the daily bar frame, including turnover, pct change, valuation and trading-status fields when available.
+- Wrote BaoStock metadata through existing provider manifest fields: `source_provider=baostock`, `source_interface=query_history_k_data_plus`, provider attempts, missing fields and fallback reason.
+- Extended the read-only market probe to include BaoStock as a core A股 source.
+- Verified fallback semantics by monkeypatch smoke: BaoStock success, BaoStock failure followed by Tencent success, and all providers failing into `missing`.
+
+## Completion Verification
+
+```bash
+uv lock
+uv run --extra dev ruff check worker/ingest/market_providers.py worker/ingest/market_data.py scripts/probe_market_sources.py
+PYTHONPATH=. uv run python /tmp/baostock_provider_smoke.py
+uv run python -m compileall backend/app worker scripts
+pnpm -C frontend build
+git diff --check
+```
