@@ -14,7 +14,8 @@
 4. Code Agent 当前进入 real-only 历史状态一致性修复：清理旧事件污染、修正旧 manifest 的 sample/mixed 残留、收敛页面主视图展示。
 5. 数据源可以 fallback，数据真实性不能 fallback；后续任务不得恢复 sample 兜底，也不得通过清空全库掩盖历史污染。
 6. BaoStock A股真实历史行情补充源已完成第一轮接入，AKShare 继续作为广覆盖入口和腾讯/新浪 fallback 封装层。
-7. 下一阶段进入持仓录入体验优化：新增只读实时报价服务，重构添加持仓流程，并打通观察池到持仓的低摩擦入口。
+7. 下一阶段进入持仓录入类型安全修正：报价与持仓录入不再通过循环调用多个实时源来猜资产类型；由用户或上下文先明确 `STOCK` / `ETF` / `FUND`，再按类型查询价格或净值。
+8. 东方财富不能作为唯一实时或历史行情源；后续需要把东财失败后的真实 provider fallback 固化为策略：腾讯 / BaoStock / Sina / 本地真实缓存 / `MISSING`，但不能恢复 sample 兜底。
 
 ## Status
 
@@ -295,6 +296,78 @@
 - Scope: 观察池资产新增“加入持仓”动作；跳转或弹窗打开持仓录入；带入 symbol、name、asset_type、最新价、建议状态和买入理由上下文。
 - Out of Scope: 不自动买入；不自动创建交易流水；不删除观察池资产；不强制执行每日任务。
 - Acceptance: 从观察池点击后能进入持仓录入并预填关键信息；保存后持仓页展示新持仓；观察池仍保留资产并可继续跟踪。
+
+### QUOTE-002: Typed Quote 查询
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 报价接口显式接收 `asset_type`，按 `STOCK` / `ETF` / `FUND` 走不同真实数据链路，避免仅靠代码推断导致场外基金被误判为 ETF 或股票。
+- Details: `docs/tasks/QUOTE-002-typed-quote-query.md`
+- Files: `backend/app/api/quotes.py`, `backend/app/services/quote_service.py`, `frontend/src/api/types.ts`
+- Scope: `GET /api/quotes/{symbol}?asset_type=...`；用户显式类型优先；typed symbol normalization；STOCK 查股票报价链路，ETF 查 ETF 报价链路，FUND 查基金净值缓存链路。
+- Out of Scope: 不并发调用多个实时源猜类型；不新增交易流水表；不写行情/净值历史数据；不恢复 sample/mock/demo/estimated fallback。
+- Acceptance: `161725 + FUND` 不会变成 `161725.SZ`；`600519 + STOCK`、`510300 + ETF`、`161725 + FUND` 均按类型返回 `REAL_QUOTE` / `REAL_CACHED` / `MISSING`，并带来源、接口和 warning。
+
+### PORT-003: 持仓录入先选类型再查询
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 把持仓录入从“输入代码后系统猜资产类型”调整为“用户先选资产类型，再按类型获取价格或净值”。
+- Details: `docs/tasks/PORT-003-portfolio-entry-type-first.md`
+- Files: `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/api/types.ts`
+- Scope: 资产类型放到代码输入前；获取报价请求带 `asset_type`; 按类型切换按钮和字段文案；切换类型时清空旧报价和手动价格状态。
+- Out of Scope: 不做资产自动识别候选列表；不做多接口循环探测类型；不做批量导入、券商导入或交易流水。
+- Acceptance: 股票显示“获取实时价格”；ETF 显示“获取交易价格”；场外基金显示“获取最新净值”；`FUND + 161725` 不展示为 `161725.SZ`；MISSING 时可手动录入临时价格但明确降级语义。
+
+### QUOTE-004: 实时报价真实源 fallback 策略标准化
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 让持仓录入的“获取价格 / 净值”具备清晰真实源 fallback：东财实时接口不可用时，按资产类型尝试真实备用源或本地真实缓存；全部失败才返回 `MISSING`。
+- Details: `docs/tasks/QUOTE-004-realtime-quote-provider-fallback.md`
+- Files: `backend/app/services/quote_service.py`, `backend/app/api/quotes.py`, `frontend/src/pages/PortfolioPage.tsx`, optional `frontend/src/api/types.ts`
+- Scope: STOCK 走股票实时链路；ETF 走 ETF 实时链路 `fund_etf_spot_em()`；FUND 走最新公布净值 / `fund_nav`；返回 provider、interface、fallback reason 和 warning。
+- Out of Scope: 不自动猜资产类型；不循环调用多个实时源做类型识别；不把手动价格写入行情历史；不接付费源；不恢复 sample/mock/demo/estimated。
+- Acceptance: `STOCK + 600519`、`ETF + 510300`、`FUND + 161725` 均按类型 fallback；东财失败不会直接终止查询；最终状态只能是 `REAL_QUOTE` / `REAL_CACHED` / `MISSING`。
+
+### QUOTE-003: 场外基金最新净值真实源增强
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 增强 `FUND` 报价链路，让场外基金持仓录入可以获取最新公布单位净值；外部源不可用时降级到本地 `fund_nav` 真实缓存或 `MISSING`。
+- Details: `docs/tasks/QUOTE-003-fund-latest-nav-provider.md`
+- Files: `backend/app/services/quote_service.py`, `backend/app/api/quotes.py`, optional `scripts/probe_market_sources.py`
+- Scope: `FUND -> 外部真实基金净值源 -> local fund_nav -> MISSING`；返回单位净值、净值日期、source mode/provider/interface；所有调用必须有 timeout。
+- Out of Scope: 不做基金估算净值；不做场外基金实时价格；不写 `fund_nav`；不接付费源；不恢复 sample/mock/demo/estimated。
+- Acceptance: `GET /api/quotes/161725?asset_type=FUND` 返回 `FUND` 且不追加 `.SZ`；外部源成功为 `REAL_QUOTE`，失败但本地有缓存为 `REAL_CACHED`，全失败为 `MISSING`。
+
+### DATA-023: 历史行情真实源 fallback 策略标准化
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 把历史行情同步的 provider chain 固化为明确策略：东方财富失败时尝试腾讯、BaoStock、Sina 等真实备用源；所有真实源失败时只能使用本地真实缓存或 `MISSING`。
+- Details: `docs/tasks/DATA-023-real-provider-fallback-policy.md`
+- Files: `worker/ingest/market_providers.py`, `worker/ingest/market_data.py`, `scripts/probe_market_sources.py`, `backend/app/services/data_credibility_service.py`, `docs/data-sources.md`
+- Scope: A股、指数、ETF 日线 provider chain；provider attempt metadata；missing fields；fallback reason；manifest 和 probe 术语一致。
+- Out of Scope: 不处理持仓录入实时报价；不接付费源；不恢复 sample/mock/demo/estimated；不通过清空全库掩盖历史污染。
+- Acceptance: 东财失败时继续尝试真实备用源；腾讯字段缺失进入 `missing_fields`；全部失败进入 `REAL_CACHED` 或 `MISSING`；manifest 记录最终 provider 和 fallback reason。
+
+### PORT-004: 不同资产入口进入持仓录入
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 让股票页、ETF/基金页、观察池页进入持仓录入时自动携带 `asset_type` 和资产上下文，减少手动输入且避免类型误判。
+- Details: `docs/tasks/PORT-004-typed-position-entry-points.md`
+- Files: `frontend/src/App.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/StocksPage.tsx`, `frontend/src/pages/FundsPage.tsx`, optional `frontend/src/api/types.ts`
+- Scope: 统一 `PortfolioPrefill` contract；从观察池、股票页、基金/ETF 页跳转持仓录入时带入 symbol/name/asset_type/reason；预填后按类型查询价格或净值。
+- Out of Scope: 不自动买入；不自动删除观察池资产；不做交易流水或券商导入；不自动运行每日任务。
+- Acceptance: 观察池 `STOCK` / `ETF` / `FUND` 进入持仓录入时类型被保留；股票页默认 `STOCK`；基金页能区分 `FUND` / `ETF`；查询 URL 带 `asset_type`。
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 
