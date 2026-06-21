@@ -8,9 +8,9 @@
 
 当前主线：
 
-1. 低摩擦投资工作台：把首页升级为今日概览 + 重要变化提醒，让用户一打开就知道是否需要介入。
-2. 重要事项池：把风险、建议变化、组合变化和数据异常聚合成只读事项，不把用户变成每日打卡工具。
-3. 复盘入口：把建议、组合快照和周/月总结串起来，支持自动沉淀后续表现与人工复核。
+1. 低摩擦决策复盘：把只读重要事项池升级为可沉淀、可确认、可延后、可解决的复盘闭环。
+2. 用户真实决策：记录买入、持有、减仓、卖出和暂不处理的原因，并允许关联建议和重要事项。
+3. 后续结果跟踪：自动沉淀决策后 1D / 1W / 1M 表现，用于周/月复盘，不做自动交易或业绩裁判。
 
 ## Status
 
@@ -30,6 +30,76 @@
 5. 做完后改成 `DONE`，写入 `Completed At`、`Changed Files`、`Verification`、`Notes`。
 
 ## Current Tasks
+
+### P1-011: Review Task 持久化
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 将当前只读重要事项聚合沉淀为 `review_task`，支持去重、状态、延后和自动失效。
+- Details: `docs/tasks/P1-011-review-task-persistence.md`
+- Files: `backend/migrations/008_review_task.sql`, `backend/app/services/review_service.py`, `backend/app/api/review.py`, `worker/review/task_generator.py`, `worker/daily_job.py`
+- Concrete Changes: 新增 `review_task` 表；使用 `dedupe_key` 防重复；支持 `OPEN`、`ACKNOWLEDGED`、`SNOOZED`、`RESOLVED`、`AUTO_EXPIRED`；`NO_MAJOR_RISK` 不生成事项。
+- Acceptance: 同一事项不会重复刷屏；延后事项默认不出现在 OPEN 列表；过期事项可自动失效；Dashboard 仍保持低打扰摘要。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: UI 文案仍使用“重要事项 / 复核 / 延后 / 已解决”，避免把产品做成每日待办系统。
+
+### P1-012: ReviewPage 接入持久化事项
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 让复盘页从实时聚合展示升级为持久化重要事项工作流。
+- Details: `docs/tasks/P1-012-review-page-task-workflow.md`
+- Files: `frontend/src/pages/ReviewPage.tsx`, `frontend/src/api/types.ts`, `frontend/src/styles/global.css`, `backend/app/api/review.py`
+- Concrete Changes: 复盘页展示 `review_task`；支持确认、延后、解决；保留无重要事项空态；任务失败和数据异常仍明确提示。
+- Acceptance: 用户可在复盘页处理重要事项；无重要事项时显示“暂无需要立即处理事项”；Dashboard 不承载完整处理流程。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 先让持久化事项体验跑通，再增加真实决策记录。
+
+### P1-013: Decision Record
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 记录用户真实投资决策及原因，让系统能复盘“当时为什么这么做”。
+- Details: `docs/tasks/P1-013-decision-record.md`
+- Files: `backend/migrations/009_decision_record.sql`, `backend/app/services/review_service.py`, `backend/app/api/review.py`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`
+- Concrete Changes: 新增 `decision_record`；支持 `BUY`、`HOLD`、`REDUCE`、`SELL`、`NO_ACTION`；允许可选关联 `review_task` 和 `investment_advice`；记录原因、预期、信心和数据日期。
+- Acceptance: 用户可以记录系统内外触发的真实决策；决策可以关联重要事项或建议，也可以独立存在；表单保持轻量。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 数据库使用英文枚举，前端展示中文。
+
+### P1-014: Decision Outcome Tracking
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 自动跟踪决策后 1D / 1W / 1M 的轻量结果，用于复盘参考。
+- Details: `docs/tasks/P1-014-decision-outcome-tracking.md`
+- Files: `backend/migrations/010_decision_outcome.sql`, `worker/review/outcome_tracker.py`, `worker/daily_job.py`, `backend/app/api/review.py`
+- Concrete Changes: 新增 `decision_outcome`；记录决策时和跟踪时的价格/净值、收益、建议等级和风险数量；daily job 自动刷新可到期的 outcome。
+- Acceptance: 每个决策可沉淀 1D / 1W / 1M 结果；重复执行幂等；结果文案明确“仅供复盘参考，不代表决策绝对对错”。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 第一版不做复杂收益归因、交易成本归因或多账户评价。
+
+### P1-015: 复盘摘要接入 Dashboard / Portfolio
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 将持久化重要事项、最近决策和 outcome 摘要接入首页与持仓页，但不把 Dashboard 做成任务处理页。
+- Details: `docs/tasks/P1-015-review-summary-surfaces.md`
+- Files: `backend/app/services/dashboard_service.py`, `backend/app/services/portfolio_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/PortfolioPage.tsx`
+- Concrete Changes: Dashboard 展示 OPEN 重要事项数量、高优先级摘要和最近决策；Portfolio 页提供按资产记录决策和查看相关事项的入口；ReviewPage 仍是完整复盘主入口。
+- Acceptance: 用户 30 秒内能知道是否需要介入；持仓页能进入记录决策；Dashboard 只显示摘要，不制造每日待办压力。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 本任务是复盘闭环 V1 的收口任务。
 
 ### P1-010: 低摩擦投资工作台 V1
 
@@ -327,3 +397,8 @@
 - `docs/tasks/P1-009-instrument-sector-map.md`
 - `docs/tasks/P2-001-portfolio-snapshot.md`
 - `docs/tasks/P1-010-low-friction-workbench-v1.md`
+- `docs/tasks/P1-011-review-task-persistence.md`
+- `docs/tasks/P1-012-review-page-task-workflow.md`
+- `docs/tasks/P1-013-decision-record.md`
+- `docs/tasks/P1-014-decision-outcome-tracking.md`
+- `docs/tasks/P1-015-review-summary-surfaces.md`
