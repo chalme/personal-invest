@@ -15,6 +15,29 @@ export FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 export FRONTEND_DIST_DIR="${FRONTEND_DIST_DIR:-frontend/dist}"
 export VITE_API_BASE="${VITE_API_BASE:-}"
 
+if [ "${1:-}" = "--check" ]; then
+  echo "python: $(python_runtime_bin)"
+  if [ ! -f "$FRONTEND_DIST_DIR/index.html" ]; then
+    echo "缺少前端构建产物：$FRONTEND_DIST_DIR/index.html"
+    echo "请先执行：pnpm -C frontend install && pnpm -C frontend build"
+    exit 1
+  fi
+  if [ ! -f "$FRONTEND_DIST_DIR/config.js" ]; then
+    echo "缺少运行时配置：$FRONTEND_DIST_DIR/config.js"
+    echo "请先执行：./.venv/bin/python scripts/write_runtime_config.py --output $FRONTEND_DIST_DIR/config.js"
+    exit 1
+  fi
+  run_python - <<'PY'
+import importlib.util
+import sys
+if importlib.util.find_spec('http') is None:
+    raise SystemExit('missing stdlib http module')
+print('frontend runtime ok')
+print(sys.version.split()[0])
+PY
+  exit 0
+fi
+
 if [ "${FRONTEND_BUILD_ON_START:-1}" = "1" ]; then
   ensure_pnpm_latest
   pnpm -C frontend install
