@@ -171,7 +171,7 @@
 
 ### OPS-003: systemd 服务模板
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 提供后端 / 前端长期运行所需的 systemd 模板和启停文档。
@@ -179,6 +179,10 @@
 - Scope: 提供 `personal-invest-backend.service`、`personal-invest-frontend.service` 模板；说明工作目录、启动命令、环境变量、日志查看、重启方式和开机自启。
 - Out of Scope: 不在生产机直接启用；不做 Docker；不做 K8s；不做多实例部署。
 - Acceptance: 模板可由人工复制到 `/etc/systemd/system/`；服务支持异常重启；文档说明如何查看日志和状态；不包含硬编码敏感信息。
+- Completed At: 2026-06-21
+- Changed Files: `deploy/systemd/personal-invest-backend.service`, `deploy/systemd/personal-invest-frontend.service`, `docs/development.md`, `docs/operation-backlog.md`, `docs/task-board.md`
+- Verification: `systemd-analyze verify` when available; `git diff --check`.
+- Notes: 只提供模板和启停文档，不在生产机执行 `systemctl enable --now`。
 
 ### OPS-004: 生产健康检查脚本
 

@@ -207,3 +207,19 @@ BACKUP_ROOT=/path/to/backups ./scripts/backup.sh
 - `.env.server.example`
 
 `.env.server` 默认不备份，因为可能包含密钥。真实备份目标、加密、异地保存和保留周期仍由人工在 `H-005` 中确认。
+
+## systemd 模板使用说明
+
+`OPS-003` 已提供：
+
+- `deploy/systemd/personal-invest-backend.service`
+- `deploy/systemd/personal-invest-frontend.service`
+
+人工启用前必须确认：
+
+- 仓库实际路径是否为 `/root/remote/personal-invest`。
+- `.env.server` 已存在且未进入 Git。
+- 前端和 API 域名已经由 Cloudflare / 反向代理指向正确端口。
+- 源站端口不会绕过访问保护裸露。
+
+模板可以复制到 `/etc/systemd/system/` 后启用，但 Code Agent 不直接在生产机执行 `systemctl enable --now`。

@@ -253,3 +253,43 @@ SQLite / Parquet / reports 本地数据
 5. 在真实浏览器中完成 `MANUAL-001` 回归验收。
 
 Code Agent 可提供文档、systemd 模板、备份脚本和健康检查脚本；Cloudflare、服务器防火墙和 Secret 配置必须由人工完成。
+
+## systemd 长期运行模板
+
+项目提供第一版 systemd 模板：
+
+```text
+deploy/systemd/personal-invest-backend.service
+deploy/systemd/personal-invest-frontend.service
+```
+
+使用方式需要人工在服务器执行：
+
+```bash
+sudo cp deploy/systemd/personal-invest-backend.service /etc/systemd/system/
+sudo cp deploy/systemd/personal-invest-frontend.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now personal-invest-backend.service
+sudo systemctl enable --now personal-invest-frontend.service
+```
+
+常用命令：
+
+```bash
+sudo systemctl status personal-invest-backend.service
+sudo systemctl status personal-invest-frontend.service
+sudo journalctl -u personal-invest-backend.service -f
+sudo journalctl -u personal-invest-frontend.service -f
+sudo systemctl restart personal-invest-backend.service
+sudo systemctl restart personal-invest-frontend.service
+```
+
+模板默认：
+
+- 工作目录：`/root/remote/personal-invest`
+- 环境文件：`.env.server`
+- 后端启动：`make backend-prod`
+- 前端启动：`make frontend-prod`
+- 异常退出自动重启：`Restart=on-failure`
+
+注意：模板只提供长期运行基础，不负责 Cloudflare Access、防火墙、Secret 管理或人工浏览器验收。

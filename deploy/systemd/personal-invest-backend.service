@@ -1,0 +1,22 @@
+[Unit]
+Description=Personal Invest Backend API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/remote/personal-invest
+Environment=ENV_FILE=.env.server
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/make backend-prod
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGINT
+
+# Optional hardening. Enable after confirming paths and permissions.
+# NoNewPrivileges=true
+# PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+[Unit]
+Description=Personal Invest Frontend Static Server
+After=network-online.target personal-invest-backend.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/remote/personal-invest
+Environment=ENV_FILE=.env.server
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/make frontend-prod
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGINT
+
+# Optional hardening. Enable after confirming paths and permissions.
+# NoNewPrivileges=true
+# PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
