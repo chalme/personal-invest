@@ -1,0 +1,41 @@
+CREATE TABLE IF NOT EXISTS etf_liquidity_snapshot (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_date TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    name TEXT NOT NULL,
+    avg_amount_20 REAL,
+    avg_volume_20 REAL,
+    latest_amount REAL,
+    latest_volume REAL,
+    estimated_scale REAL,
+    liquidity_score REAL,
+    liquidity_risk_level TEXT,
+    liquidity_note TEXT,
+    source TEXT,
+    source_mode TEXT NOT NULL DEFAULT 'ESTIMATED',
+    data_date TEXT NOT NULL,
+    data_version TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE(snapshot_date, symbol)
+);
+
+CREATE TABLE IF NOT EXISTS etf_risk_return_snapshot (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_date TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    name TEXT NOT NULL,
+    return_1m REAL,
+    return_3m REAL,
+    return_6m REAL,
+    max_drawdown REAL,
+    volatility REAL,
+    risk_return_score REAL,
+    risk_level TEXT,
+    performance_note TEXT,
+    source TEXT,
+    source_mode TEXT NOT NULL DEFAULT 'ESTIMATED',
+    data_date TEXT NOT NULL,
+    data_version TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE(snapshot_date, symbol)
+);

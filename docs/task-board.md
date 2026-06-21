@@ -201,17 +201,17 @@
 
 ### P2-013: ETF 流动性与风险收益快照
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 为 ETF / LOF 生成流动性、阶段收益、回撤、波动和交易风险快照。
 - Details: `docs/tasks/P2-013-etf-liquidity-risk-return.md`
 - Files: `backend/migrations/`, `worker/etf/`, `backend/app/services/etf_deep_service.py`, `worker/daily_job.py`
-- Concrete Changes: 新增 ETF 流动性和风险收益快照；计算成交额、成交量、规模、阶段收益、最大回撤、波动和流动性风险等级；复杂盘口和实时价差后置。
+- Concrete Changes: 新增 ETF 流动性和风险收益快照表；计算成交额、成交量、估算规模、阶段收益、最大回撤、波动和流动性风险等级；复杂盘口和实时价差后置。
 - Acceptance: ETF 能解释交易是否足够活跃、回撤是否扩大、波动是否升高；缺失成交额或规模数据时不生成高置信度结论；不影响 `FUND` 深度分析。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 第一版优先使用已有 `daily_bar` 和可得元数据，避免依赖难拿的实时盘口数据。
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/017_etf_liquidity_risk_return.sql`, `worker/etf/liquidity_risk_return.py`, `backend/app/services/etf_deep_service.py`, `worker/daily_job.py`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.etf.liquidity_risk_return`; 查询 `etf_liquidity_snapshot` 和 `etf_risk_return_snapshot`; `uv run python -m compileall backend/app worker scripts`. `./scripts/check.sh` 因当前执行环境缺少 `pnpm` 未能完成前端阶段。
+- Notes: 第一版优先使用已有 `daily_bar` 和可得元数据，避免依赖难拿的实时盘口数据；当前样本数据来源标记为 `ESTIMATED`。
 
 ### P2-014: ETF 跟踪质量与折溢价
 

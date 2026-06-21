@@ -1,10 +1,10 @@
 # P2-013: ETF 流动性与风险收益快照
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -37,7 +37,14 @@
 - `uv run python -m worker.etf.liquidity_risk_return`
 - 查询 ETF 流动性和风险收益表。
 - `uv run python -m compileall backend/app worker scripts`
-- `./scripts/check.sh`
+- `./scripts/check.sh` 当前环境缺少 `pnpm`，未能完成前端阶段。
+
+## Changed Files
+
+- `backend/migrations/017_etf_liquidity_risk_return.sql`
+- `worker/etf/liquidity_risk_return.py`
+- `backend/app/services/etf_deep_service.py`
+- `worker/daily_job.py`
 
 ## Notes
 
