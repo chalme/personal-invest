@@ -107,3 +107,50 @@ uv sync --extra data
 | `DATA-010` | ETF 折溢价与规模 | ETF 折溢价、规模、流动性 |
 
 每个任务都必须明确：输入、输出、`source_mode`、fallback、页面影响和建议规则影响。
+
+
+## Real-only Runtime Policy
+
+投资系统的运行时数据策略是：线上和开发环境只使用真实数据或真实历史缓存。缺少真实数据时必须显示 `MISSING` / 不可用，不能为了页面完整性自动生成 sample、mock、demo 或 deterministic estimate 数据。
+
+### Allowed Runtime States
+
+| State | Meaning | Display | Can Drive High-confidence Advice |
+|---|---|---|---|
+| `REAL` / `akshare` | 当前同步成功的真实源数据 | 正常展示 | 取决于新鲜度 |
+| `REAL_CACHED` / `akshare_cached` | 真实历史缓存，通常来自上次成功同步 | 展示为真实历史缓存 | 否 |
+| `STALE` | 有真实数据但晚于预期最近交易日 | 展示为过期 | 否 |
+| `MISSING` | 没有可用真实数据 | 展示缺失和下一步动作 | 否 |
+
+### Forbidden Runtime States
+
+以下状态不能由 worker、API、页面或开发环境 runtime 正常产生或依赖：
+
+- `SAMPLE`
+- `ESTIMATED`
+- `MIXED` 中包含 sample / estimated 的正常态
+- `built_in_sample`
+- `deterministic_estimate`
+- mock/demo 数据进入 `data/`、`storage/`、报告、建议或前端页面
+
+测试可以使用 fixture，但必须隔离在测试目录或显式测试上下文，不能写入本地开发数据目录或生产数据目录。
+
+### Fallback Decision Table
+
+| Situation | Correct Behavior | Forbidden Behavior |
+|---|---|---|
+| 真实源成功 | 写入真实数据和 manifest | 同时混入 sample |
+| 真实源失败，有真实历史 | 复用真实历史缓存，标记 cached/stale，关闭高置信建议 | 把历史 sample 当缓存 |
+| 真实源失败，无真实历史 | 标记 `MISSING`，页面显示缺失 | 生成 sample/mock/demo |
+| 财报/基金画像/ETF 深度数据未接入真实源 | 不写假快照，API 返回缺失态 | 写 `SAMPLE` / `ESTIMATED` 分数或画像 |
+| 页面读取到历史 sample/estimated | 显示历史污染/不可用于建议 | 当作低可信但正常的数据模式 |
+
+### Execution Tasks
+
+Real-only 治理按以下任务推进：
+
+1. `DATA-011`：真实数据 only 策略与 source mode 合约。
+2. `DATA-012`：禁止行情与基金净值新增 sample 生成。
+3. `DATA-013`：历史 sample / estimated 数据审计与清理脚本。
+4. `DATA-014`：股票 / 基金 / ETF 非真实因子改为 `MISSING`。
+5. `DATA-015`：设置页与前端移除 sample 合法模式。

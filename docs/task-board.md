@@ -9,10 +9,10 @@
 当前主线：
 
 1. 人工验收与生产权限事项单独跟踪，不作为 Code Agent 可独立完成任务。
-2. Code Agent 当前进入数据可信度与页面结论化执行阶段。
-3. 优先顺序为：交易日历与数据新鲜度、行情日线稳定性、基金净值稳定性、关键页面结论化。
-4. 真实数据源增强第一阶段继续基于 AKShare / 本地 fallback，不引入新付费供应商或外部账号配置。
-5. Web UI 整体优化采用“先审计、再重组、再逐页打磨”的路线，不做营销页式 redesign，不引入新前端框架。
+2. Code Agent 当前进入真实数据 only 治理阶段：线上和开发运行链路都不能生成、写入或展示 sample/mock/demo/estimated 作为正常数据。
+3. 优先顺序为：真实数据 source mode 合约、禁止新增 sample、清理历史污染、非真实因子改为 MISSING、设置页与前端文案收敛。
+4. 数据源增强仍基于现有 AKShare / 真实历史缓存；没有真实数据时显示 `MISSING`，不再为了页面完整性造样本。
+5. Web UI 已完成信息架构与工作台打磨，下一步只处理与真实数据 only 有关的显示和配置收敛。
 
 ## Status
 
@@ -95,6 +95,67 @@
 ## Current Code Agent Tasks
 
 以下任务不依赖人工验收或外部账号权限，可以由 Code Agent 独立推进。执行完成后需写入完成标识、检查结果和提交记录。
+
+### DATA-011: 真实数据 Only 策略与 source mode 合约
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 建立全系统硬约束：线上和开发运行链路只允许真实数据或真实历史缓存；没有真实数据时显示 `MISSING`，不能生成、写入、展示或使用 sample/mock/demo/estimated 作为正常数据。
+- Details: `docs/tasks/DATA-011-real-only-source-policy.md`
+- Files: `docs/data-pipeline.md`, `docs/task-board.md`, `docs/tasks/`
+- Scope: 定义允许/禁止 source mode、fallback 决策表、测试 fixture 边界、页面降级规则和后续任务验收口径。
+- Out of Scope: 不改业务代码；不清理历史数据；不接入新供应商。
+- Acceptance: 文档明确 runtime 不允许 sample/mock/demo/estimated；后续任务可按同一合约验收。
+
+### DATA-012: 禁止行情与基金净值新增 sample 生成
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 关闭 `daily_bar` 和 `fund_nav` 的 sample 生成路径，真实源失败且无真实历史时输出 `MISSING`，不再造行情或净值。
+- Details: `docs/tasks/DATA-012-disable-sample-generation.md`
+- Files: `worker/ingest/market_data.py`, `backend/app/services/data_credibility_service.py`, `docs/data-pipeline.md`
+- Scope: 删除或隔离 `_generate_sample_bars()` / `_generate_sample_nav()` runtime 调用；manifest 不再新增 `source_count.sample`；缺失资产进入 warning / missing 状态。
+- Out of Scope: 不清理历史 sample parquet；不接新数据源；不改 Parquet 主结构。
+- Acceptance: AKShare 全失败且无真实历史时不产生 sample；部分失败时只允许 `akshare`、`akshare_cached` 和 missing。
+
+### DATA-013: 历史 sample / estimated 数据审计与清理脚本
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 提供默认 dry-run 的审计与清理工具，清除 SQLite 与 Parquet 中已存在的 sample / estimated / built-in fake 运行时数据。
+- Details: `docs/tasks/DATA-013-purge-non-real-data.md`
+- Files: `scripts/audit_real_only.py`, `scripts/purge_non_real_data.py`, `data/parquet/`, `storage/invest.db`, `docs/data-pipeline.md`
+- Scope: 审计并清理 `daily_bar`、`fund_nav`、股票财务/估值/质量、基金画像、基金基准/同类/暴露、ETF 深度分析相关非真实记录。
+- Out of Scope: 不直接操作生产环境；不删除真实历史缓存；不接新真实源；不做 UI 清理按钮。
+- Acceptance: dry-run 能列出污染来源；`--apply` 在备份后可幂等清理；清理后页面显示真实/真实缓存/缺失/过期而非历史 sample 正常态。
+
+### DATA-014: 股票 / 基金 / ETF 非真实因子改为 MISSING
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 停止股票财务、基金画像、基金基准/同类/暴露、ETF 深度分析中的样本和估算生成；没有真实源时返回缺失态。
+- Details: `docs/tasks/DATA-014-non-real-factor-pipelines-missing.md`
+- Files: `worker/factor/stock_financial.py`, `worker/fund/deep_profile.py`, `worker/fund/benchmark_peer.py`, `worker/etf/`, `backend/app/services/`, `frontend/src/pages/`
+- Scope: 移除 runtime 对 `SAMPLE_PROFILES`、`built_in_sample`、`deterministic_estimate` 的依赖；服务和页面稳定处理缺失快照。
+- Out of Scope: 不接真实财报源、基金画像源或 ETF 数据源；不清理历史污染数据。
+- Acceptance: 新运行 worker 不再产生 `SAMPLE` / `ESTIMATED` 快照；缺真实数据时 API、页面、日报和建议都明确降级。
+
+### DATA-015: 设置页与前端移除 sample 合法模式
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 设置项和前端页面不再把 sample/mock/demo 数据作为可选运行模式或正常展示状态。
+- Details: `docs/tasks/DATA-015-real-only-ui-and-settings.md`
+- Files: `backend/app/services/settings_service.py`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/components/ui.tsx`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/api/types.ts`
+- Scope: 移除“仅样本数据”和“失败时使用样本兜底”；默认 `fallback_to_sample=false`；历史 sample/estimated 显示为污染态或不可用于建议。
+- Out of Scope: 不接新数据源；不清理历史数据；不重做导航或整体 UI。
+- Acceptance: 页面不再提供 sample 作为合法配置；无真实数据显示缺失和下一步动作；历史污染明确不可用于建议。
+
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 
@@ -1083,3 +1144,8 @@
 - `docs/tasks/UX-007-design-system-components.md`
 - `docs/tasks/UX-008-dashboard-workbench.md`
 - `docs/tasks/UX-009-core-page-polish.md`
+- `docs/tasks/DATA-011-real-only-source-policy.md`
+- `docs/tasks/DATA-012-disable-sample-generation.md`
+- `docs/tasks/DATA-013-purge-non-real-data.md`
+- `docs/tasks/DATA-014-non-real-factor-pipelines-missing.md`
+- `docs/tasks/DATA-015-real-only-ui-and-settings.md`
