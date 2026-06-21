@@ -33,3 +33,39 @@ uv sync --extra data
 ## 风控边界
 
 所有信号只代表观察，不代表自动交易。AI 只能解释已有数据，不能绕过风控。
+
+## Manifest 可信度口径
+
+所有 raw manifest 后续应尽量保持统一最小结构：
+
+```json
+{
+  "dataset": "daily_bar | fund_nav | ...",
+  "generated_at": "ISO timestamp",
+  "latest_data_date": "YYYY-MM-DD",
+  "rows": 0,
+  "asset_count": 0,
+  "source_count": {
+    "akshare": 0,
+    "sample": 0
+  },
+  "source_mode": "REAL | SAMPLE | MIXED | MISSING",
+  "warning": "可选中文说明"
+}
+```
+
+兼容字段可以继续保留，例如：
+
+- `latest_trade_date`
+- `latest_nav_date`
+- `symbols`
+- `funds`
+
+`source_mode` 推导规则：
+
+- 只有非 `sample` 来源：`REAL`
+- 同时存在真实来源和 `sample`：`MIXED`
+- 只有 `sample`：`SAMPLE`
+- 没有数据或没有来源：`MISSING`
+
+`DataCredibilityService` 应优先读取 manifest 中的 `source_mode`；缺失时再根据 `source_count` 推导。这样 market、fund 和后续真实数据源可以复用同一套可信度判断逻辑。

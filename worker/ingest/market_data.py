@@ -32,6 +32,56 @@ def _business_dates(days: int = 180) -> list[date]:
     return list(reversed(result))
 
 
+
+def _source_mode_from_count(source_count: dict[str, int]) -> str:
+    sample_count = int(source_count.get("sample") or 0)
+    real_count = sum(int(value or 0) for key, value in source_count.items() if key.lower() != "sample")
+    if real_count > 0 and sample_count > 0:
+        return "MIXED"
+    if real_count > 0:
+        return "REAL"
+    if sample_count > 0:
+        return "SAMPLE"
+    return "MISSING"
+
+
+def _source_warning(dataset_label: str, source_mode: str) -> str | None:
+    if source_mode == "REAL":
+        return None
+    if source_mode == "MIXED":
+        return f"{dataset_label}包含真实数据和样本数据，分析结论需要结合数据来源谨慎使用。"
+    if source_mode == "SAMPLE":
+        return f"{dataset_label}全部来自样本数据，仅用于功能演示，不应作为真实投资依据。"
+    return f"{dataset_label}缺失或来源不明确，请检查数据同步任务。"
+
+
+def _build_manifest(
+    *,
+    dataset: str,
+    generated_at: str,
+    rows: int,
+    assets: list[str],
+    latest_data_date: str | None,
+    source_count: dict[str, int],
+    asset_key: str,
+    latest_key: str,
+    dataset_label: str,
+) -> dict[str, Any]:
+    source_mode = _source_mode_from_count(source_count)
+    manifest = {
+        "dataset": dataset,
+        "generated_at": generated_at,
+        "latest_data_date": latest_data_date,
+        "rows": rows,
+        "asset_count": len(assets),
+        "source_count": source_count,
+        "source_mode": source_mode,
+        "warning": _source_warning(dataset_label, source_mode),
+        asset_key: assets,
+        latest_key: latest_data_date,
+    }
+    return manifest
+
 def _code(symbol: str) -> str:
     return symbol.split(".")[0]
 
@@ -144,13 +194,20 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
     df = pd.concat(frames, ignore_index=True)
     df["data_version"] = f"daily_bar_{df['trade_date'].max()}_{now_iso()}"
     df = df.sort_values(["trade_date", "symbol"]).reset_index(drop=True)
-    manifest = {
-        "generated_at": now_iso(),
-        "rows": len(df),
-        "symbols": sorted(df["symbol"].unique().tolist()),
-        "latest_trade_date": str(df["trade_date"].max()),
-        "source_count": source_count,
-    }
+    generated_at = now_iso()
+    assets = sorted(df["symbol"].unique().tolist())
+    latest_data_date = str(df["trade_date"].max())
+    manifest = _build_manifest(
+        dataset="daily_bar",
+        generated_at=generated_at,
+        rows=len(df),
+        assets=assets,
+        latest_data_date=latest_data_date,
+        source_count=source_count,
+        asset_key="symbols",
+        latest_key="latest_trade_date",
+        dataset_label="行情日线",
+    )
     write_json_atomic(RAW_DIR / "market" / f"{date.today().isoformat()}_manifest.json", manifest)
     target = write_partitioned_parquet(df, "daily_bar", ["trade_date"])
     return {**manifest, "status": "ok", "dataset": str(target)}
@@ -209,13 +266,17 @@ def sync_fund_data(days: int = 180) -> dict[str, Any]:
         watchlist = get_watchlist(conn)
     funds = [item for item in watchlist if str(item.get("asset_type") or "").upper() == "FUND"]
     if not funds:
-        manifest = {
-            "generated_at": now_iso(),
-            "rows": 0,
-            "funds": [],
-            "latest_nav_date": None,
-            "source_count": {"akshare": 0, "sample": 0},
-        }
+        manifest = _build_manifest(
+            dataset="fund_nav",
+            generated_at=now_iso(),
+            rows=0,
+            assets=[],
+            latest_data_date=None,
+            source_count={"akshare": 0, "sample": 0},
+            asset_key="funds",
+            latest_key="latest_nav_date",
+            dataset_label="基金净值",
+        )
         write_json_atomic(RAW_DIR / "fund" / f"{date.today().isoformat()}_manifest.json", manifest)
         return {**manifest, "status": "skipped", "dataset": "fund_nav"}
 
@@ -236,13 +297,20 @@ def sync_fund_data(days: int = 180) -> dict[str, Any]:
     df = pd.concat(frames, ignore_index=True)
     df["data_version"] = f"fund_nav_{df['nav_date'].max()}_{now_iso()}"
     df = df.sort_values(["nav_date", "symbol"]).reset_index(drop=True)
-    manifest = {
-        "generated_at": now_iso(),
-        "rows": len(df),
-        "funds": sorted(df["symbol"].unique().tolist()),
-        "latest_nav_date": str(df["nav_date"].max()),
-        "source_count": source_count,
-    }
+    generated_at = now_iso()
+    assets = sorted(df["symbol"].unique().tolist())
+    latest_data_date = str(df["nav_date"].max())
+    manifest = _build_manifest(
+        dataset="fund_nav",
+        generated_at=generated_at,
+        rows=len(df),
+        assets=assets,
+        latest_data_date=latest_data_date,
+        source_count=source_count,
+        asset_key="funds",
+        latest_key="latest_nav_date",
+        dataset_label="基金净值",
+    )
     write_json_atomic(RAW_DIR / "fund" / f"{date.today().isoformat()}_manifest.json", manifest)
     target = write_partitioned_parquet(df, "fund_nav", ["nav_date"])
     return {**manifest, "status": "ok", "dataset": str(target)}

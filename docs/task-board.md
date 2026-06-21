@@ -156,7 +156,7 @@
 
 ### DATA-001: 统一数据源 manifest 可信度口径
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 统一 market、fund 和后续真实数据源 manifest 的字段与 source mode 推导规则，避免可信度服务持续堆特殊分支。
@@ -164,6 +164,10 @@
 - Scope: 设计统一 manifest 最小结构：`dataset`、`generated_at`、`latest_data_date`、`rows`、`asset_count`、`source_count`、`source_mode`、`warning`；兼容旧 manifest；提供统一推导函数。
 - Out of Scope: 不重跑历史数据；不迁移旧 manifest；不接入新数据源；不做供应商 UI。
 - Acceptance: market / fund 可以复用同一套 source mode 推导规则；缺字段时不报错；后续真实数据源接入无需重复造判断逻辑。
+- Completed At: 2026-06-21
+- Changed Files: `worker/ingest/market_data.py`, `backend/app/services/data_credibility_service.py`, `docs/data-pipeline.md`, `docs/task-board.md`
+- Verification: `uv run python -m compileall backend/app worker scripts`; `PYTHONPATH=backend uv run python` smoke confirmed market/fund manifest modes; `git diff --check`.
+- Notes: 新 manifest 保留旧字段并新增 `dataset`、`latest_data_date`、`asset_count`、`source_mode`、`warning`；可信度服务优先读取 manifest source mode，缺失时按 `source_count` 推导。
 
 ### OPS-003: systemd 服务模板
 

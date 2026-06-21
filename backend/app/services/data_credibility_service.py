@@ -7,7 +7,6 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.repositories.sqlite_repo import SQLiteRepository
-from app.services.data_source_service import DataSourceService
 
 
 @dataclass(frozen=True)
@@ -25,7 +24,6 @@ class DataCredibilityService:
     def __init__(self, repo: SQLiteRepository | None = None) -> None:
         self.repo = repo or SQLiteRepository()
         self.settings = get_settings()
-        self.data_source = DataSourceService()
 
     def overview(self) -> dict[str, Any]:
         modules = [
@@ -79,56 +77,66 @@ class DataCredibilityService:
         return {"summary": self._summary(modules), "modules": modules}
 
     def _market_module(self) -> dict[str, Any]:
-        source = self.data_source.market_source_summary()
-        mode = self._normalize_mode(source.get("mode"))
-        count = int(source.get("rows") or 0)
-        note = source.get("warning") or self._mode_note(mode, "市场行情")
-        return self._module(
+        manifest = self._latest_raw_manifest("market")
+        return self._manifest_module(
             module="market_data",
             label="市场行情",
-            source_mode=mode,
-            latest_data_date=source.get("latest_trade_date"),
-            record_count=count,
-            coverage_ratio=1.0 if count else 0.0,
-            can_drive_advice=mode == "REAL",
-            risk_level=self._risk_for_mode(mode),
-            note=note,
+            manifest=manifest,
+            latest_fallback_key="latest_trade_date",
+            default_missing_note="尚未发现行情数据来源记录，请先执行每日更新。",
         )
 
     def _daily_bar_module(self) -> dict[str, Any]:
         base = self.settings.data_dir / "parquet" / "daily_bar"
         file_count, latest_date = self._partition_stats(base, "trade_date=")
-        market_mode = self._normalize_mode(self.data_source.market_source_summary().get("mode"))
-        mode = market_mode if file_count else "MISSING"
-        return self._module(
+        manifest = self._latest_raw_manifest("market")
+        module = self._manifest_module(
             module="daily_bar",
             label="行情日线",
-            source_mode=mode,
-            latest_data_date=latest_date,
-            record_count=file_count,
-            coverage_ratio=1.0 if file_count else 0.0,
-            can_drive_advice=mode == "REAL",
-            risk_level=self._risk_for_mode(mode),
-            note=self._mode_note(mode, "行情日线"),
+            manifest=manifest,
+            latest_fallback_key="latest_trade_date",
+            default_missing_note="尚未发现行情日线数据，请先执行每日更新。",
         )
+        if file_count <= 0:
+            module.update({"source_mode": "MISSING", "latest_data_date": None, "record_count": 0, "coverage_ratio": 0.0, "can_drive_advice": False, "risk_level": "HIGH"})
+        else:
+            module["latest_data_date"] = module.get("latest_data_date") or latest_date
+            module["record_count"] = max(int(module.get("record_count") or 0), file_count)
+        return module
 
-    def _fund_nav_module(self) -> dict[str, Any]:
-        base = self.settings.data_dir / "parquet" / "fund_nav"
-        file_count, latest_date = self._partition_stats(base, "nav_date=")
-        manifest = self._latest_raw_manifest("fund")
-        source_count = dict((manifest or {}).get("source_count") or {})
-        manifest_rows = int((manifest or {}).get("rows") or 0)
-        record_count = manifest_rows if manifest else file_count
-        mode = self._mode_from_source_count(source_count)
-        if record_count <= 0 and file_count <= 0:
-            mode = "MISSING"
-        if mode == "MISSING" and file_count > 0 and not manifest:
-            mode = "MISSING"
-        latest = (manifest or {}).get("latest_nav_date") or (manifest or {}).get("latest_data_date") or latest_date
-        note = (manifest or {}).get("warning") or self._mode_note(mode, "基金净值")
+
+    def _manifest_module(
+        self,
+        *,
+        module: str,
+        label: str,
+        manifest: dict[str, Any] | None,
+        latest_fallback_key: str,
+        default_missing_note: str,
+    ) -> dict[str, Any]:
+        if not manifest:
+            return self._module(
+                module=module,
+                label=label,
+                source_mode="MISSING",
+                latest_data_date=None,
+                record_count=0,
+                coverage_ratio=0.0,
+                can_drive_advice=False,
+                risk_level="HIGH",
+                note=default_missing_note,
+                source_breakdown={"MISSING": 0},
+            )
+        source_count = dict(manifest.get("source_count") or {})
+        mode = self._normalize_mode(manifest.get("source_mode"))
+        if mode == "MISSING":
+            mode = self._mode_from_source_count(source_count)
+        record_count = int(manifest.get("rows") or 0)
+        latest = manifest.get("latest_data_date") or manifest.get(latest_fallback_key)
+        note = manifest.get("warning") or self._mode_note(mode, label)
         return self._module(
-            module="fund_nav",
-            label="基金净值",
+            module=module,
+            label=label,
             source_mode=mode,
             latest_data_date=latest,
             record_count=record_count,
@@ -138,6 +146,20 @@ class DataCredibilityService:
             note=note,
             source_breakdown={self._normalize_mode(key): int(value or 0) for key, value in source_count.items()} if source_count else {mode: record_count},
         )
+
+    def _fund_nav_module(self) -> dict[str, Any]:
+        base = self.settings.data_dir / "parquet" / "fund_nav"
+        file_count, latest_date = self._partition_stats(base, "nav_date=")
+        module = self._manifest_module(
+            module="fund_nav",
+            label="基金净值",
+            manifest=self._latest_raw_manifest("fund"),
+            latest_fallback_key="latest_nav_date",
+            default_missing_note="尚未发现场外基金净值数据。",
+        )
+        if file_count > 0 and not module.get("latest_data_date"):
+            module["latest_data_date"] = latest_date
+        return module
 
     def _portfolio_snapshot_module(self) -> dict[str, Any]:
         row = self._table_stats("portfolio_snapshot", "snapshot_date")
