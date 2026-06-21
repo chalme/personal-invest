@@ -19,9 +19,9 @@ export VITE_API_BASE="${VITE_API_BASE:-}"
 
 uv sync
 pnpm -C frontend install
-uv run python scripts/init_db.py
+run_python scripts/init_db.py
 pnpm -C frontend build
-uv run python scripts/write_runtime_config.py --output "$FRONTEND_DIST_DIR/config.js"
+run_python scripts/write_runtime_config.py --output "$FRONTEND_DIST_DIR/config.js"
 
 mkdir -p .run logs
 
@@ -31,7 +31,7 @@ echo "press Ctrl+C to stop"
 
 ./scripts/backend_prod.sh > logs/backend-prod.log 2>&1 &
 BACKEND_PID=$!
-uv run python scripts/static_frontend.py --host "$FRONTEND_HOST" --port "$FRONTEND_PORT" --directory "$FRONTEND_DIST_DIR" > logs/frontend-prod.log 2>&1 &
+run_python scripts/static_frontend.py --host "$FRONTEND_HOST" --port "$FRONTEND_PORT" --directory "$FRONTEND_DIST_DIR" > logs/frontend-prod.log 2>&1 &
 FRONTEND_PID=$!
 
 cleanup() {

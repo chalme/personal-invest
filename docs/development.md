@@ -133,7 +133,8 @@ make prod-server
 
 ```text
 pnpm -C frontend build
-FastAPI 非 reload 模式启动
+部署阶段执行 `uv sync`
+FastAPI 使用 `.venv/bin/python` 非 reload 模式启动
 静态服务托管 frontend/dist
 ```
 
@@ -151,7 +152,7 @@ logs/backend-prod.log
 logs/frontend-prod.log
 ```
 
-边界：当前生产模式仍是进程前台运行，下一阶段可接 systemd / supervisor 保活。
+边界：`make prod-server` 仍是前台组合进程；长期运行请使用 systemd 模板。生产运行时不要求 `uv` 出现在 systemd PATH，但要求 `.venv/bin/python` 已存在。
 
 ## 日志
 
@@ -273,6 +274,13 @@ sudo systemctl enable --now personal-invest-backend.service
 sudo systemctl enable --now personal-invest-frontend.service
 ```
 
+部署或更新模板后，如果曾经启动失败，先执行：
+
+```bash
+sudo systemctl reset-failed personal-invest-backend.service
+sudo systemctl reset-failed personal-invest-frontend.service
+```
+
 常用命令：
 
 ```bash
@@ -288,8 +296,10 @@ sudo systemctl restart personal-invest-frontend.service
 
 - 工作目录：`/root/remote/personal-invest`
 - 环境文件：`.env.server`
-- 后端启动：`make backend-prod`
-- 前端启动：`make frontend-prod`
+- 后端启动：`/root/remote/personal-invest/scripts/backend_prod.sh`
+- 前端启动：`/root/remote/personal-invest/scripts/frontend_prod.sh`
+- 前端 systemd 模板：`FRONTEND_BUILD_ON_START=0`，只服务已构建的 `frontend/dist`，避免运行时依赖 `pnpm`
+- Python 运行时：`/root/remote/personal-invest/.venv/bin/python`
 - 异常退出自动重启：`Restart=on-failure`
 
 注意：模板只提供长期运行基础，不负责 Cloudflare Access、防火墙、Secret 管理或人工浏览器验收。

@@ -224,6 +224,13 @@ BACKUP_ROOT=/path/to/backups ./scripts/backup.sh
 
 模板可以复制到 `/etc/systemd/system/` 后启用，但 Code Agent 不直接在生产机执行 `systemctl enable --now`。
 
+systemd 模板默认直接调用生产脚本：
+
+- 后端：`scripts/backend_prod.sh`，运行时使用 `.venv/bin/python`，不依赖 `uv` 在 systemd PATH 中。
+- 前端：`scripts/frontend_prod.sh`，systemd 模板设置 `FRONTEND_BUILD_ON_START=0`，运行时只服务已构建的 `frontend/dist`；手动执行脚本时仍可构建。
+
+启用前先在项目根目录执行 `uv sync`，确保 `.venv/bin/python` 存在。更新模板后执行 `sudo systemctl daemon-reload`，如服务已经失败过可执行 `sudo systemctl reset-failed personal-invest-backend.service`。
+
 
 ## 生产健康检查脚本
 

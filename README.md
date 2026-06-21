@@ -156,7 +156,7 @@ make prod-server
 1. uv sync
 2. pnpm -C frontend install
 3. pnpm -C frontend build
-4. FastAPI 非 reload 模式启动在 BACKEND_PORT
+4. 使用 `.venv/bin/python` 启动 FastAPI 非 reload 服务
 5. React dist 静态文件服务启动在 FRONTEND_PORT
 ```
 
@@ -184,7 +184,7 @@ logs/frontend-prod.log
 ## 运行策略
 
 - Python 依赖由根目录 `pyproject.toml` 管理。
-- 后端通过 `uv run` 启动，不再使用 `pip install -r requirements.txt`。
+- 后端生产运行通过 `.venv/bin/python` 启动；`uv` 只用于部署阶段的 `uv sync`。
 - 前端通过 `pnpm -C frontend` 管理，不再使用 `npm install`。
 - 默认通过 Corepack 使用 `pnpm@latest`，避免长期停留在旧版本。
 - 日常开发优先使用 `make dev`。

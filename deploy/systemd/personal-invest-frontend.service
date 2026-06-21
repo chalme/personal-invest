@@ -2,13 +2,18 @@
 Description=Personal Invest Frontend Static Server
 After=network-online.target personal-invest-backend.service
 Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Type=simple
 WorkingDirectory=/root/remote/personal-invest
 Environment=ENV_FILE=.env.server
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/usr/bin/make frontend-prod
+Environment=FRONTEND_BUILD_ON_START=0
+Environment=PYTHON_RUNTIME_BIN=/root/remote/personal-invest/.venv/bin/python
+Environment=PATH=/root/.local/bin:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/bin
+ExecStart=/root/remote/personal-invest/scripts/frontend_prod.sh
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=30

@@ -41,10 +41,10 @@ frontend-prod:
 	./scripts/frontend_prod.sh
 
 init:
-	uv run python scripts/init_db.py
+	./.venv/bin/python scripts/init_db.py
 
 daily:
-	uv run python worker/daily_job.py
+	./.venv/bin/python worker/daily_job.py
 
 check:
 	./scripts/check.sh
