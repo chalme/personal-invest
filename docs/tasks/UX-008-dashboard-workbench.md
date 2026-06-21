@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 
@@ -53,17 +53,18 @@
 
 ## Completed At
 
--
+- 2026-06-21
 
 ## Changed Files
 
--
+- `frontend/src/pages/Dashboard.tsx`, `frontend/src/App.tsx`, `frontend/src/components/ui.tsx`, `frontend/src/styles/global.css`, `docs/task-board.md`, `docs/tasks/UX-008-dashboard-workbench.md`
 
 ## Verification
 
--
+- `pnpm -C frontend build`; `git diff --check`.
 
 ## Notes
 
+- Dashboard 首屏新增数据状态、今日结论、需要关注、明日关注和下钻入口；无重要事项时保留低打扰空态。
 - 本任务依赖 `DATA-004` 的数据新鲜度能力效果更好。
 - 可在 `UX-006` 和 `UX-007` 后执行，减少返工。

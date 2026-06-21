@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 
@@ -53,17 +53,18 @@
 
 ## Completed At
 
--
+- 2026-06-21
 
 ## Changed Files
 
--
+- `frontend/src/components/ui.tsx`, `frontend/src/styles/global.css`, `frontend/src/pages/StocksPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/ReportsPage.tsx`, `frontend/src/pages/SettingsPage.tsx`, `docs/task-board.md`, `docs/tasks/UX-007-design-system-components.md`
 
 ## Verification
 
--
+- `pnpm -C frontend build`; `git diff --check`.
 
 ## Notes
 
+- 新增统一 `Tone`、`DataModeBadge`、`FreshnessBadge`，补齐设计 token、结论卡、按钮、告警、设置表单和表格 hover 语言；不引入新前端框架。
 - 本任务应在 `UX-006` 前后配合执行，避免导航和组件样式互相返工。
 - 本项目不是 landing page，组件应服务长期使用和快速扫描。

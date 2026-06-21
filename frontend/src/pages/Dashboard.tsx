@@ -4,7 +4,7 @@ import { apiGet, apiPost } from '../api/client';
 import type { CreateJobResponse, DashboardResponse, DataCredibilityOverview, JobExecution, MarketTrend, RiskEvent, Signal } from '../api/types';
 import { MarketScoreLine } from '../components/charts/MarketScoreLine';
 import { SectorBar } from '../components/charts/SectorBar';
-import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '../components/ui';
+import { Badge, Card, DataModeBadge, EmptyState, ErrorState, FreshnessBadge, LoadingState, MetricCard } from '../components/ui';
 
 function formatMoney(value: number) {
   if (!Number.isFinite(value)) return '-';
@@ -99,7 +99,7 @@ function formatSignedMoney(value: number | undefined | null) {
   return `${prefix}${formatMoney(value)}`;
 }
 
-export function Dashboard() {
+export function Dashboard(props: { onNavigate?: (key: string) => void }) {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [marketHistory, setMarketHistory] = useState<MarketTrend[]>([]);
   const [credibility, setCredibility] = useState<DataCredibilityOverview | null>(null);
@@ -206,6 +206,20 @@ export function Dashboard() {
         source: item.source ?? item.type,
       }));
   const portfolioChange = review?.portfolio_snapshot?.change;
+  const attentionItems = [
+    source?.warning ? `数据提示：${source.warning}` : null,
+    credibilitySummary?.warning ? `可信度提示：${credibilitySummary.warning}` : null,
+    latestJobStatus === 'FAILED' ? '最近每日任务失败，需要先查看运行状态。' : null,
+    ...topRisks.map((risk) => risk.message),
+    ...reviewDisplayItems.map((item) => item.title),
+  ].filter((item): item is string => Boolean(item));
+  const tomorrowItems = [
+    topRisks[0] ? `复核风险：${topRisks[0].message}` : null,
+    topSignals[0] ? `观察信号：${topSignals[0].name ?? topSignals[0].symbol} · ${topSignals[0].signal_type}` : null,
+    topSector ? `行业线索：继续看 ${topSector.sector_name} 是否延续 ${topSector.state}` : null,
+    bestPosition ? `持仓线索：复核 ${bestPosition.name ?? bestPosition.symbol} 的盈亏贡献和仓位边界` : null,
+    !credibilitySummary?.can_drive_advice_count ? '先补齐可驱动建议的数据模块，再提高结论置信度。' : null,
+  ].filter((item): item is string => Boolean(item));
 
   return (
     <div className="page-stack dashboard-page">
@@ -262,6 +276,49 @@ export function Dashboard() {
           </div>
         </section>
       )}
+
+      <section className="workbench-grid" aria-label="今日工作台关键区块">
+        <Card className="workbench-card conclusion-card" title="数据状态" description="先确认数据能否支撑今天的判断。">
+          <div className="workbench-list">
+            <div><span>可信度</span><strong>{credibilitySummary ? <DataModeBadge mode={credibilitySummary.overall_mode} /> : dataSourceLabel(source?.mode)}</strong></div>
+            <div><span>新鲜度</span><strong>{credibilitySummary ? <FreshnessBadge status={credibilitySummary.freshness_status} /> : freshnessLabel(source?.freshness_status)}</strong></div>
+            <div><span>最新 / 预期</span><strong>{credibilitySummary?.latest_data_date ?? source?.latest_trade_date ?? '暂无'} / {credibilitySummary?.expected_latest_trade_date ?? source?.expected_latest_trade_date ?? '暂无'}</strong></div>
+            <div><span>建议边界</span><strong>{(credibilitySummary?.can_drive_advice_count ?? 0) > 0 ? `可驱动 ${credibilitySummary?.can_drive_advice_count} 个模块` : '只能低置信观察'}</strong></div>
+          </div>
+        </Card>
+
+        <Card className="workbench-card conclusion-card" title="今日结论" description="市场状态、组合风险和重要事项合并判断。">
+          <div className="workbench-list">
+            <div><span>市场</span><strong>{data.market?.trend_state ?? '暂无'} · {data.market?.market_score ?? '-'}</strong></div>
+            <div><span>组合</span><strong>{data.summary.risk_count > 0 ? `存在 ${data.summary.risk_count} 条风险` : '暂无新的高优先级风险'}</strong></div>
+            <div><span>事项</span><strong>{review?.summary.message ?? '暂无需要立即处理事项'}</strong></div>
+          </div>
+        </Card>
+
+        <Card className="workbench-card conclusion-card" title="需要关注" description="只列真实需要处理的风险、异常和任务。">
+          <div className="workbench-list">
+            {attentionItems.slice(0, 5).map((item) => <div key={item}><span>待看</span><strong>{item}</strong></div>)}
+            {attentionItems.length === 0 && <EmptyState title="暂无需要立即处理事项" description="系统没有发现高优先级风险、建议变化或数据异常。" />}
+          </div>
+        </Card>
+
+        <Card className="workbench-card conclusion-card" title="明日关注" description="把下一次打开系统时先看的内容前置。">
+          <div className="workbench-list">
+            {tomorrowItems.slice(0, 5).map((item) => <div key={item}><span>先看</span><strong>{item}</strong></div>)}
+            {tomorrowItems.length === 0 && <EmptyState title="暂无明日重点" description="执行每日更新后会根据风险、信号和行业变化生成关注项。" />}
+          </div>
+        </Card>
+
+        <Card className="workbench-card conclusion-card" title="下钻入口" description="按投资工作流继续处理，不从功能清单里找。">
+          <div className="workflow-shortcuts">
+            <button className="ghost-button" type="button" onClick={() => props.onNavigate?.('watchlist')}>去观察</button>
+            <button className="ghost-button" type="button" onClick={() => props.onNavigate?.('portfolio')}>看持仓</button>
+            <button className="ghost-button" type="button" onClick={() => props.onNavigate?.('review')}>做复盘</button>
+            <button className="ghost-button" type="button" onClick={() => props.onNavigate?.('reports')}>读报告</button>
+            <button className="ghost-button" type="button" onClick={() => props.onNavigate?.('settings')}>查设置</button>
+          </div>
+        </Card>
+      </section>
 
       <Card
         title="今日重要事项"

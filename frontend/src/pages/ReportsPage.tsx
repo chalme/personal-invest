@@ -105,7 +105,7 @@ export function ReportsPage() {
 
       {error && <Card><div className="error-box">{error}</div></Card>}
 
-      <Card title="今日投资简报" description="先看结论、复核事项和明日观察，再进入 Markdown 原文归档。">
+      <Card className="conclusion-card" title="今日投资简报" description="先看结论、复核事项和明日观察，再进入 Markdown 原文归档。">
         {latest ? (
           <>
             <div className="analysis-summary">

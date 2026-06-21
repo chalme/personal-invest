@@ -197,6 +197,7 @@ export function SettingsPage() {
 
       {credibility && (
         <Card
+          className="conclusion-card"
           title="数据可信度总览"
           description="统一查看各模块使用真实、估算、样本还是缺失数据。"
         >

@@ -118,7 +118,7 @@ export function StocksPage() {
 
       {selected ? (
         <>
-          <Card title="研究结论" description="先给判断，再给证据、风险和下一步观察；不改变现有股票分析规则。">
+          <Card className="conclusion-card" title="研究结论" description="先给判断，再给证据、风险和下一步观察；不改变现有股票分析规则。">
             <div className="analysis-summary">
               <div><span>当前判断</span><strong>{textValue(selected.conclusion)}</strong></div>
               <div><span>建议状态</span><strong>{textValue(selected.state)}</strong></div>

@@ -377,7 +377,7 @@
 
 ### UX-006: 全局信息架构与导航重组
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 将左侧导航从功能列表收敛成投资工作流入口，让用户按“今日、观察、持仓、复盘、报告、设置”理解系统。
@@ -386,10 +386,14 @@
 - Scope: 重组主导航、二级入口和页面命名；市场、行业、信号、策略、AI、回测作为二级入口或嵌入模块，不全部平铺在主导航。
 - Out of Scope: 不新增业务模型；不改后端 API；不做移动端导航专项；不引入新路由框架。
 - Acceptance: 主导航能表达核心投资流程；高级功能不挤占主入口；用户 30 秒内能找到今日概览、观察资产、持仓风险、复盘记录和报告。
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/App.tsx`, `frontend/src/styles/global.css`, `docs/task-board.md`, `docs/tasks/UX-006-global-ia-navigation.md`
+- Verification: `pnpm -C frontend build`; `git diff --check`.
+- Notes: 主导航改为工作流分组，高级功能作为二级入口保留。
 
 ### UX-007: 设计系统与组件语言收敛
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 统一卡片、表格、Badge、按钮、空态、错误态、加载态和数据可信度标签，建立稳定的金融工作台组件语言。
@@ -398,10 +402,14 @@
 - Scope: 建立视觉优先级：结论、风险、动作、证据、明细；统一 `REAL` / `ESTIMATED` / `SAMPLE` / `MISSING` / `MIXED` 的显示方式；保持桌面端专业密度。
 - Out of Scope: 不引入新前端框架；不切换现有图标库；不做品牌营销视觉；不重写所有页面业务逻辑。
 - Acceptance: 关键页面的卡片、表格、状态、按钮和可信度标签表达一致；低可信数据不会被包装成高置信结论。
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/components/ui.tsx`, `frontend/src/styles/global.css`, `frontend/src/pages/StocksPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/ReportsPage.tsx`, `frontend/src/pages/SettingsPage.tsx`, `docs/task-board.md`, `docs/tasks/UX-007-design-system-components.md`
+- Verification: `pnpm -C frontend build`; `git diff --check`.
+- Notes: 新增统一可信度/新鲜度 Badge 和结论卡层级。
 
 ### UX-008: Dashboard 今日工作台升级
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 将 Dashboard 从模块总览升级为今日工作台，集中回答数据是否新鲜、市场如何、组合是否有风险、哪些事项需要看、明天关注什么。
@@ -410,10 +418,14 @@
 - Scope: 重排 Dashboard 首屏；减少堆叠卡片；突出数据状态、市场状态、组合风险、重要事项和明日关注；没有重要事项时显示清晰空态。
 - Out of Scope: 不新增数据表；不让 AI 自由生成建议；不做复杂新闻宏观模块；不做移动端专项。
 - Acceptance: 用户打开 Dashboard 后 30 秒内能判断今天是否需要介入；无重要事项时不制造焦虑；数据日期和可信度始终可见。
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/pages/Dashboard.tsx`, `frontend/src/App.tsx`, `frontend/src/components/ui.tsx`, `frontend/src/styles/global.css`, `docs/task-board.md`, `docs/tasks/UX-008-dashboard-workbench.md`
+- Verification: `pnpm -C frontend build`; `git diff --check`.
+- Notes: 首屏新增工作台五区块，并支持从 Dashboard 跳转观察、持仓、复盘、报告、设置。
 
 ### UX-009: 核心页面逐页体验打磨
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Owner: `Codex`
 - Goal: 基于 UI 审计、导航重组和组件语言，对股票页、持仓页、观察池、复盘页、日报页和设置页逐页打磨。
@@ -422,6 +434,10 @@
 - Scope: 股票页研究结论优先；持仓页组合风险优先；观察池研究状态优先；复盘页重要事项和决策记录优先；日报页投资简报优先；设置页强调数据源和运行状态。
 - Out of Scope: 不做全站重写；不新增复杂业务能力；不做移动端专项；不把页面改成营销站。
 - Acceptance: 核心页面符合审计报告和设计系统；页面重点清楚、状态完整、表格不过度压迫，且保留金融工作台的信息密度。
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/pages/StocksPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/ReportsPage.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/styles/global.css`, `docs/task-board.md`, `docs/tasks/UX-009-core-page-polish.md`
+- Verification: `pnpm -C frontend build`; `git diff --check`.
+- Notes: 核心页结论卡统一层级，保留原有业务逻辑和表格明细。
 
 ## Completed / Historical Tasks
 

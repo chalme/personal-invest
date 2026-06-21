@@ -178,7 +178,7 @@ export function PortfolioPage() {
         <Badge tone="neutral">股票分析：{summary?.analysis_date ?? '-'} / 基金分析：{summary?.fund_analysis_date ?? '-'} / 建议：{summary?.advice_date ?? '-'}</Badge>
       </div>
 
-      <Card title="组合决策结论" description="先判断是否需要介入，再看持仓明细；这里不替代复盘页。">
+      <Card className="conclusion-card" title="组合决策结论" description="先判断是否需要介入，再看持仓明细；这里不替代复盘页。">
         <div className="analysis-summary">
           <div><span>当前最大风险</span><strong>{portfolioConclusion(summary, positions)}</strong></div>
           <div><span>优先复核</span><strong>{priorityPositions.length > 0 ? `${priorityPositions.length} 个持仓` : '暂无高优先级复核持仓'}</strong></div>

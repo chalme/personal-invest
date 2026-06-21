@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+export type Tone = 'good' | 'warn' | 'bad' | 'neutral';
+
 export function Card(props: { title?: string; description?: string; children: ReactNode; className?: string }) {
   return (
     <section className={`card ${props.className ?? ''}`}>
@@ -14,7 +16,7 @@ export function Card(props: { title?: string; description?: string; children: Re
   );
 }
 
-export function MetricCard(props: { label: string; value: string | number; hint?: string; tone?: 'good' | 'warn' | 'bad' | 'neutral' }) {
+export function MetricCard(props: { label: string; value: string | number; hint?: string; tone?: Tone }) {
   return (
     <div className={`metric metric-${props.tone ?? 'neutral'}`}>
       <span className="metric-label">{props.label}</span>
@@ -24,8 +26,45 @@ export function MetricCard(props: { label: string; value: string | number; hint?
   );
 }
 
-export function Badge(props: { children: ReactNode; tone?: 'good' | 'warn' | 'bad' | 'neutral' }) {
-  return <span className={`badge badge-${props.tone ?? 'neutral'}`}>{props.children}</span>;
+export function Badge(props: { children: ReactNode; tone?: Tone; title?: string }) {
+  return <span className={`badge badge-${props.tone ?? 'neutral'}`} title={props.title}>{props.children}</span>;
+}
+
+export function DataModeBadge(props: { mode?: string | null; compact?: boolean }) {
+  const mode = String(props.mode ?? '').toUpperCase();
+  const labels: Record<string, string> = {
+    REAL: '真实数据',
+    ESTIMATED: '估算数据',
+    SAMPLE: '样本数据',
+    MISSING: '数据缺失',
+    MIXED: '混合数据',
+  };
+  const tone: Tone = mode === 'REAL'
+    ? 'good'
+    : mode === 'MISSING'
+      ? 'bad'
+      : mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'MIXED'
+        ? 'warn'
+        : 'neutral';
+  return <Badge tone={tone}>{props.compact ? (labels[mode] ?? '未知') : (labels[mode] ?? '数据未知')}</Badge>;
+}
+
+export function FreshnessBadge(props: { status?: string | null }) {
+  const status = String(props.status ?? '').toUpperCase();
+  const labels: Record<string, string> = {
+    FRESH: '数据新鲜',
+    STALE: '数据过期',
+    MISSING: '新鲜度缺失',
+    NOT_APPLICABLE: '非日频数据',
+  };
+  const tone: Tone = status === 'FRESH'
+    ? 'good'
+    : status === 'STALE'
+      ? 'warn'
+      : status === 'MISSING'
+        ? 'bad'
+        : 'neutral';
+  return <Badge tone={tone}>{labels[status] ?? '新鲜度未知'}</Badge>;
 }
 
 export function EmptyState(props: { title: string; description: string }) {
@@ -59,8 +98,7 @@ export function ErrorState(props: { title?: string; description: string; onRetry
     <div className="error-state">
       <strong>{props.title ?? '加载失败'}</strong>
       <p>{props.description}</p>
-      {props.onRetry && <button className="ghost-button" onClick={props.onRetry}>重试</button>}
+      {props.onRetry && <button className="ghost-button" onClick={props.onRetry} type="button">重试</button>}
     </div>
   );
 }
-

@@ -149,7 +149,7 @@ export function WatchlistPage() {
         <Badge tone="neutral">{rows.length} 个关注</Badge>
       </div>
 
-      <Card title="观察池研究状态" description="先看研究状态分层，再决定是否继续跟踪、补数据或清理。">
+      <Card className="conclusion-card" title="观察池研究状态" description="先看研究状态分层，再决定是否继续跟踪、补数据或清理。">
         <div className="analysis-summary">
           <div><span>正在研究</span><strong>{highPriorityRows.length} 个重点标的</strong></div>
           <div><span>数据待补齐</span><strong>{dataMissingRows.length} 个标的</strong></div>

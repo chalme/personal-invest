@@ -55,7 +55,7 @@ export function App() {
       case 'reports': return <ReportsPage />;
       case 'ai': return <AiAnalysisPage />;
       case 'settings': return <SettingsPage />;
-      default: return <Dashboard />;
+      default: return <Dashboard onNavigate={setActive} />;
     }
   })();
   return (

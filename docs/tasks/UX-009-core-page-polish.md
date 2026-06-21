@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Owner: `Codex`
 
@@ -37,17 +37,18 @@
 
 ## Completed At
 
--
+- 2026-06-21
 
 ## Changed Files
 
--
+- `frontend/src/pages/StocksPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/ReportsPage.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/styles/global.css`, `docs/task-board.md`, `docs/tasks/UX-009-core-page-polish.md`
 
 ## Verification
 
--
+- `pnpm -C frontend build`; `git diff --check`.
 
 ## Notes
 
+- 股票、持仓、观察池、日报、设置页的首屏结论/数据状态卡统一使用 `conclusion-card` 层级；本次为轻量逐页打磨，不做全站重写。
 - 本任务应在 `UX-AUDIT-001`、`UX-006`、`UX-007` 和 `UX-008` 后执行。
 - 如果范围过大，可以在执行时再拆成股票页、持仓页、观察池、复盘页、日报页和设置页子任务。

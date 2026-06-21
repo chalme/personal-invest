@@ -454,3 +454,101 @@ html[data-density='compact'] .sidebar { padding: 16px 12px; }
 html[data-density='compact'] .sidebar button { padding: 8px 10px; }
 html[data-density='compact'] .analysis-summary { gap: 10px; }
 html[data-density='compact'] .analysis-summary div { padding: 10px; }
+
+/* UX-006/007/008: workflow navigation and shared workbench language */
+:root {
+  --text-primary: #f8fafc;
+  --text: #e5e7eb;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --muted: #94a3b8;
+  --surface-soft: rgba(15, 23, 42, 0.44);
+  --surface-strong: rgba(15, 23, 42, 0.82);
+  --border-soft: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.26);
+}
+
+.workflow-nav { display: grid; gap: 14px; }
+.nav-section { display: grid; gap: 7px; padding: 8px; border-radius: 18px; border: 1px solid transparent; }
+.nav-section.section-active { background: rgba(15, 23, 42, 0.52); border-color: rgba(96, 165, 250, 0.16); }
+.nav-section-title { display: grid; gap: 2px; padding: 0 4px 2px; }
+.nav-section-title span { color: #e2e8f0; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; }
+.nav-section-title small { color: #64748b; font-size: 11px; line-height: 1.35; }
+.sidebar button.nav-primary { align-items: flex-start; padding: 11px 12px; }
+.sidebar button.nav-primary span,
+.sidebar button.nav-secondary span { display: grid; gap: 2px; }
+.sidebar button.nav-primary strong,
+.sidebar button.nav-secondary strong { font-weight: 600; font-size: 13px; }
+.sidebar button.nav-primary small { color: #64748b; font-size: 11px; line-height: 1.35; }
+.nav-secondary-list { display: grid; gap: 4px; margin-left: 12px; padding-left: 10px; border-left: 1px solid rgba(148, 163, 184, 0.12); }
+.sidebar button.nav-secondary { padding: 8px 10px; border-radius: 10px; font-size: 13px; }
+.sidebar button.nav-primary.active small { color: #bfdbfe; }
+.topbar-section { display: inline-flex; margin-bottom: 6px; color: #93c5fd; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; }
+
+.conclusion-card { border-color: rgba(96, 165, 250, 0.24); background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.66)); }
+.conclusion-card .card-header h2 { font-size: 18px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.action-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.secondary { border: 1px solid rgba(148, 163, 184, 0.22); background: rgba(15, 23, 42, 0.62); color: #e2e8f0; border-radius: 12px; padding: 9px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.secondary:hover { border-color: rgba(96, 165, 250, 0.52); color: #f8fafc; }
+.alert { border: 1px solid var(--border-strong); border-radius: 16px; padding: 12px 14px; line-height: 1.6; color: var(--text-secondary); background: rgba(15, 23, 42, 0.54); }
+.alert-warning { border-color: rgba(245, 158, 11, 0.32); background: rgba(120, 53, 15, 0.18); color: #fde68a; }
+.alert-danger { border-color: rgba(248, 113, 113, 0.34); background: rgba(127, 29, 29, 0.2); color: #fecaca; }
+.alert-success { border-color: rgba(34, 197, 94, 0.32); background: rgba(20, 83, 45, 0.18); color: #bbf7d0; }
+.settings-summary { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.form-field { display: grid; gap: 8px; color: #cbd5e1; font-size: 13px; margin-bottom: 14px; }
+.form-field > span { color: #94a3b8; }
+.form-field input,
+.form-field select,
+.form-field textarea,
+.toggle-row input[type='checkbox'] { accent-color: #60a5fa; }
+.input-with-suffix { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.input-with-suffix em { color: #94a3b8; font-style: normal; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(148, 163, 184, 0.1); color: #e2e8f0; }
+.toggle-row span { display: grid; gap: 4px; }
+.toggle-row small { color: #94a3b8; line-height: 1.45; }
+.workbench-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+.workbench-card { padding: 16px; }
+.workbench-card .card-header { margin-bottom: 12px; }
+.workbench-list { display: grid; gap: 10px; }
+.workbench-list > div { display: grid; gap: 4px; padding: 10px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.1); }
+.workbench-list > div:last-child { border-bottom: 0; }
+.workbench-list span { color: #94a3b8; font-size: 12px; }
+.workbench-list strong { color: #f8fafc; line-height: 1.55; font-size: 13px; font-weight: 600; }
+.workflow-shortcuts { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.workflow-shortcuts button { justify-content: center; }
+.data-table tbody tr:hover { background: rgba(15, 23, 42, 0.32); }
+.card .data-table { margin-top: 4px; }
+
+html[data-theme='light'] {
+  --text-primary: #0f172a;
+  --text: #1e293b;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --muted: #64748b;
+  --surface-soft: rgba(248, 250, 252, 0.78);
+  --surface-strong: rgba(255, 255, 255, 0.88);
+  --border-soft: rgba(15, 23, 42, 0.12);
+  --border-strong: rgba(15, 23, 42, 0.18);
+}
+html[data-theme='light'] .nav-section.section-active,
+html[data-theme='light'] .conclusion-card,
+html[data-theme='light'] .workbench-list > div,
+html[data-theme='light'] .alert,
+html[data-theme='light'] .secondary {
+  background: rgba(248, 250, 252, 0.82);
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+html[data-theme='light'] .nav-section-title span,
+html[data-theme='light'] .workbench-list strong,
+html[data-theme='light'] .toggle-row,
+html[data-theme='light'] .form-field { color: #0f172a; }
+html[data-theme='light'] .nav-section-title small,
+html[data-theme='light'] .sidebar button.nav-primary small,
+html[data-theme='light'] .workbench-list span,
+html[data-theme='light'] .toggle-row small,
+html[data-theme='light'] .form-field > span { color: #64748b; }
+
+@media (max-width: 1500px) { .workbench-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1180px) { .workbench-grid, .grid-2 { grid-template-columns: 1fr; } }

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 
@@ -57,17 +57,18 @@
 
 ## Completed At
 
--
+- 2026-06-21
 
 ## Changed Files
 
--
+- `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/App.tsx`, `frontend/src/styles/global.css`, `docs/task-board.md`, `docs/tasks/UX-006-global-ia-navigation.md`
 
 ## Verification
 
--
+- `pnpm -C frontend build`; `git diff --check`.
 
 ## Notes
 
+- 主导航改为“今日 / 观察 / 持仓 / 复盘 / 报告 / 设置”工作流入口；市场、行业、策略信号、策略配置、回测、AI 作为二级入口保留。
 - 本任务应在 `UX-AUDIT-001` 后执行。
 - 不要求一次性改完所有页面内容，重点是入口和信息架构先稳定。
