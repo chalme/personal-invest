@@ -9,6 +9,7 @@ const nav = [
   { key: 'funds', label: '基金分析', icon: PieChart },
   { key: 'watchlist', label: '观察池', icon: Star },
   { key: 'portfolio', label: '持仓', icon: Briefcase },
+  { key: 'review', label: '复盘', icon: Newspaper },
   { key: 'strategies', label: '策略配置', icon: SlidersHorizontal },
   { key: 'backtests', label: '回测', icon: Activity },
   { key: 'signals', label: '策略信号', icon: LineChart },

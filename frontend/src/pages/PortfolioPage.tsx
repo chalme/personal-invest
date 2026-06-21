@@ -125,6 +125,7 @@ export function PortfolioPage() {
   const positions = overview?.positions ?? [];
   const watchingAdvice = overview?.watching_advice ?? [];
   const portfolio_risks = overview?.portfolio_risks ?? [];
+  const latestSnapshot = overview?.latest_snapshot;
   const pnlTone = (summary?.total_pnl ?? 0) >= 0 ? 'good' : 'bad';
   const concentrationTone = (summary?.concentration_hhi ?? 0) >= 0.25 ? 'bad' : (summary?.concentration_hhi ?? 0) >= 0.15 ? 'warn' : 'good';
 
@@ -144,6 +145,14 @@ export function PortfolioPage() {
         <MetricCard label="集中度 HHI" value={(summary?.concentration_hhi ?? 0).toFixed(4)} hint="越高越集中" tone={concentrationTone} />
         <MetricCard label="风险事件" value={(summary?.portfolio_risk_count ?? 0) + (summary?.symbol_risk_count ?? 0)} hint={`组合 ${summary?.portfolio_risk_count ?? 0} / 标的 ${summary?.symbol_risk_count ?? 0}`} tone={((summary?.portfolio_risk_count ?? 0) + (summary?.symbol_risk_count ?? 0)) > 0 ? 'warn' : 'good'} />
       </div>
+
+      <Card title="复盘入口" description="持仓页只展示组合快照摘要；建议变化和周/月窗口统一在复盘页查看。">
+        <div className="portfolio-brief">
+          <div><span>最新快照</span><strong>{String(latestSnapshot?.snapshot_date ?? summary?.snapshot_date ?? '暂无')}</strong><small>执行今日更新后自动沉淀</small></div>
+          <div><span>快照盈亏</span><strong>{money(Number(latestSnapshot?.total_pnl ?? summary?.total_pnl ?? 0))}</strong><small>收益率 {pct(Number(latestSnapshot?.total_pnl_ratio ?? summary?.total_pnl_ratio ?? 0))}</small></div>
+          <div><span>建议变化</span><strong>{watchingAdvice.length} 条观察建议</strong><small>更多变化请打开左侧“复盘”</small></div>
+        </div>
+      </Card>
 
       <Card title="新增 / 更新持仓" description="相同标的代码会覆盖当前持仓快照。基金使用份额、成本净值和当前净值口径。">
         <form className="form-grid" onSubmit={submit}>

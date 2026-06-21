@@ -33,17 +33,17 @@
 
 ### P1-010: 低摩擦投资工作台 V1
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 将系统从多页面数据展示升级为低摩擦决策工作台，打开首页即可知道今天是否需要介入。
 - Details: `docs/tasks/P1-010-low-friction-workbench-v1.md`
-- Files: `backend/app/services/review_service.py`, `backend/app/api/review.py`, `backend/app/services/dashboard_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `docs/ux.md`, `docs/business-roadmap.md`
-- Concrete Changes: 聚合重要事项、修正 `NO_MAJOR_RISK` 语义、Dashboard 展示今日概览、复盘页展示建议变化和组合快照、文案从每日待办改为低摩擦提醒。
+- Files: `backend/app/services/review_service.py`, `backend/app/api/review.py`, `backend/app/services/dashboard_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/styles/global.css`
+- Concrete Changes: 聚合重要事项、修正 `NO_MAJOR_RISK` 语义、Dashboard 展示今日概览、复盘页展示建议变化和组合快照、持仓页增加复盘入口、文案从每日待办改为低摩擦提醒。
 - Acceptance: 用户 30 秒内能知道今天是否需要介入；没有重要变化时显示“暂无需要立即处理事项”；系统不把用户做成每日打卡工具。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 第一版只做只读聚合，不新增 `review_task` 持久化；本任务先写 TODO，不实现代码。
+- Completed At: 2026-06-21
+- Changed Files: `backend/app/api/review.py`, `backend/app/main.py`, `backend/app/services/review_service.py`, `backend/app/services/dashboard_service.py`, `frontend/src/App.tsx`, `frontend/src/api/types.ts`, `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/styles/global.css`
+- Verification: `uv run python scripts/init_db.py`; `PYTHONPATH=backend uv run python - <<'PY' ... ReviewService().overview() ... PY`; `cd frontend && pnpm build`; `./scripts/check.sh`。
+- Notes: 第一版只做只读聚合，不新增 `review_task` 持久化；`NO_MAJOR_RISK` 已从重要事项池排除。
 
 ### P0-001: 修正每日任务按钮只入队不执行
 

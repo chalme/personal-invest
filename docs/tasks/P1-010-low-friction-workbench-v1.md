@@ -1,10 +1,10 @@
 # P1-010: 低摩擦投资工作台 V1
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -37,4 +37,4 @@
 
 - 第一版只做只读聚合，不新增 `review_task` 持久化。
 - `NO_MAJOR_RISK` 不应被算作待处理风险。
-- 本任务当前仅写 TODO，不实现代码。
+- 已实现只读聚合接口、Dashboard 今日概览、复盘页和持仓页复盘入口。

@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.repositories.sqlite_repo import SQLiteRepository
 from app.services.data_source_service import DataSourceService
 from app.services.market_service import MarketService
+from app.services.review_service import ReviewService
 
 
 class DashboardService:
@@ -22,7 +23,12 @@ class DashboardService:
             """
         )
         risks = self.repo.fetch_all(
-            "SELECT * FROM risk_event ORDER BY trade_date DESC, severity DESC, id DESC LIMIT 5"
+            """
+            SELECT * FROM risk_event
+            WHERE risk_type != 'NO_MAJOR_RISK'
+            ORDER BY trade_date DESC, severity DESC, id DESC
+            LIMIT 5
+            """
         )
         signals = self.repo.fetch_all(
             "SELECT * FROM strategy_signal ORDER BY trade_date DESC, score DESC, id DESC LIMIT 8"
@@ -37,10 +43,12 @@ class DashboardService:
 
         data_source = DataSourceService().market_source_summary()
         sector_panorama = MarketService(self.repo).sector_panorama()
+        review = ReviewService(self.repo).overview()
 
         return {
             "data_source": data_source,
             "sector_panorama": sector_panorama.get("summary"),
+            "review": review,
             "market": market,
             "sectors": sectors,
             "risks": risks,

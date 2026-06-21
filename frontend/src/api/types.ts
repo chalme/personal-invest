@@ -133,7 +133,9 @@ export type PortfolioOverview = {
     risk_date?: string | null;
     fund_analysis_date?: string | null;
     advice_date?: string | null;
+    snapshot_date?: string | null;
   };
+  latest_snapshot?: Record<string, number | string | null> | null;
   positions: Position[];
   watching_advice?: InvestmentAdvice[];
   portfolio_risks: RiskEvent[];
@@ -160,8 +162,57 @@ export type RiskEvent = {
   trade_date: string;
 };
 
+export type ReviewImportantItem = {
+  type: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO' | string;
+  title: string;
+  message: string;
+  date?: string | null;
+  symbol?: string | null;
+  source?: string | null;
+};
+
+export type ReviewWindowSummary = {
+  start_date?: string | null;
+  end_date?: string | null;
+  days: number;
+  value_delta: number;
+  pnl_delta: number;
+  latest_risk_count: number;
+};
+
+export type ReviewOverview = {
+  summary: {
+    intervention_required: boolean;
+    message: string;
+    important_count: number;
+    high_count: number;
+    medium_count: number;
+    market_state?: string | null;
+    market_score?: number | null;
+    data_mode?: string | null;
+    latest_data_date?: string | null;
+    latest_job_status?: string | null;
+  };
+  important_items: ReviewImportantItem[];
+  advice_changes: InvestmentAdvice[];
+  portfolio_snapshot: {
+    latest?: Record<string, unknown> | null;
+    previous?: Record<string, unknown> | null;
+    change?: Record<string, number | string | null> | null;
+  };
+  data_status: DataSourceSummary;
+  market?: MarketTrend | null;
+  latest_job?: Record<string, unknown> | null;
+  review_windows: {
+    last_7_days?: ReviewWindowSummary | null;
+    last_30_days?: ReviewWindowSummary | null;
+  };
+};
+
 export type DashboardResponse = {
   data_source?: DataSourceSummary;
+  review?: ReviewOverview;
   sector_panorama?: SectorPanorama['summary'];
   market: MarketTrend | null;
   sectors: SectorTrend[];

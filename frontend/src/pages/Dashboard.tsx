@@ -56,6 +56,19 @@ function dataSourceTone(mode?: string) {
   return 'neutral' as const;
 }
 
+function reviewPriorityTone(priority?: string) {
+  if (priority === 'HIGH') return 'bad' as const;
+  if (priority === 'MEDIUM') return 'warn' as const;
+  if (priority === 'LOW') return 'neutral' as const;
+  return 'good' as const;
+}
+
+function formatSignedMoney(value: number | undefined | null) {
+  if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+  const prefix = value > 0 ? '+' : '';
+  return `${prefix}${formatMoney(value)}`;
+}
+
 export function Dashboard() {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [marketHistory, setMarketHistory] = useState<MarketTrend[]>([]);
@@ -137,6 +150,9 @@ export function Dashboard() {
   const latestJobStatus = String(data.latest_job?.status ?? '暂无任务');
   const source = data.data_source;
   const sectorPanorama = data.sector_panorama;
+  const review = data.review;
+  const importantItems = review?.important_items ?? [];
+  const portfolioChange = review?.portfolio_snapshot?.change;
 
   return (
     <div className="page-stack dashboard-page">
@@ -174,6 +190,33 @@ export function Dashboard() {
           </div>
         </section>
       )}
+
+      <Card
+        title="今日重要事项"
+        description="只聚合需要复核的变化，不把普通信息变成每日待办。"
+      >
+        <div className="review-overview">
+          <div className={`review-verdict ${review?.summary.intervention_required ? 'needs-review' : 'clear'}`}>
+            <strong>{review?.summary.message ?? '暂无需要立即处理事项。'}</strong>
+            <span>
+              高优先级 {review?.summary.high_count ?? 0} · 中优先级 {review?.summary.medium_count ?? 0} · 全部 {review?.summary.important_count ?? 0}
+            </span>
+          </div>
+          <div className="review-item-list">
+            {importantItems.slice(0, 5).map((item, index) => (
+              <div className="review-item" key={`${item.type}-${item.symbol ?? index}-${item.date ?? index}`}>
+                <Badge tone={reviewPriorityTone(item.priority)}>{item.priority}</Badge>
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.message}</p>
+                  <small>{item.date ?? '暂无日期'} · {item.source ?? item.type}</small>
+                </div>
+              </div>
+            ))}
+            {importantItems.length === 0 && <EmptyState title="暂无需要立即处理事项" description="系统仍会自动跟踪后续价格、净值、风险和建议变化。" />}
+          </div>
+        </div>
+      </Card>
 
       <div className="metric-grid">
         <MetricCard label="市场评分" value={data.market?.market_score ?? '-'} hint={data.market?.trend_state ?? '暂无'} tone={currentMarketTone} />
@@ -233,6 +276,7 @@ export function Dashboard() {
           <div className="portfolio-brief">
             <div><span>表现最好</span><strong>{bestPosition?.name ?? bestPosition?.symbol ?? '暂无持仓'}</strong><small>{formatMoney(bestPosition?.pnl ?? 0)} / {formatPercent(bestPosition?.pnl_ratio)}</small></div>
             <div><span>行业线索</span><strong>{topSector?.sector_name ?? '暂无行业数据'}</strong><small>{topSector ? `趋势分 ${topSector.trend_score}` : '执行今日更新后生成'}</small></div>
+            {portfolioChange && <div><span>快照变化</span><strong>{formatSignedMoney(Number(portfolioChange.value_delta ?? 0))}</strong><small>风险 {Number(portfolioChange.risk_count ?? 0)} · 集中度 {Number(portfolioChange.concentration_hhi ?? 0).toFixed(2)}</small></div>}
           </div>
         </Card>
       </div>

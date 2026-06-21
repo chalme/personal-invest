@@ -11,6 +11,7 @@ const StocksPage = lazy(() => import('./pages/StocksPage').then((module) => ({ d
 const FundsPage = lazy(() => import('./pages/FundsPage').then((module) => ({ default: module.FundsPage })));
 const WatchlistPage = lazy(() => import('./pages/WatchlistPage').then((module) => ({ default: module.WatchlistPage })));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then((module) => ({ default: module.PortfolioPage })));
+const ReviewPage = lazy(() => import('./pages/ReviewPage').then((module) => ({ default: module.ReviewPage })));
 const AiAnalysisPage = lazy(() => import('./pages/AiAnalysisPage').then((module) => ({ default: module.AiAnalysisPage })));
 const ReportsPage = lazy(() => import('./pages/ReportsPage').then((module) => ({ default: module.ReportsPage })));
 const SignalsPage = lazy(() => import('./pages/SignalsPage').then((module) => ({ default: module.SignalsPage })));
@@ -28,6 +29,7 @@ export function App() {
       case 'funds': return <FundsPage />;
       case 'watchlist': return <WatchlistPage />;
       case 'portfolio': return <PortfolioPage />;
+      case 'review': return <ReviewPage />;
       case 'strategies': return <StrategiesPage />;
       case 'backtests': return <BacktestsPage />;
       case 'signals': return <SignalsPage />;
