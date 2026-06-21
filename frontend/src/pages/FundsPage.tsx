@@ -23,6 +23,7 @@ function numberValue(value: unknown): number {
 }
 
 type FundDeep = { profile: Record<string, string | number | null> | null; manager: Record<string, string | number | null> | null; company: Record<string, string | number | null> | null; risk_return: Record<string, string | number | null> | null; benchmark: Record<string, string | number | null> | null; peer: Record<string, string | number | null> | null; exposures: Array<Record<string, string | number | null>>; };
+type EtfDeep = { profile: Record<string, string | number | null> | null; exposures: Array<Record<string, string | number | null>>; liquidity: Record<string, string | number | null> | null; risk_return: Record<string, string | number | null> | null; tracking: Record<string, string | number | null> | null; };
 
 function analysisLabel(row?: FundAnalysis): string {
   return row?.analysis_type === 'ETF' + '_PRICE' ? 'ETF 价格分析' : '基金净值分析';
@@ -34,6 +35,7 @@ export function FundsPage() {
   const [navPoints, setNavPoints] = useState<FundNavPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [deep, setDeep] = useState<FundDeep | null>(null);
+  const [etfDeep, setEtfDeep] = useState<EtfDeep | null>(null);
 
   useEffect(() => {
     apiGet<{ data: FundAnalysis[] }>('/api/funds/analysis')
@@ -51,6 +53,9 @@ export function FundsPage() {
       .catch((err: Error) => setError(err.message));
     apiGet<{ data: FundDeep }>(`/api/funds/${selectedSymbol}/deep`)
       .then((res) => setDeep(res.data))
+      .catch((err: Error) => setError(err.message));
+    apiGet<{ data: EtfDeep }>(`/api/funds/${selectedSymbol}/etf`)
+      .then((res) => setEtfDeep(res.data))
       .catch((err: Error) => setError(err.message));
   }, [selectedSymbol]);
 
@@ -108,6 +113,30 @@ export function FundsPage() {
             ) : (
               <EmptyState title="暂无基金深度画像" description="当前资产可能是 ETF，或尚未添加 FUND 类型场外基金。" />
             )}
+          </Card>
+
+          <Card title="ETF 深度分析" description="仅面向 ETF / LOF；使用指数、主题、暴露、流动性、风险收益和跟踪质量口径。">
+            {etfDeep?.profile || etfDeep?.liquidity || etfDeep?.tracking ? (
+              <div className="analysis-summary compact">
+                <div><span>跟踪指数</span><strong>{etfDeep.profile?.tracking_index ?? '暂无'}</strong></div>
+                <div><span>主题</span><strong>{etfDeep.profile?.theme ?? '暂无'}</strong></div>
+                <div><span>流动性评分</span><strong>{numberValue(etfDeep.liquidity?.liquidity_score).toFixed(1)}</strong></div>
+                <div><span>流动性风险</span><strong>{etfDeep.liquidity?.liquidity_risk_level ?? '暂无'}</strong></div>
+                <div><span>风险收益评分</span><strong>{numberValue(etfDeep.risk_return?.risk_return_score).toFixed(1)}</strong></div>
+                <div><span>跟踪评分</span><strong>{numberValue(etfDeep.tracking?.fit_score).toFixed(1)}</strong></div>
+                <div><span>跟踪状态</span><strong>{etfDeep.tracking?.tracking_quality_level ?? '暂无'}</strong></div>
+                <div><span>数据来源</span><strong>{etfDeep.tracking?.source_mode ?? etfDeep.liquidity?.source_mode ?? etfDeep.profile?.source_mode ?? '暂无'}</strong></div>
+              </div>
+            ) : (
+              <EmptyState title="暂无 ETF 深度分析" description="当前资产可能是场外基金，或尚未执行 ETF 深度分析流水线。" />
+            )}
+            {etfDeep?.exposures?.length ? (
+              <div className="tag-row">
+                {etfDeep.exposures.slice(0, 8).map((item) => (
+                  <span className="tag" key={`${item.exposure_type}-${item.exposure_name}`}>{item.exposure_type}: {item.exposure_name}</span>
+                ))}
+              </div>
+            ) : null}
           </Card>
 
           <Card title="分析结论" description="结论来自 fund_analysis_snapshot，基金为净值口径，ETF 为价格口径，供人工研究和观察。">

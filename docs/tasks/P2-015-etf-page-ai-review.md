@@ -1,10 +1,10 @@
 # P2-015: ETF 页面、AI 与复盘闭链接入
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -48,8 +48,20 @@
 - `uv run python scripts/migrate_db.py`
 - `uv run python worker/daily_job.py`
 - ETF 深度 API smoke test。
-- `cd frontend && pnpm build`
-- `./scripts/check.sh`
+- `cd frontend && pnpm build` 当前环境缺少 `node/pnpm`，未执行
+- `./scripts/check.sh` 当前环境缺少 `node/pnpm`，未完成前端阶段。
+
+## Changed Files
+
+- `backend/migrations/019_etf_deep_event.sql`
+- `worker/etf/events.py`
+- `worker/daily_job.py`
+- `backend/app/api/funds.py`
+- `backend/app/api/ai.py`
+- `backend/app/services/ai_service.py`
+- `backend/app/services/etf_deep_service.py`
+- `worker/report/report_builder.py`
+- `frontend/src/pages/FundsPage.tsx`
 
 ## Notes
 

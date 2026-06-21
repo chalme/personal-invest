@@ -157,6 +157,37 @@ class AIService:
         ]
         return self._record("fund", symbol, fund["nav_date"], sections)
 
+    def explain_etf(self, symbol: str) -> dict:
+        profile = self.repo.fetch_one("SELECT * FROM etf_profile WHERE symbol = ?", (symbol,))
+        liquidity = self.repo.fetch_one("SELECT * FROM etf_liquidity_snapshot WHERE symbol = ? ORDER BY snapshot_date DESC, id DESC LIMIT 1", (symbol,))
+        risk_return = self.repo.fetch_one("SELECT * FROM etf_risk_return_snapshot WHERE symbol = ? ORDER BY snapshot_date DESC, id DESC LIMIT 1", (symbol,))
+        tracking = self.repo.fetch_one("SELECT * FROM etf_tracking_snapshot WHERE symbol = ? ORDER BY snapshot_date DESC, id DESC LIMIT 1", (symbol,))
+        exposures = self.repo.fetch_all("""
+            SELECT * FROM etf_exposure_snapshot
+            WHERE symbol = ?
+              AND snapshot_date = (SELECT MAX(snapshot_date) FROM etf_exposure_snapshot WHERE symbol = ?)
+            ORDER BY exposure_type ASC, weight DESC
+            LIMIT 8
+            """, (symbol, symbol))
+        events = self.repo.fetch_all("SELECT * FROM etf_deep_event WHERE symbol = ? ORDER BY event_date DESC, severity DESC, id DESC LIMIT 3", (symbol,))
+        if not profile and not liquidity and not risk_return and not tracking:
+            return self._empty_result("etf", symbol, "暂无该 ETF 深度分析数据，请先加入观察池并执行每日更新。")
+
+        name = (profile or liquidity or risk_return or tracking).get("name") or symbol
+        exposure_text = "；".join(f"{item['exposure_type']}：{item['exposure_name']}" for item in exposures) if exposures else "暂无 ETF 暴露信息。"
+        event_text = "；".join(item["message"] for item in events) if events else "暂无 ETF 深度异常事件。"
+        sections = [
+            {"title": "ETF 画像", "content": f"{name} 跟踪 {profile.get('tracking_index') if profile else '待补充指数'}，主题为 {profile.get('theme') if profile else '待补充'}，数据来源 {profile.get('source_mode') if profile else 'MISSING'}。"},
+            {"title": "主要暴露", "content": exposure_text},
+            {"title": "流动性", "content": f"流动性评分 {float(liquidity.get('liquidity_score') or 0):.1f}，风险等级 {liquidity.get('liquidity_risk_level') if liquidity else '暂无'}。{liquidity.get('liquidity_note') if liquidity else ''}" if liquidity else "暂无流动性快照。"},
+            {"title": "风险收益", "content": f"风险收益评分 {float(risk_return.get('risk_return_score') or 0):.1f}，近 3 月收益 {float(risk_return.get('return_3m') or 0):.2%}，最大回撤 {float(risk_return.get('max_drawdown') or 0):.2%}。" if risk_return else "暂无风险收益快照。"},
+            {"title": "跟踪质量", "content": f"跟踪拟合评分 {float(tracking.get('fit_score') or 0):.1f}，状态 {tracking.get('tracking_quality_level') if tracking else '暂无'}。{tracking.get('tracking_note') if tracking else ''}" if tracking else "暂无跟踪质量快照。"},
+            {"title": "深度异常", "content": event_text},
+            {"title": "模型边界", "content": "ETF 解释使用指数、主题、流动性、风险收益和跟踪质量口径，不使用股票财报模型，也不使用场外基金经理主动管理模型。"},
+        ]
+        data_version = (tracking or risk_return or liquidity or profile).get("data_date") or datetime.now().date().isoformat()
+        return self._record("etf", symbol, data_version, sections)
+
     def _empty_result(self, analysis_type: str, target: str, message: str) -> dict:
         return {
             "analysis_type": analysis_type,
