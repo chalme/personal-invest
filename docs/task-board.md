@@ -8,9 +8,9 @@
 
 当前主线：
 
-1. 文档状态收敛：清理 `product-backlog` 与 `long-term-roadmap` 中已完成但仍像待办的历史内容，避免后续任务判断被污染。
-2. 数据可信度总览 V1：统一展示市场、行情、股票财报、场外基金深度、ETF 深度和复盘链路的数据来源状态。
-3. 线上功能回归验收需要人工浏览器确认，记录为 `MANUAL-001`，不作为开发任务自动执行。
+1. 人工验收与生产权限事项单独跟踪，不作为 Code Agent 可独立完成任务。
+2. Code Agent 当前优先收敛任务状态、数据可信度边界和服务器长期运行基础能力。
+3. 真实数据源增强和关键页面结论化先进入拆解规划，不直接开启大范围开发。
 
 ## Status
 
@@ -29,7 +29,175 @@
 4. 任务较复杂时创建 `docs/tasks/{task-id}-{slug}.md`，并在本文件链接过去。
 5. 做完后改成 `DONE`，写入 `Completed At`、`Changed Files`、`Verification`、`Notes`。
 
-## Current Tasks
+## Human Track
+
+以下任务需要真实浏览器、生产域名、Cloudflare、服务器或敏感配置权限，不能由 Code Agent 独立完成。
+
+### MANUAL-001: 线上功能人工回归验收
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Human`
+- Goal: 使用真实浏览器和线上域名确认 Dashboard、Settings、股票页、基金 / ETF 页面、复盘页、运行时配置、CORS 和数据可信度展示均可用。
+- Details: `docs/tasks/MANUAL-001-production-regression-checklist.md`
+- Code Agent Boundary: 不作为开发任务自动执行；验收结果如发现缺陷，再单独拆 BUG 任务。
+- Acceptance: 人工确认核心页面、API 请求和关键交互在生产环境正常。
+
+### H-002: Cloudflare Access 配置
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Human`
+- Goal: 为 `invest.chalme.indevs.in` 和 `api.chalme.indevs.in` 增加访问保护，避免个人投资数据公网裸露。
+- Files: `docs/operation-backlog.md`
+- Code Agent Boundary: 可提供文档、检查清单和健康检查脚本；不能代替 Cloudflare 账号内的配置动作。
+- Acceptance: 未登录访问前端和 API 被 Access 拦截；授权登录后页面和 API 正常。
+
+### H-003: 源站端口与服务器防火墙确认
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Human`
+- Goal: 确认后端端口、前端端口和服务器 IP 不能绕过 Cloudflare Access 直接访问投资系统。
+- Files: `docs/operation-backlog.md`
+- Code Agent Boundary: 可提供防火墙建议和检查命令；不能直接操作服务器安全组或防火墙。
+- Acceptance: 直接访问服务器 IP 和后端端口不能绕过访问保护；`/health` 不泄露敏感配置。
+
+### H-004: 生产 Secret 与敏感配置确认
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Human`
+- Goal: 确认 `.env.server`、API key、生产路径、Cloudflare 配置和备份文件没有误提交或泄露。
+- Code Agent Boundary: 可提供检查清单；不能读取或判断外部账号内的敏感配置。
+- Acceptance: 敏感配置不进 Git、不出现在公开日志、不被健康检查接口暴露。
+
+### H-005: 备份目标与恢复策略确认
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Human`
+- Goal: 决定备份保存位置、保留周期、是否压缩、是否加密、是否需要异地备份和恢复覆盖策略。
+- Code Agent Boundary: 可实现本地备份脚本；备份介质和保留策略需要人工决策。
+- Acceptance: 明确第一版备份策略，供 `OPS-002` 实现。
+
+### H-006: 真实数据源选择与授权
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Human`
+- Goal: 决定后续真实数据源增强使用 AKShare 还是补充其他来源，并明确 API key、使用限制、付费和合规边界。
+- Code Agent Boundary: 可拆技术任务；不能替代数据源授权、账号注册和成本决策。
+- Acceptance: 明确下一阶段优先接入的数据源和可接受的 fallback 策略。
+
+## Current Code Agent Tasks
+
+以下任务不依赖人工验收或外部账号权限，可以由 Code Agent 独立推进。执行完成后需写入完成标识、检查结果和提交记录。
+
+### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
+
+- Status: `DONE`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 清理 `docs/task-board.md` 中已完成但仍影响判断的历史状态，让当前主线、人工任务、Code Agent 任务和 backlog 边界清晰。
+- Files: `docs/task-board.md`, `docs/product-backlog.md`, `docs/long-term-roadmap.md`
+- Scope: 更新 `Current Mainline`；明确 `P2-017` 已完成；明确 `MANUAL-001` 由 Human 单独验收；清理重复 DONE 任务块；把下一阶段候选任务指向 backlog / operation backlog。
+- Out of Scope: 不改业务代码；不改前端；不改后端；不新增功能。
+- Acceptance: `Current Mainline` 不再包含已完成任务；同一批 DONE 任务不重复出现；当前可开发任务、人工任务、backlog 任务边界清晰。
+- Completed At: 2026-06-21
+- Changed Files: `docs/task-board.md`, `docs/operation-backlog.md`
+- Verification: `git diff --check`; 确认 Human Track 与 Current Code Agent Tasks 分区清晰；确认人工任务保留 TODO 且不自动执行。
+- Notes: 本任务只收敛任务边界，不修改业务代码。
+
+### BUG-001: 修正 fund_nav 可信度来源判断
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 避免基金净值 `fund_nav` 只要存在 parquet 文件就被标记为 `REAL`，确保样本基金净值不会误导数据可信度总览。
+- Files: `backend/app/services/data_credibility_service.py`, `worker/ingest/market_data.py`, `data/raw/fund/*_manifest.json`
+- Scope: 读取最新 fund manifest；根据 `source_count.akshare` 和 `source_count.sample` 推导 `REAL` / `SAMPLE` / `MIXED` / `MISSING`；保持 Dashboard / Settings 展示结构不变。
+- Out of Scope: 不接入新基金数据源；不改 parquet 格式；不重写基金分析；不改建议规则。
+- Acceptance: 全样本基金净值显示 `SAMPLE`；混合来源显示 `MIXED`；无基金净值显示 `MISSING`；说明文案符合可信度边界。
+
+### OPS-DOC-001: 生产部署边界文档
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 把当前生产部署边界文档化，为 Cloudflare Access、源站保护和健康检查提供执行依据。
+- Files: `docs/operation-backlog.md`, `docs/development.md`, `README.md`
+- Scope: 描述前端、后端、域名、端口关系；描述 Cloudflare Access 推荐边界；描述源站不能裸露的原因；描述 `/health` 和 `/health/cors` 的使用方式；增加人工配置清单。
+- Out of Scope: 不配置 Cloudflare；不改服务器安全组；不实现应用内登录。
+- Acceptance: 人工可以按文档完成 Access 配置和源站边界检查；哪些步骤需要人工、哪些可以脚本化边界清晰。
+
+### OPS-002: 本地备份脚本任务
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 提供一条命令备份 SQLite、Parquet、报告和配置，降低单机数据丢失风险。
+- Files: `scripts/backup.sh`, `Makefile`, `.gitignore`, `docs/operation-backlog.md`
+- Scope: 备份 `storage/invest.db`、`data/parquet/`、`reports/`、`config.yaml`；默认输出到 `backups/YYYYMMDD-HHMMSS/`；避免备份文件进入 Git。
+- Out of Scope: 不接云存储；不做自动定时；不做加密第一版；不做恢复 UI。
+- Acceptance: 一条命令生成完整备份目录；重复执行不覆盖旧备份；备份目录默认不入库。
+
+### DATA-001: 统一数据源 manifest 可信度口径
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 统一 market、fund 和后续真实数据源 manifest 的字段与 source mode 推导规则，避免可信度服务持续堆特殊分支。
+- Files: `backend/app/services/data_credibility_service.py`, `worker/ingest/market_data.py`, `docs/data-pipeline.md`
+- Scope: 设计统一 manifest 最小结构：`dataset`、`generated_at`、`latest_data_date`、`rows`、`asset_count`、`source_count`、`source_mode`、`warning`；兼容旧 manifest；提供统一推导函数。
+- Out of Scope: 不重跑历史数据；不迁移旧 manifest；不接入新数据源；不做供应商 UI。
+- Acceptance: market / fund 可以复用同一套 source mode 推导规则；缺字段时不报错；后续真实数据源接入无需重复造判断逻辑。
+
+### OPS-003: systemd 服务模板
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 提供后端 / 前端长期运行所需的 systemd 模板和启停文档。
+- Files: `deploy/systemd/`, `docs/operation-backlog.md`, `docs/development.md`
+- Scope: 提供 `personal-invest-backend.service`、`personal-invest-frontend.service` 模板；说明工作目录、启动命令、环境变量、日志查看、重启方式和开机自启。
+- Out of Scope: 不在生产机直接启用；不做 Docker；不做 K8s；不做多实例部署。
+- Acceptance: 模板可由人工复制到 `/etc/systemd/system/`；服务支持异常重启；文档说明如何查看日志和状态；不包含硬编码敏感信息。
+
+### OPS-004: 生产健康检查脚本
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 提供一条命令检查前端、后端、API、域名和 CORS 的基础状态。
+- Files: `scripts/health.sh`, `Makefile`, `docs/operation-backlog.md`
+- Scope: 检查 `/health`、`/health/cors`、`/api/dashboard`、`/api/data/credibility`、前端页面 HTTP 状态、API 域名 HTTP 状态。
+- Out of Scope: 不替代人工验收；不做完整 E2E；不做性能压测；不接告警系统。
+- Acceptance: 一条命令输出健康检查结果；失败时能区分前端、后端、CORS、数据可信度 API 问题；不打印敏感信息。
+
+### DATA-002: 真实数据源增强任务拆解
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 把“真实数据源增强”拆成可独立开发的小任务，避免一次性做成大泥球。
+- Files: `docs/product-backlog.md`, `docs/data-pipeline.md`, `docs/task-board.md`
+- Scope: 拆解行情日线稳定性、交易日历、股票财报、估值、基金净值、基金画像、ETF 跟踪指数与折溢价等子任务；每个子任务明确输入、输出、source_mode、fallback、页面影响和建议规则影响。
+- Out of Scope: 不一次性实现所有数据源；不引入付费源；不写供应商配置 UI；不承诺全覆盖。
+- Acceptance: 每个数据源增强任务都可以独立开发；每个任务都有清晰边界和验收标准。
+
+### UX-001: 关键页面结论化打磨规划
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 规划股票页、持仓页、观察池、日报如何从“数据展示”升级为“结论优先”。
+- Files: `docs/ux.md`, `docs/product-backlog.md`, `docs/business-information-architecture.md`
+- Scope: 规划股票页研究结论化、持仓页组合决策化、观察池研究状态化、日报投资简报化；明确数据可信度在页面中的展示位置。
+- Out of Scope: 不直接重构页面；不新增复杂图表；不改设计系统；不用 AI 生成高置信建议。
+- Acceptance: 每个页面明确首屏要回答的问题；每个页面区分事实、判断、风险、动作；明确低可信数据如何降级展示。
+
+## Completed / Historical Tasks
 
 ### DOC-004: 收敛产品 backlog 与长期路线图状态
 
