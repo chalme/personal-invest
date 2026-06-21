@@ -1,6 +1,6 @@
 # PORT-001: 持仓录入体验重构
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
@@ -135,3 +135,10 @@ Suggested UI smoke:
 ## Notes
 
 本任务先改善当前快照录入体验。交易流水、批量导入和券商导入应作为后续任务独立设计，避免一次性把持仓模块做复杂。
+
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/api/types.ts`, `frontend/src/styles/global.css`
+- Verification: frontend `tsc --noEmit`; frontend `vite build`; `uv run python -m compileall backend/app worker scripts`; `git diff --check`.
+- Notes: Portfolio form now follows asset recognition -> quote lookup -> user confirmation. Manual price remains allowed only as portfolio snapshot estimate and is clearly labeled.

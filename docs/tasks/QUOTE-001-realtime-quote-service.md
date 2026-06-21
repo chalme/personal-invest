@@ -1,6 +1,6 @@
 # QUOTE-001: 只读实时报价服务
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
@@ -155,3 +155,10 @@ Suggested smoke cases:
 ## Notes
 
 This service is for form assistance and portfolio valuation hints. It is not a trading quote engine and must not bypass the existing data credibility boundary used for investment advice.
+
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files: `backend/app/services/quote_service.py`, `backend/app/api/quotes.py`, `backend/app/main.py`, `frontend/src/api/types.ts`
+- Verification: `uv run --extra dev ruff check backend/app/services/quote_service.py backend/app/api/quotes.py backend/app/main.py`; `uv run python -m compileall backend/app worker scripts`; frontend `tsc --noEmit`; frontend `vite build`; `git diff --check`.
+- Notes: API is read-only; realtime public quote success returns `REAL_QUOTE`; local true cache returns `REAL_CACHED`; no true data returns `MISSING`; no sample/mock/demo/estimated fallback is used.

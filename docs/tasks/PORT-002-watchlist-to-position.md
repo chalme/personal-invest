@@ -1,6 +1,6 @@
 # PORT-002: 观察池一键加入持仓
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
@@ -125,3 +125,10 @@ Suggested UI smoke:
 ## Notes
 
 本任务是用户路径优化，不改变投资建议规则。观察池建议只能作为录入上下文，不应自动触发买入或生成强制交易动作。
+
+## Completion
+
+- Completed At: 2026-06-21
+- Changed Files: `frontend/src/App.tsx`, `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/styles/global.css`
+- Verification: frontend `tsc --noEmit`; frontend `vite build`; `uv run python -m compileall backend/app worker scripts`; `git diff --check`.
+- Notes: Watchlist rows now expose `加入持仓`, passing symbol/name/type and research context into the portfolio entry flow. Watchlist records remain unchanged after saving.

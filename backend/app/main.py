@@ -1,9 +1,28 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import ai, backtests, dashboard, data, funds, jobs, market, portfolio, prices, reports, review, settings as settings_api, signals, stocks, strategies, watchlist
+from app.api import (
+    ai,
+    backtests,
+    dashboard,
+    data,
+    funds,
+    jobs,
+    market,
+    portfolio,
+    prices,
+    quotes,
+    reports,
+    review,
+    signals,
+    stocks,
+    strategies,
+    watchlist,
+)
+from app.api import (
+    settings as settings_api,
+)
 from app.core.config import get_settings
-
 
 settings = get_settings()
 
@@ -25,6 +44,7 @@ app.include_router(market.router, prefix="/api")
 app.include_router(stocks.router, prefix="/api")
 app.include_router(funds.router, prefix="/api")
 app.include_router(prices.router, prefix="/api")
+app.include_router(quotes.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(review.router, prefix="/api")
 app.include_router(backtests.router, prefix="/api")

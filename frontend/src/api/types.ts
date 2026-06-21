@@ -480,3 +480,16 @@ export type BacktestResult = {
   holdings: Array<{ symbol: string; name?: string }>;
   notes: string[];
 };
+
+export type QuoteResponse = {
+  symbol: string;
+  name?: string | null;
+  asset_type: 'STOCK' | 'ETF' | 'FUND' | string;
+  price?: number | null;
+  price_time?: string | null;
+  trade_date?: string | null;
+  source_mode: 'REAL_QUOTE' | 'REAL_CACHED' | 'MISSING' | string;
+  source_provider?: string | null;
+  source_interface?: string | null;
+  warning?: string | null;
+};

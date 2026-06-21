@@ -56,7 +56,11 @@ function nextStep(row: WatchlistItem) {
   return '按既定理由继续观察，等待评分、行业或风险出现变化。';
 }
 
-export function WatchlistPage() {
+type WatchlistPageProps = {
+  onAddToPortfolio?: (prefill: { symbol: string; name?: string | null; asset_type?: string | null; buy_reason?: string | null }) => void;
+};
+
+export function WatchlistPage({ onAddToPortfolio }: WatchlistPageProps) {
   const [rows, setRows] = useState<WatchlistItem[]>([]);
   const [form, setForm] = useState<WatchlistForm>(initialForm);
   const [keyword, setKeyword] = useState('');
@@ -125,6 +129,21 @@ export function WatchlistPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function addToPortfolio(row: WatchlistItem) {
+    const state = watchState(row);
+    const reason = [
+      `来自观察池：${state}`,
+      row.reason ? `关注理由：${row.reason}` : '',
+      row.group_name ? `分组：${row.group_name}` : '',
+    ].filter(Boolean).join('；');
+    onAddToPortfolio?.({
+      symbol: row.symbol,
+      name: row.name,
+      asset_type: row.asset_type ?? 'STOCK',
+      buy_reason: reason,
+    });
   }
 
   async function remove(symbol: string) {
@@ -235,7 +254,12 @@ export function WatchlistPage() {
                   <td>{row.reason ?? '-'}</td>
                   <td><Badge tone={watchTone(watchState(row))}>{watchState(row)}</Badge></td>
                   <td><small>{nextStep(row)}</small></td>
-                  <td><button className="danger-button" onClick={() => remove(row.symbol)} type="button">移除</button></td>
+                  <td>
+                    <div className="table-action-stack">
+                      <button className="secondary-button" onClick={() => addToPortfolio(row)} type="button">加入持仓</button>
+                      <button className="danger-button" onClick={() => remove(row.symbol)} type="button">移除</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

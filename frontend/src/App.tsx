@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import type { PortfolioPrefill } from './pages/PortfolioPage';
 import { AppLayout } from './components/layout/AppLayout';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ErrorBoundary } from './components/system/ErrorBoundary';
@@ -22,6 +23,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => 
 
 export function App() {
   const [active, setActive] = useState('dashboard');
+  const [portfolioPrefill, setPortfolioPrefill] = useState<PortfolioPrefill | null>(null);
   useEffect(() => {
     applyUiPreferences({ theme: 'dark', density: 'comfortable' });
     const cached = window.localStorage.getItem('personal-invest-ui');
@@ -46,8 +48,8 @@ export function App() {
       case 'sectors': return <SectorsPage />;
       case 'stocks': return <StocksPage />;
       case 'funds': return <FundsPage />;
-      case 'watchlist': return <WatchlistPage />;
-      case 'portfolio': return <PortfolioPage />;
+      case 'watchlist': return <WatchlistPage onAddToPortfolio={(prefill) => { setPortfolioPrefill(prefill); setActive('portfolio'); }} />;
+      case 'portfolio': return <PortfolioPage prefillPosition={portfolioPrefill} onPrefillConsumed={() => setPortfolioPrefill(null)} />;
       case 'review': return <ReviewPage />;
       case 'strategies': return <StrategiesPage />;
       case 'backtests': return <BacktestsPage />;

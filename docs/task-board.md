@@ -262,7 +262,7 @@
 
 ### QUOTE-001: 只读实时报价服务
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Owner: `Codex`
 - Goal: 新增只读实时报价服务，为持仓录入、资产识别和市值估算提供真实报价辅助；实时源失败时只能回退到本地真实缓存或 `MISSING`。
@@ -274,7 +274,7 @@
 
 ### PORT-001: 持仓录入体验重构
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Owner: `Codex`
 - Goal: 把添加持仓从全手工表单升级为“资产识别 -> 自动补价 -> 用户确认”的低摩擦流程。
@@ -286,7 +286,7 @@
 
 ### PORT-002: 观察池一键加入持仓
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Owner: `Codex`
 - Goal: 打通“观察 -> 买入 -> 持仓”链路，让观察池资产可以一键进入持仓录入流程并自动带入资产信息和报价。
