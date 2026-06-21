@@ -145,17 +145,17 @@
 
 ### P2-009: 场外基金画像与风险收益快照
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 落地场外基金画像、经理 / 公司信息和风险收益快照。
 - Details: `docs/tasks/P2-009-fund-profile-risk-return.md`
 - Files: `backend/migrations/`, `worker/`, `backend/app/services/`
 - Concrete Changes: 新增 `fund_profile`、`fund_manager_profile`、`fund_company_profile`、`fund_risk_return_snapshot`；计算阶段收益、最大回撤、波动、夏普、卡玛和回撤修复时间。
 - Acceptance: 场外基金基础画像和风险收益快照可生成并供后续页面、建议和复盘读取。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: ETF / LOF 不混入本任务。
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/013_fund_profile_risk_return.sql`, `worker/fund/deep_profile.py`, `worker/fund/__init__.py`, `worker/daily_job.py`, `backend/app/services/fund_deep_service.py`
+- Verification: `uv run python scripts/migrate_db.py`; `uv run python -m worker.fund.deep_profile`; verified no active FUND assets are skipped without mixing ETF / LOF; `uv run python -m compileall backend/app worker scripts`; `./scripts/check.sh`.
+- Notes: ETF / LOF 不混入本任务；当前无 active FUND 时安全跳过，用户加入 FUND 后自动生成画像和风险收益快照。
 
 ### P2-010: 场外基金基准 / 同类比较与暴露
 

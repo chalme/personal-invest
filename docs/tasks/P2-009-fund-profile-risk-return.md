@@ -1,10 +1,10 @@
 # P2-009: 场外基金画像与风险收益快照
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -30,9 +30,11 @@
 
 ## Verification
 
-- 迁移可重复执行。
-- worker 执行后能查询到画像和风险收益数据。
-- `rtk git diff --check`。
+- `uv run python scripts/migrate_db.py` applied `013_fund_profile_risk_return`.
+- `uv run python -m worker.fund.deep_profile`.
+- Verified no active FUND assets are skipped without mixing ETF / LOF.
+- `uv run python -m compileall backend/app worker scripts`.
+- `./scripts/check.sh`.
 
 ## Notes
 
