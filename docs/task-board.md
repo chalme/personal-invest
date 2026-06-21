@@ -12,6 +12,7 @@
 2. Code Agent 当前进入数据可信度与页面结论化执行阶段。
 3. 优先顺序为：交易日历与数据新鲜度、行情日线稳定性、基金净值稳定性、关键页面结论化。
 4. 真实数据源增强第一阶段继续基于 AKShare / 本地 fallback，不引入新付费供应商或外部账号配置。
+5. Web UI 整体优化采用“先审计、再重组、再逐页打磨”的路线，不做营销页式 redesign，不引入新前端框架。
 
 ## Status
 
@@ -357,6 +358,66 @@
 - Changed Files: `frontend/src/pages/ReportsPage.tsx`, `worker/report/report_builder.py`, `docs/tasks/UX-005-report-page-briefing.md`, `docs/task-board.md`
 - Verification: `git diff --check`; `uv run python -m compileall backend/app worker scripts`; `PYTHONPATH=backend uv run python` import smoke test for `build_daily_report`。`pnpm -C frontend build` 未执行：当前环境缺少 `node` / `pnpm`。
 - Notes: 只强化简报入口与 Markdown 归档关系，不接新闻宏观源、不引入外部 LLM 长文生成。
+
+### UX-AUDIT-001: 当前 Web UI 审计
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 审计当前 Dashboard、股票页、持仓页、观察池、复盘页、日报和设置页，形成 UI 问题清单和改版原则。
+- Details: `docs/tasks/UX-AUDIT-001-web-ui-audit.md`
+- Files: `frontend/src/`, `docs/ui-audit.md`, `docs/ux.md`
+- Scope: 检查导航、信息层级、卡片密度、表格重量、数据可信度标签、空态、错误态、加载态、按钮文案、视觉一致性和桌面端可读性。
+- Out of Scope: 不改代码；不重构页面；不做移动端专项；不做营销页、hero 大图或炫酷动效。
+- Acceptance: 输出可执行审计报告；每个关键页面都有问题、影响、优先级和建议方向；明确哪些问题进入 `UX-006` 到 `UX-009`。
+
+### UX-006: 全局信息架构与导航重组
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 将左侧导航从功能列表收敛成投资工作流入口，让用户按“今日、观察、持仓、复盘、报告、设置”理解系统。
+- Details: `docs/tasks/UX-006-global-ia-navigation.md`
+- Files: `frontend/src/components/layout/AppLayout.tsx`, `frontend/src/App.tsx`, `frontend/src/pages/`, `docs/ux.md`
+- Scope: 重组主导航、二级入口和页面命名；市场、行业、信号、策略、AI、回测作为二级入口或嵌入模块，不全部平铺在主导航。
+- Out of Scope: 不新增业务模型；不改后端 API；不做移动端导航专项；不引入新路由框架。
+- Acceptance: 主导航能表达核心投资流程；高级功能不挤占主入口；用户 30 秒内能找到今日概览、观察资产、持仓风险、复盘记录和报告。
+
+### UX-007: 设计系统与组件语言收敛
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 统一卡片、表格、Badge、按钮、空态、错误态、加载态和数据可信度标签，建立稳定的金融工作台组件语言。
+- Details: `docs/tasks/UX-007-design-system-components.md`
+- Files: `frontend/src/styles/global.css`, `frontend/src/components/`, `frontend/src/pages/`, `docs/ux.md`
+- Scope: 建立视觉优先级：结论、风险、动作、证据、明细；统一 `REAL` / `ESTIMATED` / `SAMPLE` / `MISSING` / `MIXED` 的显示方式；保持桌面端专业密度。
+- Out of Scope: 不引入新前端框架；不切换现有图标库；不做品牌营销视觉；不重写所有页面业务逻辑。
+- Acceptance: 关键页面的卡片、表格、状态、按钮和可信度标签表达一致；低可信数据不会被包装成高置信结论。
+
+### UX-008: Dashboard 今日工作台升级
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 将 Dashboard 从模块总览升级为今日工作台，集中回答数据是否新鲜、市场如何、组合是否有风险、哪些事项需要看、明天关注什么。
+- Details: `docs/tasks/UX-008-dashboard-workbench.md`
+- Files: `frontend/src/pages/Dashboard.tsx`, `frontend/src/api/types.ts`, `docs/ux.md`
+- Scope: 重排 Dashboard 首屏；减少堆叠卡片；突出数据状态、市场状态、组合风险、重要事项和明日关注；没有重要事项时显示清晰空态。
+- Out of Scope: 不新增数据表；不让 AI 自由生成建议；不做复杂新闻宏观模块；不做移动端专项。
+- Acceptance: 用户打开 Dashboard 后 30 秒内能判断今天是否需要介入；无重要事项时不制造焦虑；数据日期和可信度始终可见。
+
+### UX-009: 核心页面逐页体验打磨
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 基于 UI 审计、导航重组和组件语言，对股票页、持仓页、观察池、复盘页、日报页和设置页逐页打磨。
+- Details: `docs/tasks/UX-009-core-page-polish.md`
+- Files: `frontend/src/pages/`, `frontend/src/components/`, `docs/ux.md`
+- Scope: 股票页研究结论优先；持仓页组合风险优先；观察池研究状态优先；复盘页重要事项和决策记录优先；日报页投资简报优先；设置页强调数据源和运行状态。
+- Out of Scope: 不做全站重写；不新增复杂业务能力；不做移动端专项；不把页面改成营销站。
+- Acceptance: 核心页面符合审计报告和设计系统；页面重点清楚、状态完整、表格不过度压迫，且保留金融工作台的信息密度。
 
 ## Completed / Historical Tasks
 
@@ -997,3 +1058,8 @@
 - `docs/tasks/UX-003-portfolio-page-conclusion.md`
 - `docs/tasks/UX-004-watchlist-page-conclusion.md`
 - `docs/tasks/UX-005-report-page-briefing.md`
+- `docs/tasks/UX-AUDIT-001-web-ui-audit.md`
+- `docs/tasks/UX-006-global-ia-navigation.md`
+- `docs/tasks/UX-007-design-system-components.md`
+- `docs/tasks/UX-008-dashboard-workbench.md`
+- `docs/tasks/UX-009-core-page-polish.md`
