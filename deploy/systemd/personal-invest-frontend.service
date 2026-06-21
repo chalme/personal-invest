@@ -9,6 +9,7 @@ StartLimitBurst=5
 Type=simple
 WorkingDirectory=/root/remote/personal-invest
 Environment=ENV_FILE=.env.server
+Environment=HOME=/root
 Environment=PYTHONUNBUFFERED=1
 Environment=FRONTEND_BUILD_ON_START=0
 Environment=PYTHON_RUNTIME_BIN=/root/remote/personal-invest/.venv/bin/python

@@ -2,8 +2,17 @@
 
 # systemd services do not read interactive shell profiles, so tools installed by
 # uv's installer or Node/Corepack may otherwise be invisible at runtime.
-export PATH="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin}"
-for candidate in   "$HOME/.local/bin"   "$HOME/.cargo/bin"   "/root/.local/bin"   "/root/.cargo/bin"   "/usr/local/bin"; do
+export PATH="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+USER_HOME="${HOME:-}"
+for candidate in \
+  "${USER_HOME:+$USER_HOME/.local/bin}" \
+  "${USER_HOME:+$USER_HOME/.cargo/bin}" \
+  "/root/.local/bin" \
+  "/root/.cargo/bin" \
+  "/usr/local/bin"; do
+  if [ -z "$candidate" ]; then
+    continue
+  fi
   if [ -d "$candidate" ]; then
     case ":$PATH:" in
       *":$candidate:"*) ;;
