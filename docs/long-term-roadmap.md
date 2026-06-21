@@ -181,13 +181,13 @@ Personal Invest 服务
 - `decision_outcome`：跟踪决策后 1 天、1 周、1 月的结果。
 - `investment_policy`：记录个人风险偏好、仓位纪律和投资约束。
 
-当前执行拆分：
+已完成执行拆分：
 
-- `P1-011`：Review Task 持久化。
-- `P1-012`：ReviewPage 接入持久化事项。
-- `P1-013`：Decision Record。
-- `P1-014`：Decision Outcome Tracking。
-- `P1-015`：复盘摘要接入 Dashboard / Portfolio。
+- `P1-011`：已完成，Review Task 持久化。
+- `P1-012`：已完成，ReviewPage 接入持久化事项。
+- `P1-013`：已完成，Decision Record。
+- `P1-014`：已完成，Decision Outcome Tracking。
+- `P1-015`：已完成，复盘摘要接入 Dashboard / Portfolio。
 
 `review_task` 第一版建议状态：
 
@@ -383,12 +383,11 @@ AI 应遵守：
 
 ## 当前优先级
 
-在长期规划下，模型收敛和低摩擦工作台 V1 已完成，当前优先级进入低摩擦决策复盘闭环：
+在长期规划下，模型收敛、低摩擦工作台 V1 和低摩擦决策复盘闭环 V1 已完成。当前优先级不是继续堆页面，也不是直接进入财报或基金深度实现，而是先验收闭环体验，再规划下一层分析模型：
 
-1. `review_task` 持久化重要事项。
-2. ReviewPage 接入持久化事项状态流转。
-3. `decision_record` 记录用户真实决策。
-4. `decision_outcome` 跟踪 1D / 1W / 1M 后续结果。
-5. Dashboard / Portfolio 接入复盘摘要和决策入口。
+1. `P1-016`：低摩擦决策复盘闭环验收，允许修复小型一致性、文案、状态流、空态问题，但不新增表、不新增大页面、不改核心模型。
+2. `P2-003`：股票财报分析规划，输出 `docs/stock-financial-analysis-design.md`，明确财报数据、指标、估值、事件、worker、API、页面、风险事件、重要事项和 AI 解释边界。
+3. `P2-004`：基金深度分析规划，输出 `docs/fund-deep-analysis-design.md`，明确基金画像、经理/公司、基准/同类比较、风险收益、ETF 跟踪质量、暴露适配、重要事项和 AI 解释边界。
+4. `P2-002` 保留给响应式和主题系统，不复用为股票或基金分析任务编号。
 
-完成这些后，再进入股票基本面与财报分析、基金深度分析、宏观新闻上下文和个性化策略。
+完成这些后，再进入股票基本面与财报分析 V1、基金深度分析 V1、宏观新闻上下文和个性化策略。

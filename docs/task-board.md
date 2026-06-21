@@ -8,9 +8,9 @@
 
 当前主线：
 
-1. 低摩擦决策复盘：把只读重要事项池升级为可沉淀、可确认、可延后、可解决的复盘闭环。
-2. 用户真实决策：记录买入、持有、减仓、卖出和暂不处理的原因，并允许关联建议和重要事项。
-3. 后续结果跟踪：自动沉淀决策后 1D / 1W / 1M 表现，用于周/月复盘，不做自动交易或业绩裁判。
+1. 复盘闭环验收：确认 `review_task`、`decision_record`、`decision_outcome` 形成低打扰、可解释、可持续使用的复盘链路。
+2. 股票财报分析规划：先设计 `STOCK` 财报、财务指标、估值、财报事件和股票质量口径，不直接进入实现。
+3. 基金深度分析规划：先设计 `FUND`、`ETF`、`LOF` 的基金画像、基准/同类比较、风险收益和 ETF 跟踪质量口径。
 
 ## Status
 
@@ -30,6 +30,62 @@
 5. 做完后改成 `DONE`，写入 `Completed At`、`Changed Files`、`Verification`、`Notes`。
 
 ## Current Tasks
+
+### P1-016: 低摩擦决策复盘闭环验收
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 验证 P1-011 到 P1-015 的复盘闭环是否真的低打扰、可解释、可持续使用。
+- Details: `docs/tasks/P1-016-review-loop-acceptance.md`
+- Files: `backend/app/services/review_service.py`, `backend/app/api/review.py`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `worker/review/outcome_tracker.py`
+- Concrete Changes: 执行验收并允许修复小型一致性、文案、状态流、空态问题；不新增表、不新增大页面、不改核心模型。
+- Acceptance: `review_task` 去重、延后、解决、自动失效正确；`decision_record` 轻量可用且允许独立存在；`decision_outcome` 只做复盘参考；Dashboard 只展示摘要；ReviewPage 承担完整流程；Portfolio 只做入口。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 本任务是验收 + 低风险修复，不是新增产品大功能。
+
+### P2-002 reserved: Responsive layout and theme system
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 保留给响应式和主题系统，补齐移动端、亮/暗主题和密度设置。
+- Details: 后续开始执行时再创建任务详情页。
+- Files: `frontend/`
+- Concrete Changes: 本编号已被 UX 规划占用，不用于股票财报或基金深度分析。
+- Acceptance: 后续任务启动时再补充。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 显式保留该编号，避免 `P2-003` / `P2-004` 看起来跳号。
+
+### P2-003: 股票财报分析规划
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 为 `STOCK` 设计财报数据、财务指标、估值、财报事件和股票质量分析口径。
+- Details: `docs/tasks/P2-003-stock-financial-analysis-planning.md`
+- Files: `docs/tasks/P2-003-stock-financial-analysis-planning.md`, `docs/stock-financial-analysis-design.md`
+- Concrete Changes: 输出设计文档，覆盖数据模型、数据来源、指标口径、估值口径、worker 流程、API 范围、页面范围、`review_task` 接入点、`risk_event` 接入点和 AI 解释边界。
+- Acceptance: 规划明确该能力只适用于 `STOCK`；ETF、LOF、FUND 不使用股票财报、公司估值或公司质量评分；财报异常能进入风险、重要事项、日报和 AI 解释链路。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 本任务只产出设计规划，不实现代码。
+
+### P2-004: 基金深度分析规划
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 为 `FUND`、`ETF`、`LOF` 设计基金画像、基准/同类比较、风险收益、暴露适配和 ETF 跟踪质量口径。
+- Details: `docs/tasks/P2-004-fund-deep-analysis-planning.md`
+- Files: `docs/tasks/P2-004-fund-deep-analysis-planning.md`, `docs/fund-deep-analysis-design.md`
+- Concrete Changes: 输出设计文档，覆盖基金画像、基金经理/基金公司、基准比较、同类比较、风险收益、ETF 跟踪质量、暴露适配、worker 流程、API 范围、页面范围、`review_task` 接入点和 AI 解释边界。
+- Acceptance: 规划明确基金深度分析不套股票模型；FUND 看产品、经理、策略和风险收益；ETF 看指数、主题、流动性、跟踪误差、折溢价和暴露；基金异常能进入风险、重要事项、日报和 AI 解释链路。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 本任务只产出设计规划，不实现代码。
 
 ### P1-011: Review Task 持久化
 
@@ -402,3 +458,6 @@
 - `docs/tasks/P1-013-decision-record.md`
 - `docs/tasks/P1-014-decision-outcome-tracking.md`
 - `docs/tasks/P1-015-review-summary-surfaces.md`
+- `docs/tasks/P1-016-review-loop-acceptance.md`
+- `docs/tasks/P2-003-stock-financial-analysis-planning.md`
+- `docs/tasks/P2-004-fund-deep-analysis-planning.md`
