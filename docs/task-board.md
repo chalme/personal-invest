@@ -13,7 +13,8 @@
 3. 真实行情多源容错阶段已完成第一轮：东方财富行情源失败时切换腾讯等真实备用源；所有真实源失败时只能进入真实历史缓存或 `MISSING`。
 4. Code Agent 当前进入 real-only 历史状态一致性修复：清理旧事件污染、修正旧 manifest 的 sample/mixed 残留、收敛页面主视图展示。
 5. 数据源可以 fallback，数据真实性不能 fallback；后续任务不得恢复 sample 兜底，也不得通过清空全库掩盖历史污染。
-6. 下一阶段补强免费真实行情源：优先评估并接入 BaoStock 作为 A股历史日线与估值字段补充源，AKShare 继续作为广覆盖入口和腾讯/新浪 fallback 封装层。
+6. BaoStock A股真实历史行情补充源已完成第一轮接入，AKShare 继续作为广覆盖入口和腾讯/新浪 fallback 封装层。
+7. 下一阶段进入持仓录入体验优化：新增只读实时报价服务，重构添加持仓流程，并打通观察池到持仓的低摩擦入口。
 
 ## Status
 
@@ -258,6 +259,42 @@
 - Changed Files: `pyproject.toml`, `uv.lock`, `worker/ingest/market_providers.py`, `worker/ingest/market_data.py`, `scripts/probe_market_sources.py`, `docs/tasks/DATA-022-baostock-astock-provider.md`, `docs/task-board.md`
 - Verification: `uv lock`; targeted `ruff`; Python compile; monkeypatch smoke 覆盖 BaoStock 成功、BaoStock 失败后腾讯 fallback、全真实源失败进入 missing；前端 build；`git diff --check`。
 - Notes: BaoStock 只作为 A股真实历史行情补充源；不恢复 sample/mock/demo/estimated fallback。
+
+### QUOTE-001: 只读实时报价服务
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 新增只读实时报价服务，为持仓录入、资产识别和市值估算提供真实报价辅助；实时源失败时只能回退到本地真实缓存或 `MISSING`。
+- Details: `docs/tasks/QUOTE-001-realtime-quote-service.md`
+- Files: `backend/app/api/quotes.py`, `backend/app/services/quote_service.py`, `frontend/src/api/types.ts`, optional `frontend/src/api/client.ts`
+- Scope: 支持 A股、ETF、基金的报价查询；A股/ETF 优先公开实时源，失败后使用本地 `daily_bar` 真实缓存；基金优先本地最新 `fund_nav`，后续可扩展估值源；返回价格、名称、资产类型、来源、时间和 warning。
+- Out of Scope: 不写入 `daily_bar` / `fund_nav`；不做自动交易；不做高频盘口；不把实时价格用于高置信投资建议；不恢复 sample/mock/demo/estimated。
+- Acceptance: `GET /api/quotes/{symbol}` 能返回真实报价或真实缓存；实时源失败时明确 `REAL_CACHED` / `MISSING`；接口只读且不污染历史行情；Python 编译、smoke、前端构建通过。
+
+### PORT-001: 持仓录入体验重构
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 把添加持仓从全手工表单升级为“资产识别 -> 自动补价 -> 用户确认”的低摩擦流程。
+- Details: `docs/tasks/PORT-001-portfolio-entry-experience.md`
+- Files: `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/api/types.ts`, `backend/app/services/portfolio_service.py`, optional `backend/app/api/quotes.py`
+- Scope: 输入 symbol 后自动识别名称、资产类型、最新价/净值、价格来源和日期；用户主要填写数量、成本、理由、止盈止损；保存前展示预估市值、盈亏和仓位影响。
+- Out of Scope: 不新增交易流水表；不做券商导入；不做批量导入；不把手动现价当真实行情源；不自动运行每日任务。
+- Acceptance: 添加持仓时不再要求用户手填名称、类型和现价；实时/缓存价格来源明确；保存前有影响预览；QUOTE-001 不可用时能降级到手动但明确标记。
+
+### PORT-002: 观察池一键加入持仓
+
+- Status: `TODO`
+- Priority: `P0`
+- Owner: `Codex`
+- Goal: 打通“观察 -> 买入 -> 持仓”链路，让观察池资产可以一键进入持仓录入流程并自动带入资产信息和报价。
+- Details: `docs/tasks/PORT-002-watchlist-to-position.md`
+- Files: `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/App.tsx`, optional `frontend/src/api/types.ts`
+- Scope: 观察池资产新增“加入持仓”动作；跳转或弹窗打开持仓录入；带入 symbol、name、asset_type、最新价、建议状态和买入理由上下文。
+- Out of Scope: 不自动买入；不自动创建交易流水；不删除观察池资产；不强制执行每日任务。
+- Acceptance: 从观察池点击后能进入持仓录入并预填关键信息；保存后持仓页展示新持仓；观察池仍保留资产并可继续跟踪。
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 
