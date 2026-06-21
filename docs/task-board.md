@@ -9,8 +9,9 @@
 当前主线：
 
 1. 人工验收与生产权限事项单独跟踪，不作为 Code Agent 可独立完成任务。
-2. Code Agent 当前优先收敛任务状态、数据可信度边界和服务器长期运行基础能力。
-3. 真实数据源增强和关键页面结论化先进入拆解规划，不直接开启大范围开发。
+2. Code Agent 当前进入数据可信度与页面结论化执行阶段。
+3. 优先顺序为：交易日历与数据新鲜度、行情日线稳定性、基金净值稳定性、关键页面结论化。
+4. 真实数据源增强第一阶段继续基于 AKShare / 本地 fallback，不引入新付费供应商或外部账号配置。
 
 ## Status
 
@@ -228,6 +229,106 @@
 - Changed Files: `docs/tasks/UX-001-key-page-conclusion-planning.md`, `docs/ux.md`, `docs/product-backlog.md`, `docs/business-information-architecture.md`, `docs/task-board.md`
 - Verification: `git diff --check`; 确认 UX-002 到 UX-005 均明确首屏问题、信息分类和低可信数据降级规则。
 - Notes: 本任务只做规划，不直接重构页面。
+
+### DOC-006: 收敛下一阶段执行看板
+
+- Status: `DONE`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 将已完成规划的真实数据源增强和关键页面结论化任务，正式提升为下一阶段 Code Agent 可执行任务。
+- Details: `docs/tasks/DOC-006-next-stage-task-board.md`
+- Files: `docs/task-board.md`, `docs/tasks/`
+- Scope: 新增 `DATA-004`、`DATA-003`、`DATA-007`、`UX-002`、`UX-003`、`UX-004`、`UX-005` 当前 TODO；补齐任务详情页；更新当前主线。
+- Out of Scope: 不实现代码；不改页面；不接新数据源；不执行人工验收；不修改生产配置。
+- Acceptance: 下一阶段任务均在 Current Code Agent Tasks 中有明确状态、优先级、边界、验收和详情页。
+- Completed At: 2026-06-21
+- Changed Files: `docs/task-board.md`, `docs/tasks/DOC-006-next-stage-task-board.md`, `docs/tasks/DATA-004-trading-calendar-freshness.md`, `docs/tasks/DATA-003-daily-bar-stability.md`, `docs/tasks/DATA-007-fund-nav-stability.md`, `docs/tasks/UX-002-stock-page-conclusion.md`, `docs/tasks/UX-003-portfolio-page-conclusion.md`, `docs/tasks/UX-004-watchlist-page-conclusion.md`, `docs/tasks/UX-005-report-page-briefing.md`
+- Verification: `git diff --check`; 搜索确认下一阶段任务均进入 `task-board` 和任务详情索引。
+- Notes: 本任务只收敛执行看板，不改变业务代码。
+
+### DATA-004: 交易日历与数据新鲜度 V1
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 建立统一交易日历和数据新鲜度判断，让系统能解释数据是否落在最近有效交易日。
+- Details: `docs/tasks/DATA-004-trading-calendar-freshness.md`
+- Files: `worker/ingest/`, `backend/app/services/data_credibility_service.py`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `docs/data-pipeline.md`
+- Scope: 生成或推导最近有效交易日；输出 `latest_data_date`、`expected_latest_trade_date`、`freshness_status`、`stale_days`、`can_drive_advice`、`warning`；无真实交易日历时用工作日估算并标记 `ESTIMATED`。
+- Out of Scope: 不接付费交易日历；不实现复杂节假日维护 UI；不重写所有建议规则。
+- Acceptance: Dashboard / Settings 能展示数据新鲜度；过期数据降低建议可信度或提示低可信；不会把过期数据当作高置信当日结论。
+
+### DATA-003: 行情日线稳定性增强
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 提升股票、ETF、指数日线同步稳定性，避免真实数据失败时被样本静默覆盖。
+- Details: `docs/tasks/DATA-003-daily-bar-stability.md`
+- Files: `worker/ingest/market_data.py`, `backend/app/services/data_credibility_service.py`, `docs/data-pipeline.md`
+- Scope: AKShare 成功时写入 `REAL`；失败时保留最近成功数据；只有无历史数据时才使用样本；market manifest 必须表达 `REAL` / `MIXED` / `SAMPLE` / `MISSING` 和 warning。
+- Out of Scope: 不接新供应商；不做实时行情；不做分钟线；不改变 Parquet 主存储方向。
+- Acceptance: AKShare 部分失败不会污染已有真实历史；样本数据始终可见为 `SAMPLE` 或 `MIXED`；价格类建议只能基于可接受的新鲜真实数据高置信触发。
+
+### DATA-007: 基金净值真实源稳定化
+
+- Status: `TODO`
+- Priority: `P1`
+- Owner: `Codex`
+- Goal: 提升场外基金净值同步稳定性，确保基金收益、回撤和持仓估值不被样本净值误导。
+- Details: `docs/tasks/DATA-007-fund-nav-stability.md`
+- Files: `worker/ingest/market_data.py`, `backend/app/services/data_credibility_service.py`, `frontend/src/pages/FundsPage.tsx`, `docs/data-pipeline.md`
+- Scope: AKShare 基金净值成功时写入 `REAL`；失败时保留最近成功净值；无历史数据时才使用样本；fund manifest 必须包含最新净值日期、覆盖基金数、source mode 和 warning。
+- Out of Scope: 不接付费基金源；不做基金公司公告抓取；不做基金画像真实源。
+- Acceptance: 基金页和数据可信度能展示净值日期与来源；`SAMPLE` 净值不能驱动高置信基金建议；基金净值失败有明确提示而非静默降级。
+
+### UX-002: 股票页研究结论化
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 将股票页从指标展示页升级为研究结论页，首屏回答“是否值得继续观察、为什么、下一步看什么”。
+- Details: `docs/tasks/UX-002-stock-page-conclusion.md`
+- Files: `frontend/src/pages/StocksPage.tsx`, `frontend/src/api/types.ts`, `docs/ux.md`
+- Scope: 增加顶部研究结论卡；突出建议等级、一句话结论、置信度、数据日期、source mode、关键证据和风险点；保留明细指标作为下层内容。
+- Out of Scope: 不做移动端专项；不新增复杂图表；不让 AI 生成黑盒建议；不改变股票分析规则。
+- Acceptance: 用户不读完整表格也能知道该股票当前结论、证据、风险和下一步观察；低可信财报/估值明确降级展示。
+
+### UX-003: 持仓页组合决策化
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 将持仓页从持仓表升级为组合风险和复核入口，首屏回答“当前组合最大风险是什么”。
+- Details: `docs/tasks/UX-003-portfolio-page-conclusion.md`
+- Files: `frontend/src/pages/PortfolioPage.tsx`, `frontend/src/api/types.ts`, `docs/ux.md`
+- Scope: 突出组合风险结论、优先复核资产、资产类型暴露、集中度、盈亏贡献和相关重要事项入口。
+- Out of Scope: 不做复杂收益归因；不做多账户；不做交易导入；不改持仓数据模型。
+- Acceptance: 用户能快速看到是否需要介入、哪些持仓优先复核、组合暴露是否集中；低可信价格/净值明确降级。
+
+### UX-004: 观察池研究状态化
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 将观察池从资产列表升级为研究状态视图，首屏回答“正在研究什么、哪些值得继续看、哪些关注已失效”。
+- Details: `docs/tasks/UX-004-watchlist-page-conclusion.md`
+- Files: `frontend/src/pages/WatchlistPage.tsx`, `frontend/src/api/types.ts`, `docs/ux.md`
+- Scope: 增加观察池摘要、研究状态、建议等级、最新变化、下一步观察和数据待补齐分组。
+- Out of Scope: 不做复杂标签系统；不做批量导入；不做自动清理；不改观察池数据库结构。
+- Acceptance: 观察资产能按研究状态和数据可信度分层；样本数据资产不进入高优先级机会排序。
+
+### UX-005: 日报投资简报化
+
+- Status: `TODO`
+- Priority: `P2`
+- Owner: `Codex`
+- Goal: 将日报从 Markdown 阅读器升级为投资简报入口，首屏回答“今天最重要变化、是否需要复核、明天看什么”。
+- Details: `docs/tasks/UX-005-report-page-briefing.md`
+- Files: `frontend/src/pages/ReportsPage.tsx`, `worker/report/report_builder.py`, `docs/ux.md`
+- Scope: 强化今日结论、重要事项、市场行业、股票/ETF/FUND 分区、明日观察清单和原文归档关系。
+- Out of Scope: 不重写报告生成体系；不接新闻宏观源；不做外部 LLM 长文生成。
+- Acceptance: 日报页面先展示简报结论和复核重点，再进入 Markdown 原文；整体 `MIXED` 或低可信模块必须提示数据边界。
 
 ## Completed / Historical Tasks
 
@@ -856,7 +957,15 @@
 - `docs/tasks/P2-014-etf-tracking-premium.md`
 - `docs/tasks/P2-015-etf-page-ai-review.md`
 - `docs/tasks/DOC-004-product-roadmap-state-alignment.md`
+- `docs/tasks/DOC-006-next-stage-task-board.md`
 - `docs/tasks/P2-017-data-credibility-overview.md`
 - `docs/tasks/MANUAL-001-production-regression-checklist.md`
 - `docs/tasks/DATA-002-real-data-source-enhancement-planning.md`
 - `docs/tasks/UX-001-key-page-conclusion-planning.md`
+- `docs/tasks/DATA-004-trading-calendar-freshness.md`
+- `docs/tasks/DATA-003-daily-bar-stability.md`
+- `docs/tasks/DATA-007-fund-nav-stability.md`
+- `docs/tasks/UX-002-stock-page-conclusion.md`
+- `docs/tasks/UX-003-portfolio-page-conclusion.md`
+- `docs/tasks/UX-004-watchlist-page-conclusion.md`
+- `docs/tasks/UX-005-report-page-briefing.md`
