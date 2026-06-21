@@ -1,10 +1,10 @@
 # P2-017: 数据可信度总览 V1
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -85,6 +85,13 @@
 - `PYTHONPATH=backend uv run python` smoke test `DataCredibilityService`
 - `cd frontend && pnpm build`
 - `./scripts/check.sh`
+
+## Completion
+
+- Added `DataCredibilityService` and `GET /api/data/credibility`.
+- Dashboard now shows a compact credibility summary.
+- Settings now shows the full module-level credibility table.
+- The service distinguishes `REAL`, `ESTIMATED`, `SAMPLE`, `MISSING`, and `MIXED`.
 
 ## Notes
 

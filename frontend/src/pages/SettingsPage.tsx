@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshCcw, RotateCcw, Save } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '../api/client';
-import type { AppSettings } from '../api/types';
+import type { AppSettings, DataCredibilityOverview } from '../api/types';
 import { Badge, Card, LoadingState } from '../components/ui';
 import { applyUiPreferences } from '../utils/uiPreferences';
 
@@ -69,8 +69,26 @@ function ToggleField(props: { label: string; description?: string; checked: bool
   );
 }
 
+
+function credibilityLabel(mode?: string) {
+  if (mode === 'REAL') return '真实';
+  if (mode === 'ESTIMATED') return '估算';
+  if (mode === 'SAMPLE') return '样本';
+  if (mode === 'MISSING') return '缺失';
+  if (mode === 'MIXED') return '混合';
+  return '未知';
+}
+
+function credibilityTone(mode?: string) {
+  if (mode === 'REAL') return 'good' as const;
+  if (mode === 'MISSING') return 'bad' as const;
+  if (mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'MIXED') return 'warn' as const;
+  return 'neutral' as const;
+}
+
 export function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [credibility, setCredibility] = useState<DataCredibilityOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,8 +100,12 @@ export function SettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiGet<ApiResponse<AppSettings>>('/api/settings');
+      const [res, credibilityRes] = await Promise.all([
+        apiGet<ApiResponse<AppSettings>>('/api/settings'),
+        apiGet<ApiResponse<DataCredibilityOverview>>('/api/data/credibility'),
+      ]);
       setSettings(res.data);
+      setCredibility(credibilityRes.data);
       applyUiPreferences(res.data.ui);
       window.localStorage.setItem('personal-invest-ui', JSON.stringify(res.data.ui));
     } catch (err) {
@@ -158,6 +180,45 @@ export function SettingsPage() {
 
       {error && <div className="alert alert-danger">{error}</div>}
       {message && <div className="alert alert-success">{message}</div>}
+
+      {credibility && (
+        <Card
+          title="数据可信度总览"
+          description="统一查看各模块使用真实、估算、样本还是缺失数据。"
+        >
+          <div className="settings-summary">
+            <Badge tone={credibilityTone(credibility.summary.overall_mode)}>整体：{credibilityLabel(credibility.summary.overall_mode)}</Badge>
+            <Badge tone="good">真实 {credibility.summary.real_count}</Badge>
+            <Badge tone="warn">估算 {credibility.summary.estimated_count}</Badge>
+            <Badge tone="warn">样本 {credibility.summary.sample_count}</Badge>
+            <Badge tone={credibility.summary.missing_count > 0 ? 'bad' : 'neutral'}>缺失 {credibility.summary.missing_count}</Badge>
+          </div>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>模块</th>
+                <th>数据模式</th>
+                <th>最新日期</th>
+                <th>记录数</th>
+                <th>参与建议</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              {credibility.modules.map((item) => (
+                <tr key={item.module}>
+                  <td><strong>{item.label}</strong><br /><small>{item.module}</small></td>
+                  <td><Badge tone={credibilityTone(item.source_mode)}>{credibilityLabel(item.source_mode)}</Badge></td>
+                  <td>{item.latest_data_date ?? '暂无'}</td>
+                  <td>{item.record_count}</td>
+                  <td>{item.can_drive_advice ? '是' : '否 / 低置信'}</td>
+                  <td><small>{item.note}</small></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
 
       <div className="grid-2">
         <Card title="风控阈值" description="用于每日风险事件生成，不影响历史报告。">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Database, Flame, PlayCircle, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
 import { apiGet, apiPost } from '../api/client';
-import type { CreateJobResponse, DashboardResponse, JobExecution, MarketTrend, RiskEvent, Signal } from '../api/types';
+import type { CreateJobResponse, DashboardResponse, DataCredibilityOverview, JobExecution, MarketTrend, RiskEvent, Signal } from '../api/types';
 import { MarketScoreLine } from '../components/charts/MarketScoreLine';
 import { SectorBar } from '../components/charts/SectorBar';
 import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '../components/ui';
@@ -56,6 +56,22 @@ function dataSourceTone(mode?: string) {
   return 'neutral' as const;
 }
 
+function credibilityLabel(mode?: string) {
+  if (mode === 'REAL') return '真实数据';
+  if (mode === 'ESTIMATED') return '估算数据';
+  if (mode === 'SAMPLE') return '样本数据';
+  if (mode === 'MISSING') return '数据缺失';
+  if (mode === 'MIXED') return '混合数据';
+  return '数据未知';
+}
+
+function credibilityTone(mode?: string) {
+  if (mode === 'REAL') return 'good' as const;
+  if (mode === 'ESTIMATED' || mode === 'SAMPLE' || mode === 'MIXED') return 'warn' as const;
+  if (mode === 'MISSING') return 'bad' as const;
+  return 'neutral' as const;
+}
+
 function reviewPriorityTone(priority?: string) {
   if (priority === 'HIGH') return 'bad' as const;
   if (priority === 'MEDIUM') return 'warn' as const;
@@ -72,6 +88,7 @@ function formatSignedMoney(value: number | undefined | null) {
 export function Dashboard() {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [marketHistory, setMarketHistory] = useState<MarketTrend[]>([]);
+  const [credibility, setCredibility] = useState<DataCredibilityOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -81,12 +98,14 @@ export function Dashboard() {
   async function load() {
     try {
       setLoading(true);
-      const [dashboard, history] = await Promise.all([
+      const [dashboard, history, credibilityResult] = await Promise.all([
         apiGet<DashboardResponse>('/api/dashboard'),
         apiGet<{ data: MarketTrend[] }>('/api/market/trend/history?limit=60'),
+        apiGet<{ data: DataCredibilityOverview }>('/api/data/credibility'),
       ]);
       setData(dashboard);
       setMarketHistory(history.data);
+      setCredibility(credibilityResult.data);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
@@ -149,6 +168,7 @@ export function Dashboard() {
   const currentMarketTone = marketTone(data.market?.market_score ?? 0);
   const latestJobStatus = String(data.latest_job?.status ?? '暂无任务');
   const source = data.data_source;
+  const credibilitySummary = credibility?.summary;
   const sectorPanorama = data.sector_panorama;
   const review = data.review;
   const importantItems = review?.important_items ?? [];
@@ -205,6 +225,21 @@ export function Dashboard() {
             <p>{source.warning}</p>
             <small>
               数据行数 {source.rows} · 标的 {source.symbol_count} · 来源 {Object.entries(source.source_count ?? {}).map(([key, value]) => `${key}:${value}`).join(' / ') || '未知'}
+            </small>
+          </div>
+        </section>
+      )}
+
+      {credibilitySummary && (
+        <section className={`data-source-alert alert-${credibilityTone(credibilitySummary.overall_mode)}`}>
+          <Database size={18} />
+          <div>
+            <strong>数据可信度：{credibilityLabel(credibilitySummary.overall_mode)}</strong>
+            <p>
+              真实 {credibilitySummary.real_count} · 估算 {credibilitySummary.estimated_count} · 样本 {credibilitySummary.sample_count} · 缺失 {credibilitySummary.missing_count}
+            </p>
+            <small>
+              最新数据日期：{credibilitySummary.latest_data_date ?? '暂无'}。估算或样本数据用于展示和低置信解释，不应单独作为高优先级建议依据。
             </small>
           </div>
         </section>

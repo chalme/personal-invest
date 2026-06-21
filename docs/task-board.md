@@ -47,17 +47,17 @@
 
 ### P2-017: 数据可信度总览 V1
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Goal: 提供统一数据可信度总览，让用户知道各分析模块使用真实、估算、样本还是缺失数据。
 - Details: `docs/tasks/P2-017-data-credibility-overview.md`
 - Files: `backend/app/services/data_credibility_service.py`, `backend/app/api/`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/api/types.ts`
 - Concrete Changes: 新增数据可信度服务与 API；Dashboard 展示摘要；Settings 展示完整模块表；明确 `REAL` / `ESTIMATED` / `SAMPLE` / `MISSING` / `MIXED` 的建议边界。
 - Acceptance: API 返回全局摘要和模块列表；Dashboard 与 Settings 能展示可信度；股票财报、场外基金深度、ETF 深度均被统计；无 FUND 时显示 MISSING；前端构建通过。
-- Completed At:
-- Changed Files:
-- Verification:
-- Notes: 只做数据可信度可见性，不在本任务接入真实数据源或重写建议规则。
+- Completed At: 2026-06-21
+- Changed Files: `backend/app/services/data_credibility_service.py`, `backend/app/api/data.py`, `backend/app/main.py`, `frontend/src/api/types.ts`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `docs/task-board.md`, `docs/tasks/P2-017-data-credibility-overview.md`
+- Verification: `uv run python scripts/migrate_db.py`; `PYTHONPATH=backend uv run python` smoke tested `DataCredibilityService`; `uv run python -m compileall backend/app worker scripts`; `git diff --check`. Frontend build 未执行：当前环境缺少 `pnpm`。
+- Notes: 只做数据可信度可见性，不在本任务接入真实数据源或重写建议规则。当前统计覆盖市场、行情日线、基金净值、股票财报、场外基金深度、ETF 深度、组合快照和复盘闭环。
 
 ### P1-016: 低摩擦决策复盘闭环验收
 

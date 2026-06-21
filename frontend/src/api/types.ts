@@ -12,6 +12,39 @@ export type DataSourceSummary = {
   manifest_file?: string | null;
 };
 
+
+export type DataCredibilityMode = 'REAL' | 'ESTIMATED' | 'SAMPLE' | 'MISSING' | 'MIXED' | string;
+
+export type DataCredibilitySummary = {
+  overall_mode: DataCredibilityMode;
+  real_count: number;
+  estimated_count: number;
+  sample_count: number;
+  missing_count: number;
+  mixed_count: number;
+  latest_data_date?: string | null;
+  has_blocking_issue: boolean;
+  module_count: number;
+};
+
+export type DataCredibilityModule = {
+  module: string;
+  label: string;
+  source_mode: DataCredibilityMode;
+  latest_data_date?: string | null;
+  record_count: number;
+  coverage_ratio?: number | null;
+  can_drive_advice: boolean;
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | string;
+  note: string;
+  source_breakdown?: Record<string, number>;
+};
+
+export type DataCredibilityOverview = {
+  summary: DataCredibilitySummary;
+  modules: DataCredibilityModule[];
+};
+
 export type MarketTrend = {
   trade_date: string;
   market_score: number;
