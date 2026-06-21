@@ -1,10 +1,10 @@
 # P1-013: Decision Record
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -38,3 +38,17 @@
 ## Notes
 
 - 数据库存英文枚举，前端展示中文。
+
+
+## Completed Changes
+
+- Added `decision_record` table and indexes.
+- Added decision create/list service methods and `/api/review/decisions` endpoints.
+- ReviewPage can record a decision from an important item and show recent decisions.
+- Decision creation can auto-fill asset metadata and latest advice context where available.
+
+## Completed Verification
+
+- Migration applied through `scripts/migrate_db.py`.
+- Smoke test saved BUY, HOLD, REDUCE, SELL and NO_ACTION records.
+- Frontend build and `./scripts/check.sh` passed.

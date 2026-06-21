@@ -61,16 +61,16 @@
 
 ### P1-013: Decision Record
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 记录用户真实投资决策及原因，让系统能复盘“当时为什么这么做”。
 - Details: `docs/tasks/P1-013-decision-record.md`
 - Files: `backend/migrations/009_decision_record.sql`, `backend/app/services/review_service.py`, `backend/app/api/review.py`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/pages/PortfolioPage.tsx`
 - Concrete Changes: 新增 `decision_record`；支持 `BUY`、`HOLD`、`REDUCE`、`SELL`、`NO_ACTION`；允许可选关联 `review_task` 和 `investment_advice`；记录原因、预期、信心和数据日期。
 - Acceptance: 用户可以记录系统内外触发的真实决策；决策可以关联重要事项或建议，也可以独立存在；表单保持轻量。
-- Completed At:
-- Changed Files:
-- Verification:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/009_decision_record.sql`, `backend/app/services/review_service.py`, `backend/app/api/review.py`, `frontend/src/pages/ReviewPage.tsx`, `frontend/src/api/types.ts`, `frontend/src/styles/global.css`
+- Verification: `uv run python scripts/migrate_db.py`; API smoke test created BUY/HOLD/REDUCE/SELL/NO_ACTION; `cd frontend && pnpm build`; `./scripts/check.sh`.
 - Notes: 数据库使用英文枚举，前端展示中文。
 
 ### P1-014: Decision Outcome Tracking

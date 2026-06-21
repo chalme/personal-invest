@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { apiGet, apiPatch } from '../api/client';
-import type { ReviewOverview, ReviewTask } from '../api/types';
+import { apiGet, apiPatch, apiPost } from '../api/client';
+import type { DecisionRecord, ReviewOverview, ReviewTask } from '../api/types';
 import { Badge, Card, EmptyState, ErrorState, LoadingState, MetricCard } from '../components/ui';
 
 function tone(priority?: string) {
@@ -38,7 +38,13 @@ type TaskFilter = 'OPEN' | 'ACKNOWLEDGED' | 'SNOOZED' | 'RESOLVED' | 'AUTO_EXPIR
 export function ReviewPage() {
   const [data, setData] = useState<ReviewOverview | null>(null);
   const [tasks, setTasks] = useState<ReviewTask[]>([]);
+  const [decisions, setDecisions] = useState<DecisionRecord[]>([]);
   const [filter, setFilter] = useState<TaskFilter>('OPEN');
+  const [decisionTask, setDecisionTask] = useState<ReviewTask | null>(null);
+  const [decisionType, setDecisionType] = useState('NO_ACTION');
+  const [decisionReason, setDecisionReason] = useState('');
+  const [expectedOutcome, setExpectedOutcome] = useState('');
+  const [conviction, setConviction] = useState('MEDIUM');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -46,12 +52,14 @@ export function ReviewPage() {
   async function load(nextFilter = filter) {
     try {
       setLoading(true);
-      const [overview, taskResp] = await Promise.all([
+      const [overview, taskResp, decisionResp] = await Promise.all([
         apiGet<ReviewOverview>('/api/review/overview'),
         apiGet<{ data: ReviewTask[] }>(`/api/review/tasks?status=${nextFilter}`),
+        apiGet<{ data: DecisionRecord[] }>('/api/review/decisions'),
       ]);
       setData(overview);
       setTasks(taskResp.data);
+      setDecisions(decisionResp.data);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '复盘数据加载失败');
@@ -74,6 +82,34 @@ export function ReviewPage() {
       setError(err instanceof Error ? err.message : '事项状态更新失败');
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  async function createDecision() {
+    if (!decisionTask || !decisionTask.symbol) {
+      setError('请先选择一个带资产代码的重要事项');
+      return;
+    }
+    try {
+      await apiPost('/api/review/decisions', {
+        symbol: decisionTask.symbol,
+        name: decisionTask.name,
+        asset_type: decisionTask.asset_type,
+        review_task_id: decisionTask.id,
+        decision_type: decisionType,
+        decision_reason: decisionReason,
+        expected_outcome: expectedOutcome,
+        conviction,
+        data_date: decisionTask.source_date,
+      });
+      setDecisionTask(null);
+      setDecisionReason('');
+      setExpectedOutcome('');
+      setDecisionType('NO_ACTION');
+      setConviction('MEDIUM');
+      await load(filter);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '决策记录保存失败');
     }
   }
 
@@ -143,6 +179,7 @@ export function ReviewPage() {
                       <button className="ghost-button" disabled={updatingId === task.id} onClick={() => updateTask(task, 'ACKNOWLEDGED')}>确认</button>
                       <button className="ghost-button" disabled={updatingId === task.id} onClick={() => updateTask(task, 'SNOOZED', snoozeUntil(3))}>延后 3 天</button>
                       <button className="primary-button" disabled={updatingId === task.id} onClick={() => updateTask(task, 'RESOLVED')}>解决</button>
+                      {task.symbol && <button className="ghost-button" onClick={() => setDecisionTask(task)}>记录决策</button>}
                     </>
                   )}
                   {task.status !== 'OPEN' && task.status !== 'RESOLVED' && task.status !== 'AUTO_EXPIRED' && (
@@ -156,7 +193,56 @@ export function ReviewPage() {
         </div>
       </Card>
 
+      {decisionTask && (
+        <Card title={`记录决策：${decisionTask.name || decisionTask.symbol}`} description="只记录人工判断，不会自动交易。">
+          <div className="review-decision-form">
+            <label>
+              决策动作
+              <select value={decisionType} onChange={(event) => setDecisionType(event.target.value)}>
+                <option value="BUY">买入</option>
+                <option value="HOLD">持有</option>
+                <option value="REDUCE">减仓</option>
+                <option value="SELL">卖出</option>
+                <option value="NO_ACTION">暂不处理</option>
+              </select>
+            </label>
+            <label>
+              信心
+              <select value={conviction} onChange={(event) => setConviction(event.target.value)}>
+                <option value="LOW">低</option>
+                <option value="MEDIUM">中</option>
+                <option value="HIGH">高</option>
+              </select>
+            </label>
+            <label>
+              决策原因
+              <textarea value={decisionReason} onChange={(event) => setDecisionReason(event.target.value)} placeholder="为什么这样处理或暂不处理？" />
+            </label>
+            <label>
+              预期结果
+              <textarea value={expectedOutcome} onChange={(event) => setExpectedOutcome(event.target.value)} placeholder="后续希望验证什么？" />
+            </label>
+            <div className="review-actions">
+              <button className="primary-button" onClick={createDecision}>保存决策</button>
+              <button className="ghost-button" onClick={() => setDecisionTask(null)}>取消</button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="grid-two">
+        <Card title="最近决策" description="记录当时为什么处理或暂不处理，后续用于周/月复盘。">
+          <div className="list-stack refined-list">
+            {decisions.slice(0, 6).map((item) => (
+              <div className="list-item" key={item.id}>
+                <Badge tone="neutral">{item.decision_type}</Badge>
+                <strong>{item.name ?? item.symbol}</strong>
+                <span>{item.decision_reason || '未填写原因'} · {item.decision_date}</span>
+              </div>
+            ))}
+            {decisions.length === 0 && <EmptyState title="暂无决策记录" description="当有真实处理或暂不处理时，可以从重要事项里记录。" />}
+          </div>
+        </Card>
         <Card title="建议变化" description="只展示需要复核或建议等级发生变化的资产。">
           <div className="list-stack refined-list">
             {data.advice_changes.map((item) => (

@@ -197,6 +197,25 @@ export type ReviewTask = {
   expires_at?: string | null;
 };
 
+export type DecisionRecord = {
+  id: number;
+  decision_date: string;
+  symbol: string;
+  name?: string | null;
+  asset_type: string;
+  decision_type: 'BUY' | 'HOLD' | 'REDUCE' | 'SELL' | 'NO_ACTION' | string;
+  decision_reason?: string | null;
+  expected_outcome?: string | null;
+  review_task_id?: number | null;
+  advice_id?: number | null;
+  advice_level?: string | null;
+  confidence?: number | null;
+  conviction?: string | null;
+  data_date?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ReviewWindowSummary = {
   start_date?: string | null;
   end_date?: string | null;

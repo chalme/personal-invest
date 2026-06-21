@@ -121,6 +121,80 @@ class ReviewService:
             raise ValueError("Review task not found")
         return task
 
+    def list_decisions(self, limit: int = 100, symbol: str | None = None) -> list[dict[str, Any]]:
+        params: list[Any] = []
+        where = ""
+        if symbol:
+            where = "WHERE symbol = ?"
+            params.append(symbol)
+        params.append(max(1, min(limit, 500)))
+        return self.repo.fetch_all(
+            f"""
+            SELECT * FROM decision_record
+            {where}
+            ORDER BY decision_date DESC, id DESC
+            LIMIT ?
+            """,
+            tuple(params),
+        )
+
+    def create_decision(self, payload: dict[str, Any]) -> dict[str, Any]:
+        decision_type = str(payload.get("decision_type") or "").upper()
+        if decision_type not in {"BUY", "HOLD", "REDUCE", "SELL", "NO_ACTION"}:
+            raise ValueError("Unsupported decision type")
+        symbol = str(payload.get("symbol") or "").strip().upper()
+        if not symbol:
+            raise ValueError("symbol is required")
+        now = self._now()
+        task = self.repo.fetch_one("SELECT * FROM review_task WHERE id = ?", (payload.get("review_task_id"),)) if payload.get("review_task_id") else None
+        latest_advice = self.repo.fetch_one(
+            """
+            SELECT * FROM investment_advice
+            WHERE symbol = ?
+            ORDER BY advice_date DESC, id DESC
+            LIMIT 1
+            """,
+            (symbol,),
+        )
+        instrument = self.repo.fetch_one("SELECT * FROM instrument WHERE symbol = ?", (symbol,))
+        name = payload.get("name") or (task or {}).get("name") or (latest_advice or {}).get("name") or (instrument or {}).get("name") or symbol
+        asset_type = payload.get("asset_type") or (task or {}).get("asset_type") or (latest_advice or {}).get("asset_type") or (instrument or {}).get("asset_type") or "STOCK"
+        advice_id = payload.get("advice_id") or (latest_advice or {}).get("id")
+        advice_level = payload.get("advice_level") or (latest_advice or {}).get("advice_level")
+        data_date = payload.get("data_date") or (latest_advice or {}).get("advice_date") or (task or {}).get("source_date")
+        with get_db() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO decision_record(
+                    decision_date, symbol, name, asset_type, decision_type,
+                    decision_reason, expected_outcome, review_task_id, advice_id,
+                    advice_level, confidence, conviction, data_date, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    payload.get("decision_date") or now[:10],
+                    symbol,
+                    name,
+                    asset_type,
+                    decision_type,
+                    payload.get("decision_reason"),
+                    payload.get("expected_outcome"),
+                    payload.get("review_task_id"),
+                    advice_id,
+                    advice_level,
+                    payload.get("confidence"),
+                    payload.get("conviction"),
+                    data_date,
+                    now,
+                    now,
+                ),
+            )
+            decision_id = int(cursor.lastrowid)
+        decision = self.repo.fetch_one("SELECT * FROM decision_record WHERE id = ?", (decision_id,))
+        if not decision:
+            raise ValueError("Decision not found after create")
+        return decision
+
     def sync_tasks_from_overview(self) -> dict[str, Any]:
         self.expire_tasks()
         overview = self.overview()
