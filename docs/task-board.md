@@ -201,7 +201,7 @@
 
 ### DATA-002: 真实数据源增强任务拆解
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Owner: `Codex`
 - Goal: 把“真实数据源增强”拆成可独立开发的小任务，避免一次性做成大泥球。
@@ -209,6 +209,10 @@
 - Scope: 拆解行情日线稳定性、交易日历、股票财报、估值、基金净值、基金画像、ETF 跟踪指数与折溢价等子任务；每个子任务明确输入、输出、source_mode、fallback、页面影响和建议规则影响。
 - Out of Scope: 不一次性实现所有数据源；不引入付费源；不写供应商配置 UI；不承诺全覆盖。
 - Acceptance: 每个数据源增强任务都可以独立开发；每个任务都有清晰边界和验收标准。
+- Completed At: 2026-06-21
+- Changed Files: `docs/tasks/DATA-002-real-data-source-enhancement-planning.md`, `docs/data-pipeline.md`, `docs/product-backlog.md`, `docs/task-board.md`
+- Verification: `git diff --check`; 确认 DATA-003 到 DATA-010 均包含输入、输出、source_mode、fallback、页面影响和建议规则影响。
+- Notes: 本任务只拆解，不接入新真实数据源。
 
 ### UX-001: 关键页面结论化打磨规划
 
@@ -1032,3 +1036,4 @@
 - `docs/tasks/DOC-004-product-roadmap-state-alignment.md`
 - `docs/tasks/P2-017-data-credibility-overview.md`
 - `docs/tasks/MANUAL-001-production-regression-checklist.md`
+- `docs/tasks/DATA-002-real-data-source-enhancement-planning.md`
