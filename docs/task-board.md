@@ -8,9 +8,9 @@
 
 当前主线：
 
-1. ETF 深度分析 V1：在现有 `ETF_PRICE` 基础能力上，补齐 ETF 画像、暴露、流动性、风险收益、跟踪质量、页面、AI 和复盘闭环。
-2. 桌面端体验系统：重定义 `P2-002`，只做桌面端主题、密度、视觉一致性和设置持久化；移动端响应式适配后置，不进入当前任务。
-3. 已完成股票财报分析 V1 和场外基金深度分析 V1，后续只做缺陷修复或基于新任务继续增强。
+1. 文档状态收敛：清理 `product-backlog` 与 `long-term-roadmap` 中已完成但仍像待办的历史内容，避免后续任务判断被污染。
+2. 数据可信度总览 V1：统一展示市场、行情、股票财报、场外基金深度、ETF 深度和复盘链路的数据来源状态。
+3. 线上功能回归验收需要人工浏览器确认，记录为 `MANUAL-001`，不作为开发任务自动执行。
 
 ## Status
 
@@ -30,6 +30,34 @@
 5. 做完后改成 `DONE`，写入 `Completed At`、`Changed Files`、`Verification`、`Notes`。
 
 ## Current Tasks
+
+### DOC-004: 收敛产品 backlog 与长期路线图状态
+
+- Status: `TODO`
+- Priority: `P1`
+- Goal: 将产品 backlog、长期路线图和任务看板与当前已实现能力对齐，避免已完成能力继续以未完成待办形式出现。
+- Details: `docs/tasks/DOC-004-product-roadmap-state-alignment.md`
+- Files: `docs/product-backlog.md`, `docs/long-term-roadmap.md`, `docs/task-board.md`, `docs/README.md`
+- Concrete Changes: 更新已完成能力、当前真实短板和下一阶段方向；不改业务代码。
+- Acceptance: 已完成能力不再被描述为当前未完成主线；当前短板只保留真实短板；下一阶段任务方向清晰；`git diff --check` 通过。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 文档状态收敛任务，不是线上人工验收，也不是新功能实现。
+
+### P2-017: 数据可信度总览 V1
+
+- Status: `TODO`
+- Priority: `P2`
+- Goal: 提供统一数据可信度总览，让用户知道各分析模块使用真实、估算、样本还是缺失数据。
+- Details: `docs/tasks/P2-017-data-credibility-overview.md`
+- Files: `backend/app/services/data_credibility_service.py`, `backend/app/api/`, `frontend/src/pages/Dashboard.tsx`, `frontend/src/pages/SettingsPage.tsx`, `frontend/src/api/types.ts`
+- Concrete Changes: 新增数据可信度服务与 API；Dashboard 展示摘要；Settings 展示完整模块表；明确 `REAL` / `ESTIMATED` / `SAMPLE` / `MISSING` / `MIXED` 的建议边界。
+- Acceptance: API 返回全局摘要和模块列表；Dashboard 与 Settings 能展示可信度；股票财报、场外基金深度、ETF 深度均被统计；无 FUND 时显示 MISSING；前端构建通过。
+- Completed At:
+- Changed Files:
+- Verification:
+- Notes: 只做数据可信度可见性，不在本任务接入真实数据源或重写建议规则。
 
 ### P1-016: 低摩擦决策复盘闭环验收
 
@@ -809,3 +837,6 @@
 - `docs/tasks/P2-013-etf-liquidity-risk-return.md`
 - `docs/tasks/P2-014-etf-tracking-premium.md`
 - `docs/tasks/P2-015-etf-page-ai-review.md`
+- `docs/tasks/DOC-004-product-roadmap-state-alignment.md`
+- `docs/tasks/P2-017-data-credibility-overview.md`
+- `docs/tasks/MANUAL-001-production-regression-checklist.md`
