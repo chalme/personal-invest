@@ -1,6 +1,6 @@
 # DATA-020: Dashboard / Settings 展示 provider 级可信度
 
-- Status: TODO
+- Status: DONE
 - Priority: P2
 - Owner: Codex
 - Created At: 2026-06-21
@@ -66,3 +66,10 @@
 ## Notes
 
 本任务是可观测性和用户理解增强。它不负责让数据源变可用，数据源容错由 `DATA-016` 到 `DATA-019` 负责。
+
+
+## Completion
+
+- Completed At: 2026-06-21
+- Implemented provider chain for real daily bars, provider metadata, missing field tracking, timeout/retry/circuit breaker, read-only probe script, and Dashboard/Settings provider credibility display.
+- Real-only invariant preserved: all live providers failed -> real historical cache or MISSING, never sample/mock/demo/estimated.

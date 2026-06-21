@@ -1,6 +1,6 @@
 # DATA-017: 行情字段标准化与 provider 元数据
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
@@ -71,3 +71,10 @@
 ## Notes
 
 本任务的关键不是“字段越全越好”，而是“字段语义必须诚实”。真实源没有提供的字段宁可缺失，也不能用估算值冒充真实数据。
+
+
+## Completion
+
+- Completed At: 2026-06-21
+- Implemented provider chain for real daily bars, provider metadata, missing field tracking, timeout/retry/circuit breaker, read-only probe script, and Dashboard/Settings provider credibility display.
+- Real-only invariant preserved: all live providers failed -> real historical cache or MISSING, never sample/mock/demo/estimated.

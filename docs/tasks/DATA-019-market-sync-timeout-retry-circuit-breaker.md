@@ -1,6 +1,6 @@
 # DATA-019: 行情同步 timeout / retry / 熔断
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
@@ -61,3 +61,10 @@
 ## Notes
 
 本任务优先稳定性，不追求高并发。公开数据源访问过快可能加重限流，第一版建议串行 provider fallback、小并发资产处理或保持当前串行资产处理。
+
+
+## Completion
+
+- Completed At: 2026-06-21
+- Implemented provider chain for real daily bars, provider metadata, missing field tracking, timeout/retry/circuit breaker, read-only probe script, and Dashboard/Settings provider credibility display.
+- Real-only invariant preserved: all live providers failed -> real historical cache or MISSING, never sample/mock/demo/estimated.

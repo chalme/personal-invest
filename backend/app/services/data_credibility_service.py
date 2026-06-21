@@ -161,6 +161,15 @@ class DataCredibilityService:
             }
             if source_count
             else {mode: record_count},
+            provider_count=dict(manifest.get("provider_count") or {}),
+            interface_count=dict(manifest.get("interface_count") or {}),
+            missing_field_count=dict(manifest.get("missing_field_count") or {}),
+            asset_source_status=dict(manifest.get("asset_source_status") or {}),
+            asset_missing_fields=dict(manifest.get("asset_missing_fields") or {}),
+            provider_error_count=dict(manifest.get("provider_error_count") or {}),
+            error_category_count=dict(manifest.get("error_category_count") or {}),
+            provider_disabled=list(manifest.get("provider_disabled") or []),
+            asset_fallback_reason=dict(manifest.get("asset_fallback_reason") or {}),
         )
         return self._with_freshness(module_result)
 

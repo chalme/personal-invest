@@ -100,6 +100,31 @@ function freshnessTone(status?: string) {
   return 'neutral' as const;
 }
 
+function providerLabel(provider: string) {
+  const labels: Record<string, string> = {
+    eastmoney: '东方财富',
+    tencent: '腾讯',
+    sina: '新浪',
+    akshare_cached: '真实历史缓存',
+    missing: '缺失',
+    historical_parquet: '历史 parquet',
+  };
+  return labels[provider] ?? provider;
+}
+
+function formatCountMap(value?: Record<string, number>, limit = 5) {
+  const entries = Object.entries(value ?? {}).filter(([, count]) => Number(count) > 0);
+  if (entries.length === 0) return '暂无';
+  return entries.slice(0, limit).map(([key, count]) => `${providerLabel(key)}:${count}`).join(' / ');
+}
+
+function listMatchingAssets(value?: Record<string, string>, target = 'missing') {
+  return Object.entries(value ?? {})
+    .filter(([, status]) => status.toLowerCase().includes(target))
+    .map(([symbol]) => symbol);
+}
+
+
 export function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [credibility, setCredibility] = useState<DataCredibilityOverview | null>(null);
@@ -172,6 +197,10 @@ export function SettingsPage() {
     return <LoadingState title="正在加载设置" description="读取本地 SQLite 配置。" />;
   }
 
+  const dailyBarCredibility = credibility?.modules.find((item) => item.module === 'daily_bar');
+  const missingAssets = listMatchingAssets(dailyBarCredibility?.asset_source_status, 'missing');
+  const cachedAssets = listMatchingAssets(dailyBarCredibility?.asset_source_status, 'cached');
+
   return (
     <div className="page-stack">
       <div className="page-title-row">
@@ -210,6 +239,12 @@ export function SettingsPage() {
             <Badge tone={freshnessTone(credibility.summary.freshness_status)}>新鲜度：{freshnessLabel(credibility.summary.freshness_status)}</Badge>
             <Badge tone="neutral">预期交易日 {credibility.summary.expected_latest_trade_date ?? '暂无'}</Badge>
           </div>
+          {dailyBarCredibility && (
+            <div className="alert alert-info">
+              行情真实源组成：{formatCountMap(dailyBarCredibility.provider_count)}；接口组成：{formatCountMap(dailyBarCredibility.interface_count)}；
+              真实历史缓存 {cachedAssets.length} 个；缺失资产 {missingAssets.length} 个。
+            </div>
+          )}
           {credibility.summary.warning && <div className="alert alert-warning">{credibility.summary.warning}</div>}
           <table className="data-table">
             <thead>
@@ -220,6 +255,8 @@ export function SettingsPage() {
                 <th>预期交易日</th>
                 <th>新鲜度</th>
                 <th>记录数</th>
+                <th>Provider / 接口</th>
+                <th>失败 / 缺字段</th>
                 <th>参与建议</th>
                 <th>说明</th>
               </tr>
@@ -236,8 +273,20 @@ export function SettingsPage() {
                     {item.stale_days ? <small>落后 {item.stale_days} 天</small> : null}
                   </td>
                   <td>{item.record_count}</td>
+                  <td>
+                    <small>{formatCountMap(item.provider_count)}</small><br />
+                    <small>{formatCountMap(item.interface_count, 3)}</small>
+                  </td>
+                  <td>
+                    <small>失败：{formatCountMap(item.provider_error_count)}</small><br />
+                    <small>缺字段：{formatCountMap(item.missing_field_count)}</small>
+                  </td>
                   <td>{item.can_drive_advice ? '是' : '否 / 低置信'}</td>
-                  <td><small>{item.note}</small></td>
+                  <td>
+                    <small>{item.note}</small>
+                    {item.provider_disabled?.length ? <><br /><small>本轮熔断：{item.provider_disabled.join(' / ')}</small></> : null}
+                    {Object.keys(item.asset_fallback_reason ?? {}).length ? <><br /><small>fallback 资产：{Object.keys(item.asset_fallback_reason ?? {}).slice(0, 3).join(' / ')}</small></> : null}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -86,6 +86,30 @@ function freshnessTone(status?: string) {
   return 'neutral' as const;
 }
 
+function providerLabel(provider: string) {
+  const labels: Record<string, string> = {
+    eastmoney: '东方财富',
+    tencent: '腾讯',
+    sina: '新浪',
+    akshare_cached: '真实历史缓存',
+    missing: '缺失',
+  };
+  return labels[provider] ?? provider;
+}
+
+function formatCountMap(value?: Record<string, number>, limit = 4) {
+  const entries = Object.entries(value ?? {}).filter(([, count]) => Number(count) > 0);
+  if (entries.length === 0) return '暂无';
+  return entries.slice(0, limit).map(([key, count]) => `${providerLabel(key)} ${count}`).join(' / ');
+}
+
+function assetStatusSummary(value?: Record<string, string>, target = 'missing') {
+  return Object.entries(value ?? {})
+    .filter(([, status]) => status.toLowerCase().includes(target))
+    .map(([symbol]) => symbol);
+}
+
+
 function reviewPriorityTone(priority?: string) {
   if (priority === 'HIGH') return 'bad' as const;
   if (priority === 'MEDIUM') return 'warn' as const;
@@ -183,6 +207,11 @@ export function Dashboard(props: { onNavigate?: (key: string) => void }) {
   const latestJobStatus = String(data.latest_job?.status ?? '暂无任务');
   const source = data.data_source;
   const credibilitySummary = credibility?.summary;
+  const dailyBarCredibility = credibility?.modules.find((item) => item.module === 'daily_bar');
+  const providerSummary = formatCountMap(dailyBarCredibility?.provider_count);
+  const interfaceSummary = formatCountMap(dailyBarCredibility?.interface_count, 3);
+  const missingProviderAssets = assetStatusSummary(dailyBarCredibility?.asset_source_status, 'missing');
+  const cachedProviderAssets = assetStatusSummary(dailyBarCredibility?.asset_source_status, 'cached');
   const sectorPanorama = data.sector_panorama;
   const review = data.review;
   const importantItems = review?.important_items ?? [];
@@ -272,6 +301,11 @@ export function Dashboard(props: { onNavigate?: (key: string) => void }) {
               最新数据日期：{credibilitySummary.latest_data_date ?? '暂无'} · 预期交易日：{credibilitySummary.expected_latest_trade_date ?? '暂无'} · 新鲜度：{freshnessLabel(credibilitySummary.freshness_status)}。
               可驱动高置信建议模块 {credibilitySummary.can_drive_advice_count ?? 0} 个。历史估算或样本污染不可作为正常建议依据，请先清理或补齐真实数据。
             </small>
+            {dailyBarCredibility && (
+              <small>
+                行情源组成：{providerSummary}；接口：{interfaceSummary}；缺失资产 {missingProviderAssets.slice(0, 3).join(' / ') || '无'}。
+              </small>
+            )}
             {credibilitySummary.warning && <small>{credibilitySummary.warning}</small>}
           </div>
         </section>
@@ -283,6 +317,9 @@ export function Dashboard(props: { onNavigate?: (key: string) => void }) {
             <div><span>可信度</span><strong>{credibilitySummary ? <DataModeBadge mode={credibilitySummary.overall_mode} /> : dataSourceLabel(source?.mode)}</strong></div>
             <div><span>新鲜度</span><strong>{credibilitySummary ? <FreshnessBadge status={credibilitySummary.freshness_status} /> : freshnessLabel(source?.freshness_status)}</strong></div>
             <div><span>最新 / 预期</span><strong>{credibilitySummary?.latest_data_date ?? source?.latest_trade_date ?? '暂无'} / {credibilitySummary?.expected_latest_trade_date ?? source?.expected_latest_trade_date ?? '暂无'}</strong></div>
+            <div><span>真实源组成</span><strong>{providerSummary}</strong></div>
+            <div><span>接口组成</span><strong>{interfaceSummary}</strong></div>
+            <div><span>缓存 / 缺失资产</span><strong>{cachedProviderAssets.length} / {missingProviderAssets.length}</strong></div>
             <div><span>建议边界</span><strong>{(credibilitySummary?.can_drive_advice_count ?? 0) > 0 ? `可驱动 ${credibilitySummary?.can_drive_advice_count} 个模块` : '只能低置信观察'}</strong></div>
           </div>
         </Card>

@@ -5,6 +5,11 @@ from typing import Any
 
 import pandas as pd
 
+from worker.ingest.market_providers import (
+    ProviderRuntime,
+    fetch_daily_bar,
+    provider_attempts_to_json,
+)
 from worker.storage import (
     RAW_DIR,
     connect_db,
@@ -159,6 +164,15 @@ def _build_manifest(
     extra_warnings: list[str] | None = None,
     can_drive_advice_override: bool | None = None,
     asset_source_status: dict[str, str] | None = None,
+    provider_count: dict[str, int] | None = None,
+    interface_count: dict[str, int] | None = None,
+    missing_field_count: dict[str, int] | None = None,
+    asset_missing_fields: dict[str, list[str]] | None = None,
+    provider_error_count: dict[str, int] | None = None,
+    error_category_count: dict[str, int] | None = None,
+    provider_disabled: list[str] | None = None,
+    asset_fallback_reason: dict[str, str] | None = None,
+    asset_provider_attempts: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     source_mode = _source_mode_from_count(source_count)
     freshness = _freshness_fields(source_mode, latest_data_date)
@@ -183,6 +197,15 @@ def _build_manifest(
         "warning": " ".join(warnings) if warnings else None,
         **freshness,
         "asset_source_status": asset_source_status or {},
+        "provider_count": provider_count or {},
+        "interface_count": interface_count or {},
+        "missing_field_count": missing_field_count or {},
+        "asset_missing_fields": asset_missing_fields or {},
+        "provider_error_count": provider_error_count or {},
+        "error_category_count": error_category_count or {},
+        "provider_disabled": provider_disabled or [],
+        "asset_fallback_reason": asset_fallback_reason or {},
+        "asset_provider_attempts": asset_provider_attempts or {},
         asset_key: assets,
         latest_key: latest_data_date,
     }
@@ -268,14 +291,23 @@ def _historical_real_bars(
     required = ["trade_date", "open", "high", "low", "close"]
     if any(col not in frame.columns for col in required):
         return None
+    missing_fields: list[str] = []
     if "volume" not in frame.columns:
-        frame["volume"] = 0
+        frame["volume"] = pd.NA
+        missing_fields.append("volume")
     if "amount" not in frame.columns:
-        frame["amount"] = frame["close"].astype(float) * frame["volume"].astype(float)
+        frame["amount"] = pd.NA
+        missing_fields.append("amount")
     frame["symbol"] = symbol
     frame["name"] = name
     frame["trade_date"] = pd.to_datetime(frame["trade_date"]).dt.date.astype(str)
     frame["source"] = "akshare_cached"
+    frame["source_mode"] = "REAL_CACHED"
+    frame["source_provider"] = "akshare_cached"
+    frame["source_interface"] = "historical_parquet"
+    frame["missing_fields"] = ",".join(sorted(missing_fields))
+    frame["derived_fields"] = ""
+    frame["fallback_reason"] = "all_live_providers_failed; reused historical real bars"
     columns = [
         "trade_date",
         "open",
@@ -287,9 +319,26 @@ def _historical_real_bars(
         "symbol",
         "name",
         "source",
+        "source_mode",
+        "source_provider",
+        "source_interface",
+        "missing_fields",
+        "derived_fields",
+        "fallback_reason",
     ]
     frame = frame[columns].copy()
     return frame.sort_values("trade_date").tail(max_days).reset_index(drop=True)
+
+
+def _increment(counter: dict[str, int], key: str | None, amount: int = 1) -> None:
+    normalized = str(key or "unknown")
+    counter[normalized] = counter.get(normalized, 0) + amount
+
+
+def _split_fields(value: Any) -> list[str]:
+    if value is None:
+        return []
+    return [item for item in str(value).split(",") if item]
 
 
 def sync_market_data(days: int = 180) -> dict[str, Any]:
@@ -301,43 +350,110 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
     end_date = business_dates[-1].strftime("%Y%m%d")
     historical_daily_bar = read_parquet_dataset("daily_bar")
     frames: list[pd.DataFrame] = []
+    runtime = ProviderRuntime()
     source_count = {"akshare": 0, "akshare_cached": 0, "missing": 0}
+    provider_count: dict[str, int] = {}
+    interface_count: dict[str, int] = {}
+    missing_field_count: dict[str, int] = {}
     asset_source_status: dict[str, str] = {}
+    asset_missing_fields: dict[str, list[str]] = {}
+    asset_fallback_reason: dict[str, str] = {}
+    asset_provider_attempts: dict[str, str] = {}
     fallback_symbols: list[str] = []
     missing_symbols: list[str] = []
+
     for item in merged.values():
         symbol = str(item["symbol"])
         name = str(item.get("name") or symbol)
-        frame = _fetch_with_akshare(symbol, name, start_date, end_date)
-        if frame is None or frame.empty:
-            frame = _historical_real_bars(symbol, name, historical_daily_bar, days)
-            if frame is None or frame.empty:
-                source_count["missing"] += 1
-                asset_source_status[symbol] = "missing"
-                missing_symbols.append(symbol)
-                continue
-            else:
-                source_count["akshare_cached"] += 1
-                asset_source_status[symbol] = "akshare_cached"
-                fallback_symbols.append(symbol)
-        else:
+        asset_type = str(item.get("asset_type") or "") or None
+        group_name = str(item.get("group_name") or "") or None
+        result = fetch_daily_bar(
+            symbol=symbol,
+            name=name,
+            asset_type=asset_type,
+            group_name=group_name,
+            start_date=start_date,
+            end_date=end_date,
+            runtime=runtime,
+        )
+        if result is not None:
+            asset_provider_attempts[symbol] = provider_attempts_to_json(result.attempts)
+        if result is not None and not result.frame.empty:
+            frame = result.frame
             source_count["akshare"] += 1
-            asset_source_status[symbol] = "akshare"
+            _increment(provider_count, result.provider)
+            _increment(interface_count, result.interface)
+            asset_source_status[symbol] = f"{result.provider}:{result.interface}"
+            if result.missing_fields:
+                asset_missing_fields[symbol] = result.missing_fields
+                for field in result.missing_fields:
+                    _increment(missing_field_count, field)
+            if result.fallback_reason:
+                asset_fallback_reason[symbol] = result.fallback_reason
+                fallback_symbols.append(symbol)
+            frames.append(frame)
+            continue
+
+        frame = _historical_real_bars(symbol, name, historical_daily_bar, days)
+        if frame is None or frame.empty:
+            source_count["missing"] += 1
+            _increment(provider_count, "missing")
+            _increment(interface_count, "missing")
+            asset_source_status[symbol] = "missing"
+            if result and result.fallback_reason:
+                asset_fallback_reason[symbol] = result.fallback_reason
+            missing_symbols.append(symbol)
+            continue
+
+        source_count["akshare_cached"] += 1
+        _increment(provider_count, "akshare_cached")
+        _increment(interface_count, "historical_parquet")
+        asset_source_status[symbol] = "akshare_cached:historical_parquet"
+        cached_missing_value = (
+            frame["missing_fields"].iloc[0] if "missing_fields" in frame.columns else ""
+        )
+        cached_missing = _split_fields(cached_missing_value)
+        if cached_missing:
+            asset_missing_fields[symbol] = cached_missing
+            for field in cached_missing:
+                _increment(missing_field_count, field)
+        fallback_symbols.append(symbol)
         frames.append(frame)
+
     generated_at = now_iso()
     requested_assets = sorted(str(item["symbol"]) for item in merged.values())
     missing_warning = (
-        f"{len(missing_symbols)} 个资产缺少 AKShare 数据且没有可复用真实历史，"
+        f"{len(missing_symbols)} 个资产所有真实 provider 失败且没有可复用真实历史，"
         "已标记为 MISSING，未生成样本行情。"
         if missing_symbols
         else None
     )
     fallback_warning = (
-        f"{len(fallback_symbols)} 个资产 AKShare 同步失败，"
-        "已保留最近成功真实历史；相关资产不应驱动高置信当日价格建议。"
+        f"{len(fallback_symbols)} 个资产发生 provider fallback 或复用真实历史；"
+        "相关资产不应驱动高置信当日价格建议。"
         if fallback_symbols
         else None
     )
+    provider_warning = (
+        f"provider 失败摘要：{runtime.provider_error_count}；"
+        f"本轮熔断：{sorted(runtime.disabled)}。"
+        if runtime.provider_error_count or runtime.disabled
+        else None
+    )
+    common_manifest_kwargs = {
+        "provider_count": provider_count,
+        "interface_count": interface_count,
+        "missing_field_count": missing_field_count,
+        "asset_missing_fields": asset_missing_fields,
+        "provider_error_count": runtime.provider_error_count,
+        "error_category_count": runtime.error_count,
+        "provider_disabled": sorted(runtime.disabled),
+        "asset_fallback_reason": asset_fallback_reason,
+        "asset_provider_attempts": asset_provider_attempts,
+    }
+    extra_warnings = [
+        warning for warning in (missing_warning, fallback_warning, provider_warning) if warning
+    ]
     if not frames:
         manifest = _build_manifest(
             dataset="daily_bar",
@@ -349,9 +465,10 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
             asset_key="symbols",
             latest_key="latest_trade_date",
             dataset_label="行情日线",
-            extra_warnings=[warning for warning in (missing_warning, fallback_warning) if warning],
+            extra_warnings=extra_warnings,
             can_drive_advice_override=False,
             asset_source_status=asset_source_status,
+            **common_manifest_kwargs,
         )
         write_json_atomic(
             RAW_DIR / "market" / f"{date.today().isoformat()}_manifest.json", manifest
@@ -373,14 +490,14 @@ def sync_market_data(days: int = 180) -> dict[str, Any]:
         asset_key="symbols",
         latest_key="latest_trade_date",
         dataset_label="行情日线",
-        extra_warnings=[warning for warning in (missing_warning, fallback_warning) if warning],
+        extra_warnings=extra_warnings,
         can_drive_advice_override=False if fallback_symbols or missing_symbols else None,
         asset_source_status=asset_source_status,
+        **common_manifest_kwargs,
     )
     write_json_atomic(RAW_DIR / "market" / f"{date.today().isoformat()}_manifest.json", manifest)
     target = write_partitioned_parquet(df, "daily_bar", ["trade_date"])
     return {**manifest, "status": "ok", "dataset": str(target)}
-
 
 def _fetch_fund_nav_with_akshare(symbol: str, name: str) -> pd.DataFrame | None:
     try:

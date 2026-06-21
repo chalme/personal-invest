@@ -1,6 +1,6 @@
 # DATA-018: 行情源健康检查脚本
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
@@ -75,3 +75,10 @@
 ## Notes
 
 该脚本是排障工具，不是同步任务。它的价值在于避免把“数据源不可用”误判为“代码 bug”或“周末不能查询”。
+
+
+## Completion
+
+- Completed At: 2026-06-21
+- Implemented provider chain for real daily bars, provider metadata, missing field tracking, timeout/retry/circuit breaker, read-only probe script, and Dashboard/Settings provider credibility display.
+- Real-only invariant preserved: all live providers failed -> real historical cache or MISSING, never sample/mock/demo/estimated.

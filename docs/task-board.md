@@ -163,7 +163,7 @@
 
 ### DATA-016: 真实行情多源 Provider 抽象
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Owner: `Codex`
 - Goal: 把行情日线采集从单一 AKShare 接口调用升级为真实数据 provider chain，东方财富失败时切换腾讯等真实备用源，全部失败时进入真实缓存或 `MISSING`。
@@ -173,9 +173,11 @@
 - Out of Scope: 不接付费数据源；不做前端展示；不清理历史数据；不处理财务/基金画像/ETF 深度因子。
 - Acceptance: 东财失败时 `600519.SH`、`000001.SZ`、`000001.SH`、`399001.SZ`、`510300.SH` 可走真实备用源；全部失败时不产生 sample。
 
+- Completed At: `2026-06-21`
+
 ### DATA-017: 行情字段标准化与 provider 元数据
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P0`
 - Owner: `Codex`
 - Goal: 统一不同真实源返回字段，明确 provider、接口、缺失字段和真实派生字段，避免把缺失字段估算成真实字段。
@@ -185,9 +187,11 @@
 - Out of Scope: 不新增 provider chain；不做 UI 展示；不清理历史 parquet。
 - Acceptance: 东财/腾讯/指数源都写入统一 schema；缺失字段进入 `missing_fields`，不被伪造。
 
+- Completed At: `2026-06-21`
+
 ### DATA-018: 行情源健康检查脚本
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 提供只读脚本快速确认当前环境哪些真实行情源可访问，避免把网络/接口问题误判为业务代码问题。
@@ -197,9 +201,11 @@
 - Out of Scope: 不写 DB/Parquet/manifest；不改同步逻辑；不自动配置代理。
 - Acceptance: 脚本默认只读，能结构化展示 partial_ok / all_failed，执行前后数据文件无变更。
 
+- Completed At: `2026-06-21`
+
 ### DATA-019: 行情同步 timeout / retry / 熔断
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Owner: `Codex`
 - Goal: 防止单个不可用 provider 卡死整个行情同步，让可用真实备用源继续完成同步。
@@ -209,9 +215,11 @@
 - Out of Scope: 不做分布式任务队列；不接监控系统；不恢复 sample fallback。
 - Acceptance: 东财超时不会拖死同步；腾讯可用时继续写真实行情；全部失败进入缓存或 `MISSING`。
 
+- Completed At: `2026-06-21`
+
 ### DATA-020: Dashboard / Settings 展示 provider 级可信度
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Owner: `Codex`
 - Goal: 在 Dashboard 和设置页展示真实行情 provider 组成、缓存资产、缺失资产和失败原因。
@@ -220,6 +228,8 @@
 - Scope: 展示 `provider_count`、`interface_count`、资产级 provider 状态、失败原因和缺失字段摘要。
 - Out of Scope: 不改行情同步；不改 manifest 生成；不恢复 sample 合法文案。
 - Acceptance: Dashboard/Settings 能解释数据来自腾讯/东财/缓存/缺失，且不把 sample/estimated 当合法模式。
+
+- Completed At: `2026-06-21`
 
 ### DOC-005: 清理 task-board 当前主线与重复 DONE 任务块
 

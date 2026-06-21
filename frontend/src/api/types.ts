@@ -11,6 +11,9 @@ export type DataSourceSummary = {
   rows: number;
   symbol_count: number;
   source_count: Record<string, number>;
+  provider_count?: Record<string, number>;
+  interface_count?: Record<string, number>;
+  missing_field_count?: Record<string, number>;
   has_sample_data: boolean;
   has_real_data: boolean;
   warning?: string | null;
@@ -55,6 +58,15 @@ export type DataCredibilityModule = {
   note: string;
   warning?: string | null;
   source_breakdown?: Record<string, number>;
+  provider_count?: Record<string, number>;
+  interface_count?: Record<string, number>;
+  missing_field_count?: Record<string, number>;
+  asset_source_status?: Record<string, string>;
+  asset_missing_fields?: Record<string, string[]>;
+  provider_error_count?: Record<string, number>;
+  error_category_count?: Record<string, number>;
+  provider_disabled?: string[];
+  asset_fallback_reason?: Record<string, string>;
 };
 
 export type DataCredibilityOverview = {

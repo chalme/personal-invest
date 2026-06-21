@@ -1,6 +1,6 @@
 # DATA-016: 真实行情多源 Provider 抽象
 
-- Status: TODO
+- Status: DONE
 - Priority: P0
 - Owner: Codex
 - Created At: 2026-06-21
@@ -73,3 +73,10 @@
 ## Notes
 
 本任务解决的是“真实数据源单点失败”问题，不降低 real-only 约束。数据源可以 fallback，数据真实性不能 fallback。
+
+
+## Completion
+
+- Completed At: 2026-06-21
+- Implemented provider chain for real daily bars, provider metadata, missing field tracking, timeout/retry/circuit breaker, read-only probe script, and Dashboard/Settings provider credibility display.
+- Real-only invariant preserved: all live providers failed -> real historical cache or MISSING, never sample/mock/demo/estimated.
