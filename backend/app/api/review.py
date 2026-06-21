@@ -59,6 +59,16 @@ def list_decisions(symbol: str | None = Query(default=None)) -> dict:
     return {"data": ReviewService().list_decisions(symbol=symbol)}
 
 
+@router.get("/decisions/{decision_id}/outcomes")
+def list_decision_outcomes(decision_id: int) -> dict:
+    return {"data": ReviewService().list_decision_outcomes(decision_id=decision_id)}
+
+
+@router.get("/outcomes")
+def list_outcomes() -> dict:
+    return {"data": ReviewService().list_decision_outcomes()}
+
+
 @router.post("/decisions")
 def create_decision(payload: DecisionCreate) -> dict:
     try:

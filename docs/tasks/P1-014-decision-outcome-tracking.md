@@ -1,10 +1,10 @@
 # P1-014: Decision Outcome Tracking
 
-- Status: TODO
+- Status: DONE
 - Priority: P1
 - Owner: Codex
 - Created At: 2026-06-21
-- Completed At:
+- Completed At: 2026-06-21
 
 ## Goal
 
@@ -38,3 +38,18 @@
 ## Notes
 
 - 卖出后上涨不一定代表决策错误，页面需要避免做简单裁判。
+
+
+## Completed Changes
+
+- Added `decision_outcome` table with unique `(decision_id, horizon)`.
+- Added `worker/review/outcome_tracker.py` for 1D / 1W / 1M outcome refresh.
+- Daily job now refreshes decision outcomes before building the report.
+- Added Review API outcome listing endpoints.
+
+## Completed Verification
+
+- Migration applied through `scripts/migrate_db.py`.
+- Outcome tracker repeated execution stayed idempotent through upsert.
+- A historical smoke decision produced outcome rows.
+- Python compile, frontend build and `./scripts/check.sh` passed.

@@ -138,6 +138,23 @@ class ReviewService:
             tuple(params),
         )
 
+    def list_decision_outcomes(self, decision_id: int | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        params: list[Any] = []
+        where = ""
+        if decision_id:
+            where = "WHERE decision_id = ?"
+            params.append(decision_id)
+        params.append(max(1, min(limit, 500)))
+        return self.repo.fetch_all(
+            f"""
+            SELECT * FROM decision_outcome
+            {where}
+            ORDER BY measured_at DESC, id DESC
+            LIMIT ?
+            """,
+            tuple(params),
+        )
+
     def create_decision(self, payload: dict[str, Any]) -> dict[str, Any]:
         decision_type = str(payload.get("decision_type") or "").upper()
         if decision_type not in {"BUY", "HOLD", "REDUCE", "SELL", "NO_ACTION"}:

@@ -75,16 +75,16 @@
 
 ### P1-014: Decision Outcome Tracking
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Goal: 自动跟踪决策后 1D / 1W / 1M 的轻量结果，用于复盘参考。
 - Details: `docs/tasks/P1-014-decision-outcome-tracking.md`
 - Files: `backend/migrations/010_decision_outcome.sql`, `worker/review/outcome_tracker.py`, `worker/daily_job.py`, `backend/app/api/review.py`
 - Concrete Changes: 新增 `decision_outcome`；记录决策时和跟踪时的价格/净值、收益、建议等级和风险数量；daily job 自动刷新可到期的 outcome。
 - Acceptance: 每个决策可沉淀 1D / 1W / 1M 结果；重复执行幂等；结果文案明确“仅供复盘参考，不代表决策绝对对错”。
-- Completed At:
-- Changed Files:
-- Verification:
+- Completed At: 2026-06-21
+- Changed Files: `backend/migrations/010_decision_outcome.sql`, `worker/review/outcome_tracker.py`, `worker/daily_job.py`, `backend/app/services/review_service.py`, `backend/app/api/review.py`
+- Verification: `uv run python scripts/migrate_db.py`; repeated `uv run python -m worker.review.outcome_tracker`; smoke decision generated outcomes; Python compile; frontend build; `./scripts/check.sh`.
 - Notes: 第一版不做复杂收益归因、交易成本归因或多账户评价。
 
 ### P1-015: 复盘摘要接入 Dashboard / Portfolio
