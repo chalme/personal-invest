@@ -7,6 +7,9 @@
 | 场景 | 推荐文档 |
 |---|---|
 | 第一次使用系统 | [`user-guide.md`](user-guide.md) |
+| 想看当前交易账本实现规格 | [`specs/trading-ledger-mvp-v1.6.md`](specs/trading-ledger-mvp-v1.6.md) |
+| 想理解长期北极星 | [`strategy/investment-behavior-operating-system.md`](strategy/investment-behavior-operating-system.md) |
+| 想理解关键架构取舍 | [`decisions/`](decisions/) |
 | 想知道系统支持哪些功能 | [`feature-matrix.md`](feature-matrix.md) |
 | 想理解数据源和 real-only 策略 | [`data-sources.md`](data-sources.md) / [`data-pipeline.md`](data-pipeline.md) |
 | 想理解系统限制 | [`limitations.md`](limitations.md) |
@@ -34,6 +37,8 @@
 | 文档 | 说明 |
 |---|---|
 | [`architecture.md`](architecture.md) | 技术架构、模块边界、数据流 |
+| [`specs/trading-ledger-mvp-v1.6.md`](specs/trading-ledger-mvp-v1.6.md) | 当前冻结版轻量交易账本实现规格 |
+| [`decisions/`](decisions/) | 已接受的关键架构判断和取舍 |
 | [`data-sources.md`](data-sources.md) | AKShare / BaoStock / 腾讯 / 新浪等真实数据源说明 |
 | [`data-pipeline.md`](data-pipeline.md) | 每日流水线、manifest、real-only、provider chain |
 | [`storage.md`](storage.md) | SQLite / DuckDB / Parquet 存储边界 |
@@ -49,6 +54,15 @@
 | [`stock-financial-analysis-design.md`](stock-financial-analysis-design.md) | 股票财报、估值、质量和财报事件设计 |
 | [`fund-deep-analysis-design.md`](fund-deep-analysis-design.md) | 场外基金画像、经理/公司、风险收益和同类比较设计 |
 | [`etf-deep-analysis-design.md`](etf-deep-analysis-design.md) | ETF / LOF 指数、主题、流动性、跟踪质量和交易风险设计 |
+
+## 策略与历史治理
+
+| 文档 | 说明 |
+|---|---|
+| [`strategy/investment-behavior-operating-system.md`](strategy/investment-behavior-operating-system.md) | 投资行为操作系统 10 层长期北极星 |
+| [`specs/`](specs/) | 当前有效或接近冻结的实现规格 |
+| [`decisions/`](decisions/) | 已接受的架构决策，类似 ADR |
+| [`archive/`](archive/) | 历史讨论、被替代方案和归档草稿 |
 
 ## UX 与任务文档
 
@@ -72,4 +86,7 @@
 5. 系统限制集中写到 `limitations.md`，不要分散在页面文案里。
 6. API 能力和接口边界写到 `api.md`。
 7. 生产排障写到 `operations-runbook.md`，发布检查写到 `release-checklist.md`。
-8. 历史任务文档只记录当时决策；当前运行策略以 `data-pipeline.md` 和 `data-sources.md` 为准。
+8. 当前可实现规格写到 `docs/specs/`，长期方向写到 `docs/strategy/`。
+9. 已接受的关键判断写到 `docs/decisions/`，每篇只记录一个决定、取舍和后果。
+10. 历史讨论和被替代方案写到 `docs/archive/`，不得作为当前实现依据。
+11. 历史任务文档只记录当时决策；当前运行策略以 `data-pipeline.md`、`data-sources.md` 和 `docs/specs/` 为准。
